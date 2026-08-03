@@ -27,6 +27,7 @@ export type ContentId =
   | 'about'
   | 'user-guide'
   | 'faq'
+  | 'whats-new'
   | 'changelog'
   | 'privacy-policy'
   | 'terms-of-use'
