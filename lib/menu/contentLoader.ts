@@ -10,6 +10,7 @@ const CONTENT_FILES: Record<ContentId, string> = {
   'about': 'ABOUT.md',
   'user-guide': 'USER_GUIDE.md',
   'faq': 'FAQ.md',
+  'whats-new': 'WHATS_NEW.md',
   'changelog': 'CHANGELOG.md',
   'privacy-policy': 'PRIVACY_POLICY.md',
   'terms-of-use': 'TERMS_OF_USE.md',
