@@ -102,7 +102,12 @@ describe('rearrange: signatureFor', () => {
   });
 
   it('is independent of word order', () => {
-    expect(signatureFor('Physics Part 3', 15, 16)).toBe(signatureFor('Part 3 Physics', 5, 6));
+    const a = parseFileName('Physics Part 3.pdf');
+    const b = parseFileName('Part 3 Physics.pdf');
+    const ta = a.tokens.find((t) => t.kind === 'number');
+    const tb = b.tokens.find((t) => t.kind === 'number');
+    expect(ta && tb).toBeTruthy();
+    expect(signatureFor(a.stem, ta!.start, ta!.end)).toBe(signatureFor(b.stem, tb!.start, tb!.end));
   });
 
   it('falls back to noise words when nothing else remains', () => {
