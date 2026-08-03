@@ -102,11 +102,11 @@ describe('rearrange: signatureFor', () => {
   });
 
   it('is independent of word order', () => {
-    expect(signatureFor('Physics Part 3', 8, 9)).toBe(signatureFor('Part 3 Physics', 5, 6));
+    expect(signatureFor('Physics Part 3', 15, 16)).toBe(signatureFor('Part 3 Physics', 5, 6));
   });
 
   it('falls back to noise words when nothing else remains', () => {
-    expect(signatureFor('Class Notes 1', 11, 12)).toBe('class notes');
+    expect(signatureFor('Class Notes 1', 12, 13)).toBe('class notes');
     expect(signatureFor('Lecture 02', 8, 10)).toBe('lecture');
   });
 
