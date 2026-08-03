@@ -29,20 +29,20 @@ const WORD_SPLIT_RE = /[^a-z0-9\u00C0-\u024F]+/i;
 /**
  * Build the series signature for a stem with the token at
  * [removeStart, removeEnd) taken out.
- * Returns '' when nothing meaningful remains (never a valid signature).
+ *
+ * Noise words ("class", "notes", "part", ...) are dropped first. When a name
+ * consists ONLY of noise words ("Class Notes 1", "21st Lecture"), the noise
+ * words themselves form the signature so such series are still detected.
+ * Returns '' when nothing remains (never a valid signature).
  */
 export function signatureFor(stem: string, removeStart: number, removeEnd: number): string {
   const stripped = `${stem.slice(0, removeStart)} ${stem.slice(removeEnd)}`.toLowerCase();
   const words = stripped.split(WORD_SPLIT_RE).filter(Boolean);
+  if (words.length === 0) return '';
 
-  const kept: string[] = [];
-  for (const w of words) {
-    if (NOISE_WORDS.has(w)) continue;
-    kept.push(w);
-  }
-  if (kept.length === 0) return '';
-  kept.sort();
-  return kept.join(' ');
+  const kept = words.filter((w) => !NOISE_WORDS.has(w));
+  const base = kept.length > 0 ? kept : words;
+  return [...base].sort().join(' ');
 }
 
 /** Title-case a signature for display ("basic maths" -> "Basic Maths"). */
