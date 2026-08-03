@@ -34,4 +34,4 @@ This guide walks you through optimizing class notes for printing.
 
 ## Need help?
 
-- Read the [FAQ](/content/FAQ.md) or contact [myself.juyel.dev@gmail.com](mailto:myself.juyel.dev@gmail.com).
+- Check the **FAQ** in the menu, or contact [myself.juyel.dev@gmail.com](mailto:myself.juyel.dev@gmail.com).
