@@ -2,9 +2,9 @@ name: CI + Deploy
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "develop"]
   pull_request:
-    branches: ["main", "master"]
+    branches: ["main", "master", "develop"]
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Runs on main, master and develop. On develop this acts as the
+  # preview/testing gate (build + tests) WITHOUT deploying to production.
   ci:
     runs-on: ubuntu-latest
     env:
@@ -53,6 +55,7 @@ jobs:
           path: ./out
           retention-days: 7
 
+  # PRODUCTION deploy - ONLY from main/master. develop never deploys here.
   deploy:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     needs: ci
