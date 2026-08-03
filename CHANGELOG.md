@@ -17,17 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feedback reachable from the menu via a modal reusing the existing form
 - Clear Cache privacy action; Telegram community/channel and contact links
 - App and drawer footer with copyright and contact email
-
-### Changed
-- Re-licensed from MIT to the Juyel Source License (JSL) v1.0
-  (LICENSE, package.json, README, CONTRIBUTING)
-- Updated feedback Google Apps Script endpoint to the new web app URL
-
-### Removed
-- Old workflow-navigator drawer content (install banner, phase shortcuts,
-  quick actions, legacy footer)
-
-### Added (previous)
 - Smart PDF Rearrangement: automatic detection of related PDF series
   (e.g. "Basic Maths and Calculus 1..13 Class Notes") with rule-based
   natural sorting (numbers, ordinals, roman numerals, zero-padding)
@@ -41,6 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their upload order
 - Unit test coverage for the rearrangement pipeline (parser, normalizer,
   sorter, rule engine, edge cases, performance smoke test)
+
+### Changed
+- Re-licensed from MIT to the Juyel Source License (JSL) v1.0
+  (LICENSE, package.json, README, CONTRIBUTING)
+- Updated feedback Google Apps Script endpoint to the new web app URL
+
+### Removed
+- Old workflow-navigator drawer content (install banner, phase shortcuts,
+  quick actions, legacy footer)
 
 ## [1.0.0] - 2026-07-31
 
