@@ -1,5 +1,3 @@
-# Juyel Source License (JSL) v1.0
-
 Juyel Source License (JSL) v1.0
 
 Copyright (c) 2026 Juyel Hossain. All Rights Reserved.
