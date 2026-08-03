@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Adaptive PWA **Install/Share card** at the top of the Settings drawer:
+  shows a beautiful install card (native add-to-home-screen) when the app is
+  not installed, and switches to a **Share this app** card (Web Share API with
+  copy-link fallback) once installed
+- Install card shows benefit chips (Fast / Offline / Private) and an iOS
+  "Add to Home Screen" guide
+
+### Changed
+- Install prompt UI now lives **only inside the drawer** (nothing renders
+  outside the hamburger menu)
+
+### Removed
+- `InstallBanner` (replaced by the adaptive `InstallShareCard`)
+- Unused `InstallButton` component
+
+### Added (previous)
 - Unit tests for the menu module: Markdown renderer (escaping/XSS/lists/links),
   MenuRegistry (register/resolve/validate/hidden filtering) and contentLoader
   (fetch mocking + caching), plus a config-integration sanity suite
