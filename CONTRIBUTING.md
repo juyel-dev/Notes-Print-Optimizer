@@ -95,6 +95,28 @@ Use conventional commits:
 - Attach sample PDFs if relevant (small files only)
 - Describe expected vs actual behavior
 
+## Branching & Release Workflow
+
+This repository uses a two-branch model to keep production safe.
+
+| Branch | Purpose | Deploys to production? |
+|--------|---------|------------------------|
+| `main` | Production only (live users) | Yes (on merge) |
+| `develop` | Development, testing, preview | No |
+
+### Rules
+- All features, bug fixes and code changes go to `develop` first. Never commit directly to `main`.
+- `main` is branch-protected: direct pushes are blocked; merging requires a Pull Request, passing CI (`ci`) and one approving review.
+- CI (lint, type check, unit tests, build) runs on `main`, `develop` and every PR.
+- The production GitHub Pages deploy runs only when `main` updates. Pushes to `develop` build and upload a preview artifact but never deploy to production.
+
+### Release flow
+1. Implement and commit changes on `develop`.
+2. CI validates `develop` (type check + build). The compiled site is available as the `out` build artifact for preview.
+3. Review and test the changes on `develop`.
+4. When approved, open a Pull Request from `develop` to `main`.
+5. After CI passes and the PR is approved, merge it. That merge is what deploys to production.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the Juyel Source License (JSL) v1.0.
