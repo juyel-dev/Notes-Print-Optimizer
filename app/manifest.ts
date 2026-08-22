@@ -7,15 +7,17 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: `${basePath}/`,
-    name: 'PW Notes Print Optimizer',
-    short_name: 'PW Optimizer',
+    name: 'Print Optimizer',
+    short_name: 'Print Optimizer',
     description:
-      'Mobile-first print optimizer and adaptive layout engine for PW lecture notes. Convert dark-background slides to print-ready PDFs with optimal ink and paper usage.',
+      'Every PDF, print-perfect — merge, whiten dark notes, enhance light scans & build smart N-up layouts. 100% offline, on-device.',
     start_url: `${basePath}/`,
     scope: `${basePath}/`,
     display: 'standalone',
     background_color: '#020617',
-    theme_color: '#020617',
+    /* Static by PWA platform design — brand indigo reads as intentional on
+       both light and dark headers (runtime toggle only drives meta theme-color). */
+    theme_color: '#4338ca',
     orientation: 'portrait-primary',
     categories: ['education', 'productivity', 'utilities'],
     prefer_related_applications: false,

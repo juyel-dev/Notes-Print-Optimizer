@@ -7,8 +7,34 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Enhance Light PDF tool** (mobile): self-contained flow
+  (upload → enhance → export) for faint, light-background PDFs —
+  handwritten/scan/photographed notes. Tunable Darken / Contrast / Sharpen
+  sliders, Clean Background and Grayscale toggles, per-page before/after
+  preview, and print-ready PDF export. Engine lives in `lib/enhance/`
+  (pure deterministic kernels `enhanceKernels.ts`, reducer, processor,
+  exporter) with unit tests (21 new); the dark→print flow is untouched.
+- **Premium mobile landing "Aurora Dark"**: brand-gradient tools box
+  (`#243BFF→#5B35FF→#A12CFF`) with two tool cards (Dark Notes → Print,
+  Enhance Light PDF); upgraded hero (gradient headline, ambient glows,
+  glass stat chips). Tools box is mobile-only (`md:hidden`); tablet and
+  desktop layouts unchanged.
+
 ### Fixed
 
+- **Enhance workflow race + validation**: abort now guards against stale
+  `RESET` overwriting a new run (`PROCESS_CANCEL` keeps files), unmount
+  cleanup added, processor checks `signal` after every async step,
+  `validatePdfFiles` helper centralizes PDF checks and `MAX_FILES` is
+  enforced consistently; a11y fixes — dropzone no nested button,
+  sliders 24px hit area, Hero glows 3→2.
+- **Enhance polish**: ToolCard gradients differentiated
+  (Dark Notes indigo→cyan, Enhance violet→pink), Hero glows reduced for
+  performance, tuning constants extracted (`ENHANCE_TUNING`), slider
+  dirty-check (`Up to date`), hold-to-compare preview, export share +
+  safe-area sticky CTA, `scale-in` animation.
 - **Settings/Info modals rendered inside the drawer** instead of the
   viewport: the drawer's slide-in animation (`animate-slide-in-left`,
   fill-mode `both`) leaves a retained `transform` that turns the drawer into

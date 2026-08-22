@@ -1,18 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { ProcessingModal } from '@/components/ProcessingModal';
 import { PlatformUIOrchestrator } from '@/components/views/PlatformUIOrchestrator';
 import { usePageHandlers } from '@/lib/workflow/usePageHandlers';
 import { useMonitor } from '@/lib/monitoring/useMonitor';
 import { ToastProvider } from '@/components/shared/Toast';
-import type { WorkflowState, WorkflowActions, WorkflowHandlers, ResumeSession } from '@/components/views/types';
+import type { WorkflowState, WorkflowActions, WorkflowHandlers } from '@/components/views/types';
+import type { ToolMode } from '@/lib/enhance/types';
+import type { HandoffPageInput } from '@/lib/services/EnhanceHandoffService';
 import { RefreshCw, X } from 'lucide-react';
 
 export default function AppShell() {
   useMonitor();
   const [swUpdateAvailable, setSwUpdateAvailable] = useState(false);
+  const [toolMode, setToolMode] = useState<ToolMode | null>(null);
+  /** True while the user is inside the N-Up stage reached from the enhance tool. */
+  const [arrivedViaEnhance, setArrivedViaEnhance] = useState(false);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -40,7 +45,7 @@ export default function AppShell() {
 
   const {
     state, actions,
-    handleResetWorkflow, handleFilesUpload, handleLoadSamplePdf,
+    handleResetWorkflow, handleFilesUpload,
     handleMoveItem, handleRemoveItem, handleDownloadMerged,
     handleSmartArrange, handleReorderItem,
     handleProceedToPhase2, handleToggleExcludePage, handleDownloadOptimized1Up,
@@ -50,9 +55,34 @@ export default function AppShell() {
     handleTogglePageNumbers, handleUpdateOuterMargins, handleUpdateInnerMargin,
     handleApplyLayout, handleDownloadFinalPrintPdf, handleProceedToPhase4,
     handleSendFeedback, compilePhase3PrintLayout,
-    handleCancelProcessing, resumeInfo, handleResumeProcessing, handleDismissResume,
+    handleCancelProcessing,
+    handleEnhanceLayoutHandoff,
     progressiveThumbnails,
   } = usePageHandlers();
+
+  /** Enhance -> N-Up: land inside the dark-print tool but without its
+   * pipeline chrome (stepper/back-to-optimize) — see arrivedViaEnhance. */
+  const runEnhanceLayoutHandoff = useCallback(async (pages: HandoffPageInput[]) => {
+    await handleEnhanceLayoutHandoff(pages);
+    setToolMode('dark-print');
+    setArrivedViaEnhance(true);
+  }, [handleEnhanceLayoutHandoff]);
+
+  /** From the handoff stage, reset exits to the tools box, not tool-1 upload. */
+  const handleSessionReset = useCallback(() => {
+    if (arrivedViaEnhance) {
+      setArrivedViaEnhance(false);
+      setToolMode(null);
+    }
+    handleResetWorkflow();
+  }, [arrivedViaEnhance, handleResetWorkflow]);
+
+  /** Return to the enhance workbench (its results stay alive in the tool machine). */
+  const handleBackToEnhance = useCallback(() => {
+    setArrivedViaEnhance(false);
+    setToolMode('enhance');
+    handleResetWorkflow();
+  }, [handleResetWorkflow]);
 
   const workflowState: WorkflowState = useMemo(() => ({
     currentPhase: state.currentPhase,
@@ -63,7 +93,6 @@ export default function AppShell() {
     mergedPdfBlob: state.mergedPdfBlob,
     mergedPdfBytes: state.mergedPdfBytes,
     mergedPageDataUrls: state.mergedPageDataUrls,
-    selectedEngineVersion: state.selectedEngineVersion,
     processedPages: state.processedPages,
     selectedPageIndex: state.selectedPageIndex,
     excludedPages: state.excludedPages,
@@ -88,7 +117,6 @@ export default function AppShell() {
   const workflowActions: WorkflowActions = useMemo(() => ({
     setPhase: actions.setPhase,
     setError: actions.setError,
-    setEngineVersion: actions.setEngineVersion,
     setSelectedPageIndex: actions.setSelectedPageIndex,
     setMasterParams: actions.setMasterParams,
     setProcessingToggles: actions.setProcessingToggles,
@@ -99,7 +127,6 @@ export default function AppShell() {
 
   const workflowHandlers: WorkflowHandlers = useMemo(() => ({
     handleFilesUpload,
-    handleLoadSamplePdf,
     handleMoveItem,
     handleRemoveItem,
     handleReorderItem,
@@ -122,26 +149,19 @@ export default function AppShell() {
     handleDownloadFinalPrintPdf,
     handleProceedToPhase4,
     handleSendFeedback,
-    handleResetWorkflow,
-    handleCancelProcessing,
-    handleResumeProcessing,
-    handleDismissResume,
     compilePhase3PrintLayout,
+    handleCancelProcessing,
+    handleResetWorkflow: handleSessionReset,
   }), [
-    handleFilesUpload, handleLoadSamplePdf, handleMoveItem, handleRemoveItem,
+    handleFilesUpload, handleMoveItem, handleRemoveItem,
     handleReorderItem, handleSmartArrange, handleDownloadMerged, handleProceedToPhase2,
     handleToggleExcludePage, handleDownloadOptimized1Up, handleProceedToPhase3,
     handleReprocess, handlePreviewReprocess, handleResetSettings, handleApplyLayout,
     handleSelectLayoutFormat, handleToggleOrientation, handleToggleBorders,
     handleTogglePageNumbers, handleUpdateOuterMargins, handleUpdateInnerMargin,
     handleDownloadFinalPrintPdf, handleProceedToPhase4, handleSendFeedback,
-    handleResetWorkflow, handleCancelProcessing, handleResumeProcessing,
-    handleDismissResume, compilePhase3PrintLayout,
+    handleResetWorkflow, handleCancelProcessing, compilePhase3PrintLayout,
   ]);
-
-  const resumeSession: ResumeSession = useMemo(() => ({
-    resumeInfo,
-  }), [resumeInfo]);
 
   return (
     <ToastProvider>
@@ -149,17 +169,17 @@ export default function AppShell() {
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Header
         currentPhase={state.currentPhase}
-        onReset={handleResetWorkflow}
-        onLoadSample={handleLoadSamplePdf}
+        onReset={handleSessionReset}
         onNavigatePhase={(phase) => actions.setPhase(phase)}
         isProcessing={state.isProcessing}
+        showStepper={toolMode === 'dark-print' && !arrivedViaEnhance}
       />
       <ProcessingModal progress={state.progress} onCancel={handleCancelProcessing} progressiveThumbnails={progressiveThumbnails} />
       {swUpdateAvailable && (
         <div role="status" className="bg-primary-faint/90 border-b border-primary-deep text-primary-soft text-xs py-2 px-4 flex items-center justify-between font-medium shadow-md">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-3.5 h-3.5 text-primary-soft animate-spin" />
-            <span>A new version of Notes Print Optimizer is available.</span>
+            <span>A new version of Print Optimizer is available.</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -170,7 +190,7 @@ export default function AppShell() {
             </button>
             <button
               onClick={() => setSwUpdateAvailable(false)}
-              className="p-2 hover:text-white text-primary-soft transition"
+              className="p-2 hover:text-ink text-primary-soft transition"
               aria-label="Dismiss update alert"
             >
               <X className="w-3.5 h-3.5" />
@@ -183,7 +203,7 @@ export default function AppShell() {
           <div className="flex-1 text-center">{state.errorMessage}</div>
           <button
             onClick={() => actions.setError(null)}
-            className="p-2 hover:text-white text-danger-soft transition"
+            className="p-2 hover:text-ink text-danger-soft transition"
             aria-label="Dismiss error"
           >
             <X className="w-4 h-4" />
@@ -195,7 +215,11 @@ export default function AppShell() {
           state={workflowState}
           actions={workflowActions}
           handlers={workflowHandlers}
-          resume={resumeSession}
+          toolMode={toolMode}
+          onToolModeChange={setToolMode}
+          onEnhanceHandoff={runEnhanceLayoutHandoff}
+          enhanceHandoffActive={arrivedViaEnhance}
+          onBackToEnhance={handleBackToEnhance}
         />
       </main>
       <footer className="border-t border-surface-2/60 px-4 py-6 text-center text-[11px] text-ink-muted">

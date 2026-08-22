@@ -25,6 +25,52 @@ export async function isLikelyPdfFile(file: File): Promise<boolean> {
   return false;
 }
 
+export interface PdfValidationResult {
+  validFiles: File[];
+  skipped: string[];
+  error: string | null;
+}
+
+/**
+ * Shared validator for PDF uploads — used by both the main UploadArea
+ * and the Enhance tool. Keeps per-file / total-size / magic-byte checks
+ * in one place so limits stay consistent.
+ */
+export async function validatePdfFiles(files: File[], maxFiles = 10): Promise<PdfValidationResult> {
+  const validFiles: File[] = [];
+  const skipped: string[] = [];
+  let totalSize = 0;
+
+  for (const file of files) {
+    if (validFiles.length >= maxFiles) {
+      skipped.push(`${file.name} (over ${maxFiles} file limit)`);
+      continue;
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      skipped.push(`${file.name} (over ${MAX_FILE_SIZE_MB} MB)`);
+      continue;
+    }
+    const looksLikePdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isPdf = looksLikePdf && (await isLikelyPdfFile(file));
+    if (!isPdf) {
+      skipped.push(file.name);
+      continue;
+    }
+    validFiles.push(file);
+    totalSize += file.size;
+  }
+
+  if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
+    return {
+      validFiles: [],
+      skipped,
+      error: `Combined size exceeds the ${MAX_TOTAL_SIZE_MB} MB limit. Please upload fewer or smaller files.`,
+    };
+  }
+
+  return { validFiles, skipped, error: null };
+}
+
 export class UploadService {
   static async readFiles(files: File[]): Promise<UploadedItem[]> {
     let counter = 0;
@@ -69,17 +115,5 @@ export class UploadService {
       thumbnails.push(memoryManager.createTrackedBlobUrl(blob));
     }
     return { pdfBlob, pdfBytes, thumbnails };
-  }
-
-  static async generateSamplePdf(): Promise<UploadedItem> {
-    const { SamplePdfGenerator } = await import('../optimizer/samplePdfGenerator');
-    const sampleBytes = await SamplePdfGenerator.generateSamplePWDoc();
-    const pdfBuffer = sampleBytes.buffer as ArrayBuffer;
-    const file = new File([pdfBuffer], 'PW_Sample_Class_Notes.pdf', { type: 'application/pdf' });
-    return {
-      id: 'sample-pw-notes', file, name: file.name,
-      sizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      arrayBuffer: pdfBuffer,
-    };
   }
 }

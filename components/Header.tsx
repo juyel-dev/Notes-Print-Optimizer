@@ -4,12 +4,11 @@ import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 
 import {
   Menu,
   X,
-  ShieldCheck,
   CheckCircle2,
-  Sparkles,
   RefreshCw,
 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useDialogFocus } from '@/lib/ui/useDialogFocus';
 
 import type { WorkflowPhase } from '@/lib/workflow/types';
@@ -23,9 +22,10 @@ const LazySettingsDrawer = lazy(() => import('./menu/SettingsDrawer').then((m) =
 interface HeaderProps {
   currentPhase: WorkflowPhase;
   onReset?: () => void;
-  onLoadSample?: () => void;
   onNavigatePhase?: (phase: WorkflowPhase) => void;
   isProcessing?: boolean;
+  /** Controls stepper visibility — landing has no stepper until a tool is chosen */
+  showStepper?: boolean;
 }
 
 interface SettingsDrawerProps {
@@ -41,9 +41,9 @@ const SettingsDrawer = ({ onAppAction }: SettingsDrawerProps) => (
 export const Header: React.FC<HeaderProps> = ({
   currentPhase,
   onReset,
-  onLoadSample,
   onNavigatePhase,
   isProcessing = false,
+  showStepper = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
@@ -98,17 +98,17 @@ export const Header: React.FC<HeaderProps> = ({
 
   const steps = [
     { phase: 1 as WorkflowPhase, label: 'Upload' },
-    { phase: 2 as WorkflowPhase, label: 'Optimize' },
+    { phase: 2 as WorkflowPhase, label: 'Whiten' },
     { phase: 3 as WorkflowPhase, label: 'Layout' },
     { phase: 4 as WorkflowPhase, label: 'Download' },
   ];
 
   return (
     <>
-      <header id="app-header" className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-md border-b border-surface-2 text-white pt-safe">
+      <header id="app-header" className="sticky top-0 z-40 w-full bg-surface/95 backdrop-blur-md border-b border-surface-2 text-ink pt-safe">
         <div className="mx-auto max-w-7xl px-3 py-2.5 sm:px-6 lg:py-3">
           <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-4">
-            {/* Left: Hamburger Menu Button & Logo */}
+            {/* Left: Hamburger Menu Button, Theme Toggle & Logo */}
             <div className="flex items-center gap-2 lg:justify-self-start">
               <button
                 ref={hamburgerRef}
@@ -122,90 +122,67 @@ export const Header: React.FC<HeaderProps> = ({
                 {isMenuOpen ? <X className="h-5 w-5 text-warning" /> : <Menu className="h-5 w-5 text-primary-soft" />}
               </button>
 
-              <div className="flex items-center gap-2">
+              <ThemeToggle />
+
+              <div className="flex items-center gap-2.5">
                 <AppLogo className="h-9 w-9 text-primary-soft drop-shadow-md lg:h-10 lg:w-10" />
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-sm font-bold tracking-tight text-white sm:text-base">
-                      PW Optimizer
-                    </h1>
-                    <span className="rounded-md bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary-soft border border-primary/30">
-                      PWA
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-ink-muted font-medium hidden sm:inline">
-                    Android & Web Print Engine
-                  </span>
-                </div>
+                <h1 className="text-[15px] font-bold tracking-tight text-ink sm:text-base">
+                  Print Optimizer
+                </h1>
               </div>
             </div>
 
-            {/* Middle: Compact Stepper Indicator for Mobile & Tablet */}
-            <nav aria-label="Progress Stepper" className="flex items-center gap-1 rounded-xl bg-surface-2/70 p-1 border border-elevated/50 lg:justify-self-center">
-              {steps.map((step) => {
-                const isActive = currentPhase === step.phase;
-                const isCompleted = currentPhase > step.phase;
+            {/* Middle: Stepper — landing has no stepper, after tool choose it appears */}
+            {showStepper && (
+              <nav aria-label="Progress Stepper" className="hidden items-center gap-1 rounded-xl bg-surface-2/80 p-1 border border-elevated/60 sm:flex lg:justify-self-center">
+                {steps.map((step) => {
+                  const isActive = currentPhase === step.phase;
+                  const isCompleted = currentPhase > step.phase;
 
-                return (
-                  <button
-                    key={step.phase}
-                    onClick={() => {
-                      if (isCompleted && onNavigatePhase) {
-                        onNavigatePhase(step.phase);
-                      }
-                    }}
-                    disabled={!isCompleted && !isActive}
-                    aria-current={isActive ? 'step' : undefined}
-                    aria-label={`Step ${step.phase}: ${step.label}`}
-                    className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-primary-strong text-white shadow-xs lg:scale-105'
-                        : isCompleted
-                        ? 'text-success hover:bg-elevated/60'
-                        : 'text-ink-muted cursor-not-allowed'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${
+                  return (
+                    <button
+                      key={step.phase}
+                      onClick={() => {
+                        if (isCompleted && onNavigatePhase) {
+                          onNavigatePhase(step.phase);
+                        }
+                      }}
+                      disabled={!isCompleted && !isActive}
+                      aria-current={isActive ? 'step' : undefined}
+                      aria-label={`Step ${step.phase}: ${step.label}`}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-white text-primary-deep'
+                          ? 'bg-primary-strong text-white shadow-sm'
                           : isCompleted
-                          ? 'bg-success-strong text-bg'
-                          : 'bg-elevated text-ink-muted'
+                          ? 'bg-success/15 text-success-soft hover:bg-success/25 border border-success/20'
+                          : 'text-ink bg-elevated/60 border border-elevated/60 cursor-not-allowed'
                       }`}
                     >
-                      {isCompleted ? <CheckCircle2 className="h-3 w-3" /> : step.phase}
-                    </span>
-                    <span className="hidden min-[400px]:inline text-[11px] sm:text-xs">{step.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ring-1 ${
+                          isActive
+                            ? 'bg-white text-indigo-700 ring-white/20'
+                            : isCompleted
+                            ? 'bg-success-strong text-white ring-success/30'
+                            : 'bg-elevated text-ink ring-primary/20'
+                        }`}
+                      >
+                        {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.phase}
+                      </span>
+                      <span className="hidden min-[400px]:inline text-xs tracking-wide">{step.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
 
             {/* Right: Quick Action Buttons for Desktop / Tablet */}
             <div className="hidden md:flex items-center gap-2 lg:justify-self-end">
-              <div className="flex items-center gap-1.5 rounded-lg border border-success-strong/30 bg-success-strong/10 px-2.5 py-1 text-xs font-medium text-success-soft">
-                <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                <span>100% Offline</span>
-              </div>
-
-              {currentPhase === 1 && onLoadSample && (
-                <button
-                  type="button"
-                  onClick={onLoadSample}
-                  disabled={isProcessing}
-                  className="flex h-9 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary-strong/20 px-3 text-xs font-semibold text-primary-soft hover:bg-primary-strong/30 transition-colors disabled:opacity-50"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-primary-soft" />
-                  <span>Sample PDF</span>
-                </button>
-              )}
-
               {currentPhase > 1 && onReset && (
                 <button
                   type="button"
                   onClick={onReset}
-                  className="flex h-9 items-center gap-1.5 rounded-lg border border-elevated bg-surface-2 px-3 text-xs font-medium text-ink-muted hover:bg-elevated hover:text-white transition-colors"
+                  className="flex h-9 items-center gap-1.5 rounded-lg border border-elevated bg-surface-2 px-3 text-xs font-medium text-ink-muted hover:bg-elevated hover:text-ink transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>Start Over</span>
@@ -215,11 +192,12 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Top Progress Line Indicator */}
-        <div className="h-0.5 w-full bg-surface-2">
+        {/* Top Progress Line — only after tool chosen */}
+        <div aria-hidden="true" className="h-0.5 w-full bg-surface-2">
           <div
+            aria-hidden="true"
             className="h-full bg-gradient-to-r from-primary via-accent-soft to-success transition-[width] duration-200 ease-in-out"
-            style={{ width: `${(currentPhase / 4) * 100}%` }}
+            style={{ width: showStepper ? `${(currentPhase / 4) * 100}%` : '0%' }}
           />
         </div>
       </header>
@@ -248,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center gap-2.5">
                   <AppLogo className="h-8 w-8 text-primary-soft" />
                   <div>
-                    <h2 className="text-sm font-bold text-white">PW Print Optimizer</h2>
+                    <h2 className="text-sm font-bold text-ink">Print Optimizer</h2>
                     <p className="text-[11px] text-ink-muted">Settings &amp; Information</p>
                   </div>
                 </div>
@@ -256,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({
                   ref={drawerCloseRef}
                   type="button"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-ink-muted hover:text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface-2 text-ink-muted hover:text-ink"
                   aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
@@ -284,5 +262,4 @@ export const Header: React.FC<HeaderProps> = ({
     </>
   );
 };
-
 

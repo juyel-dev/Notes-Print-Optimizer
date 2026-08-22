@@ -13,25 +13,25 @@ const siteUrl = `https://juyel-dev.github.io${basePath}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'PW Notes Print Optimizer',
+  title: 'Print Optimizer',
   description:
-    'Mobile-first adaptive print optimizer and PDF engine for Physics Wallah and lecture class notes.',
+    'Every PDF, print-perfect — merge, whiten dark notes, enhance light scans & build smart N-up layouts. 100% offline, on-device.',
   alternates: {
     canonical: `${basePath}/`,
   },
   openGraph: {
-    title: 'PW Notes Print Optimizer',
+    title: 'Print Optimizer',
     description:
-      'Convert dark-background lecture slides to print-ready PDFs with optimal ink and paper usage.',
+      'Every PDF, print-perfect — merge, whiten dark notes, enhance light scans & build smart N-up layouts. 100% offline, on-device.',
     url: `${basePath}/`,
-    siteName: 'PW Notes Print Optimizer',
+    siteName: 'Print Optimizer',
     type: 'website',
     images: [
       {
         url: `${basePath}/icon-512-v2.png`,
         width: 512,
         height: 512,
-        alt: 'PW Notes Print Optimizer',
+        alt: 'Print Optimizer',
       },
     ],
   },
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'PW Optimizer',
+    title: 'Print Optimizer',
     startupImage: [
       {
         url: `${basePath}/icon-512-v2.png`,
@@ -80,11 +80,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#020617',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
 };
+
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('po:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f4f6fb':'#020617')}catch(e){}})()`;
 
 export default function RootLayout({
   children,
@@ -95,8 +97,10 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${jakarta.variable} h-full bg-bg text-ink antialiased`}
+      suppressHydrationWarning
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <meta
           httpEquiv="Content-Security-Policy"
           content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'"
