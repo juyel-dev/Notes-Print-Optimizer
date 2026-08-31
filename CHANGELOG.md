@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### Security
+
+- **Real clickjacking protection:** added `vercel.json` with `X-Frame-Options: DENY`, HSTS, `Permissions-Policy` (camera=self only), `X-Content-Type-Options`, `Referrer-Policy` as actual HTTP response headers — the previous `<meta http-equiv>` CSP could not carry `frame-ancestors`/`X-Frame-Options` (browsers ignore both when set via `<meta>`), so the app had no real frame protection despite appearing to.
+- **Owner-password modulo bias fixed:** `lib/protect/protectionService.ts` `generateOwnerPassword()` now uses unbiased rejection-sampling `randomIndex()` (same primitive as `PasswordGenToolView.tsx`) instead of `byte % 62`.
+
+### Fixed
+
+- **Accessibility CI gate restored to `error`:** `lighthouserc.json` `categories:accessibility` `warn 0.90 → error 0.90` — a prior commit had deliberately downgraded this to `warn` to unblock the Emerald palette's own contrast failures instead of fixing them (see git history same file). Re-tightening ahead of the color-system rebrand so the new palette is verified AA-compliant by CI, not just by eye.
+- **`ProcessingModal` progress bar missing ARIA semantics:** added `role="progressbar"` + `aria-valuenow/min/max` + `aria-label`.
+
+### Removed
+
+- **Dead `featureFlags` system** (`lib/optimizer/features.ts`) — zero callers anywhere in the app; its `canUseOffscreenCanvas()` was independently duplicated (and diverging) in `lib/workers/WorkerManager.ts`, which remains the single source of truth.
+- **Dead `CheckpointManager`** (`lib/pipeline/checkpoint/`) — an IndexedDB crash-resume scaffold only ever exercised by tests, never wired into `workflowReducer`/the optimization pipeline. `README.md §7` incorrectly documented it as live infra; doc corrected. Full restore instructions in `docs/rollback-dead-code-2026-08-27.md` §9–10 if resume-after-crash becomes a real priority.
+
 ### Added
 
 - **N-up PDF tool — live preview & merge flow:** `lib/nup/nupLayout.ts` pure geometry (A4/Letter, portrait/landscape, 1/2/4/6/9-up) + `lib/nup/nupService.ts` single-parse vector; `components/nup/NupLivePreview.tsx` instant top-to-bottom preview (20 pre-render), `app/(app)/tools/n-up/page.tsx` auto-merge → layout → export. Order `8-up (2×4) before 9-up (3×3)` fixed (`d999346` era).

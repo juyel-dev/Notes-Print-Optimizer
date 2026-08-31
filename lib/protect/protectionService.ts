@@ -18,13 +18,29 @@ export interface ProtectRequest {
   locks: ProtectLocks;
 }
 
+/**
+ * Crypto-secure index in [0, max) — rejection sampling, no modulo bias.
+ * Mirrors the approach in PasswordGenToolView so every random-string
+ * generator in the app draws from the same unbiased primitive.
+ */
+function randomIndex(max: number): number {
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0xffffffff / max) * max;
+  let v = 0;
+  do {
+    crypto.getRandomValues(buf);
+    v = buf[0];
+  } while (v >= limit);
+  return v % max;
+}
+
 export class ProtectionService {
-  /** 24-char alphanumeric master key via Web Crypto. */
+  /** 24-char alphanumeric master key via Web Crypto (unbiased). */
   static generateOwnerPassword(): string {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const pick = new Uint8Array(24);
-    crypto.getRandomValues(pick);
-    return Array.from(pick, (b) => alphabet[b % alphabet.length]).join('');
+    const chars: string[] = [];
+    for (let i = 0; i < 24; i++) chars.push(alphabet[randomIndex(alphabet.length)]);
+    return chars.join('');
   }
 
   static async protect(request: ProtectRequest): Promise<Uint8Array> {

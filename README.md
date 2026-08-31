@@ -57,7 +57,7 @@ Prereq: Node 20+ (`.nvmrc` → `20`), npm 10+. Rust toolchain only for `build:wa
 | Dev | `npm run dev` | http://localhost:3000 |
 | Typecheck | `npx tsc --noEmit` | must exit 0 |
 | Lint | `npm run lint` | `eslint.config.mjs` — `next/core-web-vitals` |
-| Unit + integration + bench | `npm run test` | `vitest run` — **434 tests / 41 files at 2026-08-28 HEAD** — never hardcode count; gate is *all green* |
+| Unit + integration + bench | `npm run test` | `vitest run` — see CI output for current test/file count; never hardcode it here — gate is *all green* |
 | Benchmarks (all) | `npm run test:bench` | `phase0Baseline`, `sharpenShootout`, `kernelProfile`, `realPdfBaseline` |
 | E2E smoke | `npm run test:smoke` | `playwright` chromium (22 tests) — `npx serve out -l 4180` first |
 | CI full | `npm run test:ci` | vitest + bench + smoke |
@@ -178,7 +178,7 @@ Text/utility tools (word-count, case-convert, password-gen, qr-gen) are pure cli
 | V1 | `pw-pixel-v1` | No | Parallel pool — measured 2.4× slower + 11× mem on 100p real PDF — DO NOT default |
 | V2 | `pw-pixel-v2` | **Yes** | Sequential, memory-safe — production |
 
-State: `workflowReducer` (single source) + `CheckpointManager` (IndexedDB, feature-flag `pipeline.checkpoint_resume`) + `MetricsBus` (`page:phases`, `doc:phases`).
+State: `workflowReducer` (single source) + `MetricsBus` (`page:phases`, `doc:phases`). (Note: an IndexedDB-backed `CheckpointManager`/crash-resume system was scaffolded but never wired into the pipeline — removed 2026-09-01 as dead code; see `docs/rollback-dead-code-2026-08-27.md` for restore instructions if resume-after-crash is prioritized later.)
 
 ## 8. CI/CD
 
