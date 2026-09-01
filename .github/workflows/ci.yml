@@ -46,10 +46,32 @@ jobs:
       - name: Unit Tests
         run: npm run test
 
+      - name: Coverage (regression floor)
+        run: npm run test:coverage
+
+      - name: Dead code scan (informational)
+        continue-on-error: true
+        run: npm run deadcode:check
+
       # sharp is next's optional build-time dep (server image optimizer);
       # static export never includes it, so exclude optional deps from audit.
-      - name: Dependency Audit
+      - name: Dependency Audit (production)
         run: npm audit --omit=dev --omit=optional --audit-level=high
+
+      # Non-blocking: dev-only tooling (vite/esbuild/vitest chain) has had
+      # real critical/high advisories that --omit=dev above never surfaces.
+      # These never ship to users, but a compromised dev server is still a
+      # supply-chain risk to contributors — keep it visible without gating
+      # merges on transitive dev-dependency churn we don't fully control.
+      - name: Dependency Audit (dev, informational)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Warn if using upstream default feedback endpoint
+        run: |
+          if [ -z "${{ vars.NEXT_PUBLIC_FEEDBACK_URL }}" ]; then
+            echo "::warning::NEXT_PUBLIC_FEEDBACK_URL repo variable is not set — this build falls back to juyel-dev's own Apps Script endpoint. Forks should set their own repo variable (see GOOGLE_APPS_SCRIPT.md) so feedback submissions don't silently go to the upstream owner."
+          fi
 
       - name: Build
         run: npm run build
