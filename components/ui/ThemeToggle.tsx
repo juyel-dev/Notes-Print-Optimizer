@@ -24,7 +24,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => 
       localStorage.setItem('po:theme', next);
     } catch {}
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', next === 'light' ? '#f4f6fb' : '#020617');
+    if (meta) meta.setAttribute('content', next === 'light' ? '#f7f5ef' : '#020617');
     setTheme(next);
   };
 

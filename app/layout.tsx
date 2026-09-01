@@ -106,7 +106,7 @@ export const metadata: Metadata = {
     other: [
       {
         rel: 'mask-icon',
-        color: '#243BFF',
+        color: '#3654D9',
         url: `${withBase('/icon-maskable-v2.svg')}`,
       },
     ],
@@ -145,7 +145,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('po:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f4f6fb':'#020617')}catch(e){}})()`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('po:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f7f5ef':'#020617')}catch(e){}})()`;
 
 export default function RootLayout({
   children,

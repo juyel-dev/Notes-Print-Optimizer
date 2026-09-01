@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Full color-system rebrand — "Cobalt Ink":** replaced the Emerald/Mint/Teal/Cyan identity with a cobalt-blue primary (`#5B7FFF`/`#3654D9`) + marigold accent (`#F2A93C`) — literal ink + highlighter concept for a print-optimizer tool. `success` is now a true green (`#34C77B`) instead of doubling as cyan/info, so "done" states read unambiguously. Light theme background moved from a cool blue-gray to a warm paper cream (`#F7F5EF`) to lean into the paper/print concept. Every text/background pairing (both themes) was verified against real WCAG contrast math (script-computed, not eyeballed) — all pass AA (≥4.5:1) or better. All 12 tool-card gradients in `lib/tools/registry.ts` redesigned within the new palette while keeping each tool visually distinct. Propagated to `app/manifest.ts` `theme_color`, `app/layout.tsx` mask-icon + meta theme-color script, `components/ui/ThemeToggle.tsx`, and `public/sw.js` offline fallback page. Fixed 5 components (`LandingHero`, `PersistentShell`, `ToolsBox`, `ProcessingSettingsPanel`, `Header`) that hardcoded raw Tailwind palette classes instead of the semantic design tokens — now theme-token-driven (or explicitly fixed-hex where a surface is intentionally always-white/always-dark regardless of theme). `AGENT.md`/`README.md` theme-identity lines updated; historical CHANGELOG entries left untouched.
+### Security
+
+- **Real clickjacking protection:** added `vercel.json` with `X-Frame-Options: DENY`, HSTS, `Permissions-Policy` (camera=self only), `X-Content-Type-Options`, `Referrer-Policy` as actual HTTP response headers — the previous `<meta http-equiv>` CSP could not carry `frame-ancestors`/`X-Frame-Options` (browsers ignore both when set via `<meta>`), so the app had no real frame protection despite appearing to.
+- **Owner-password modulo bias fixed:** `lib/protect/protectionService.ts` `generateOwnerPassword()` now uses unbiased rejection-sampling `randomIndex()` (same primitive as `PasswordGenToolView.tsx`) instead of `byte % 62`.
+
+### Fixed
+
+- **Accessibility CI gate restored to `error`:** `lighthouserc.json` `categories:accessibility` `warn 0.90 → error 0.90` — a prior commit had deliberately downgraded this to `warn` to unblock the Emerald palette's own contrast failures instead of fixing them (see git history same file). Re-tightening ahead of the color-system rebrand so the new palette is verified AA-compliant by CI, not just by eye.
+- **`ProcessingModal` progress bar missing ARIA semantics:** added `role="progressbar"` + `aria-valuenow/min/max` + `aria-label`.
+
+### Removed
+
+- **Dead `featureFlags` system** (`lib/optimizer/features.ts`) — zero callers anywhere in the app; its `canUseOffscreenCanvas()` was independently duplicated (and diverging) in `lib/workers/WorkerManager.ts`, which remains the single source of truth.
+- **Dead `CheckpointManager`** (`lib/pipeline/checkpoint/`) — an IndexedDB crash-resume scaffold only ever exercised by tests, never wired into `workflowReducer`/the optimization pipeline. `README.md §7` incorrectly documented it as live infra; doc corrected. Full restore instructions in `docs/rollback-dead-code-2026-08-27.md` §9–10 if resume-after-crash becomes a real priority.
+
 ### Added
 
 - **N-up PDF tool — live preview & merge flow:** `lib/nup/nupLayout.ts` pure geometry (A4/Letter, portrait/landscape, 1/2/4/6/9-up) + `lib/nup/nupService.ts` single-parse vector; `components/nup/NupLivePreview.tsx` instant top-to-bottom preview (20 pre-render), `app/(app)/tools/n-up/page.tsx` auto-merge → layout → export. Order `8-up (2×4) before 9-up (3×3)` fixed (`d999346` era).
