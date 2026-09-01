@@ -145,6 +145,15 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+// Theme init: runs before hydration so the correct data-theme is set
+// without a flash. Keep this as a plain inline script — Next.js static
+// export (output:'export') emits many inline RSC scripts
+// (self.__next_f.push...) that cannot be hashed individually. A
+// hash-source CSP (sha256-...) would block those and break hydration
+// (all 19 smoke tests + lighthouse NO_LCP). Until we can emit nonces
+// for every inline script, keep 'unsafe-inline' for script-src.
+// If you edit this script, no CSP hash regeneration is needed while
+// 'unsafe-inline' is present.
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('po:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f7f5ef':'#020617')}catch(e){}})()`;
 
 export default function RootLayout({

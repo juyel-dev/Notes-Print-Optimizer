@@ -75,6 +75,11 @@ self.addEventListener('activate', (event) => {
 // ---- Fetch ----
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  // GET-only guard: this also means the feedback submission's POST to the
+  // Google Apps Script endpoint (connect-src) is never touched by any cache
+  // strategy below, including the stale-while-revalidate catch-all further
+  // down — it's not routed through this SW at all. If a GET-based call to
+  // that endpoint is ever added, revisit this before assuming it's covered.
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);

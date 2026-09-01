@@ -6,9 +6,28 @@ import { detectDeviceProfile } from '../pipeline/types';
 class MemoryManager {
   private activeBlobUrls: Map<string, string | undefined> = new Map();
   private canvasPool: HTMLCanvasElement[] = [];
-  private canvasPoolMax = 8;
+  // Was a flat 8-item / 32MB budget for every device. Now scaled from
+  // navigator.deviceMemory (falls back to the old 4GB-tier default when
+  // unavailable, e.g. iOS Safari) so a low-RAM device doesn't hold onto as
+  // much idle canvas memory, and a high-RAM one isn't capped below what it
+  // can comfortably afford.
+  private canvasPoolMax = MemoryManager.poolSizeForMemory(detectDeviceProfile().memoryGB);
   private canvasPoolBytes = 0;
-  private canvasPoolMaxBytes = 32 * 1048576; // 32 MB pool budget
+  private canvasPoolMaxBytes = MemoryManager.poolBytesForMemory(detectDeviceProfile().memoryGB);
+
+  private static poolSizeForMemory(memoryGB: number): number {
+    if (memoryGB <= 2) return 4;
+    if (memoryGB <= 4) return 8; // previous flat default
+    if (memoryGB <= 6) return 12;
+    return 16;
+  }
+
+  private static poolBytesForMemory(memoryGB: number): number {
+    if (memoryGB <= 2) return 12 * 1048576;
+    if (memoryGB <= 4) return 32 * 1048576; // previous flat default
+    if (memoryGB <= 6) return 48 * 1048576;
+    return 64 * 1048576;
+  }
 
   public acquireCanvas(width: number, height: number): HTMLCanvasElement {
     if (typeof document === 'undefined') {
@@ -71,7 +90,18 @@ class MemoryManager {
   }
 
   public getConcurrencyLimit(): number {
-    if (this.isMobileDevice()) return 1;
+    if (this.isMobileDevice()) {
+      // Mobile tabs get killed by memory pressure long before CPU becomes
+      // the bottleneck on canvas-heavy PDF work, so this stays
+      // conservative by default. Only bump past 1 worker when BOTH cores
+      // and reported memory clearly signal a high-end device — requiring
+      // both keeps this safe on iOS Safari, which doesn't implement
+      // `navigator.deviceMemory` at all (always reads as the `|| 4`
+      // fallback below the 6 GB bar, so it never qualifies) and on
+      // Android devices that under-report either figure.
+      const { cores, memoryGB } = detectDeviceProfile();
+      return cores >= 6 && memoryGB >= 6 ? 2 : 1;
+    }
     const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
     return Math.min(cores, 4);
   }
