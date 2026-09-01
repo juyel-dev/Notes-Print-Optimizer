@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "npx rimraf .next out",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage --exclude tests/benchmarks/**",
+    "test:coverage": "vitest run --coverage --exclude 'tests/benchmarks/**'",
     "test:watch": "vitest",
     "test:bench": "vitest bench",
     "test:smoke": "playwright test --config=playwright.config.ts",
