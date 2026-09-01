@@ -57,7 +57,7 @@ export const ToolsBox: React.FC = () => {
     >
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-bold tracking-wide text-ink">Choose a Tool for Your Notes</h2>
-        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-700/20 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-800 shadow-sm">12 Free • No sign-up</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#22368F]/20 bg-white px-2.5 py-1 text-[11px] font-bold text-[#22368F] shadow-sm">12 Free • No sign-up</span>
       </div>
 
       {/* Search — student-friendly */}
@@ -69,7 +69,7 @@ export const ToolsBox: React.FC = () => {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search — PYQ, dark slides, handwritten, image to pdf…"
           aria-label="Search tools"
-          className="h-11 w-full rounded-xl border border-elevated bg-surface/80 pl-10 pr-10 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-emerald-500/30 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+          className="h-11 w-full rounded-xl border border-elevated bg-surface/80 pl-10 pr-10 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-primary/30 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
         />
         {query && (
           <button
@@ -124,7 +124,7 @@ export const ToolsBox: React.FC = () => {
                 onClick={() => setActiveCategory(cat)}
                 className={`h-8 shrink-0 snap-start rounded-full border px-3.5 text-xs font-bold capitalize transition-colors ${
                   active
-                    ? 'border-emerald-700 bg-emerald-700 text-white shadow-sm'
+                    ? 'border-primary-strong bg-primary-strong text-white shadow-sm'
                     : 'border-elevated bg-surface text-ink-muted hover:text-ink'
                 }`}
               >

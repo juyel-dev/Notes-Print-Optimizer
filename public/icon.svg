@@ -1,28 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Ultra Bright Vibrant Background Gradient -->
+    <!-- Cobalt Ink background gradient -->
     <linearGradient id="brightBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5540FF"/>
-      <stop offset="45%" stop-color="#8B1FFF"/>
-      <stop offset="100%" stop-color="#E000FF"/>
+      <stop offset="0%" stop-color="#3654FF"/>
+      <stop offset="45%" stop-color="#5B7FFF"/>
+      <stop offset="100%" stop-color="#8FA6FF"/>
     </linearGradient>
 
     <!-- Top Gloss Overlay Gradient for Extra Brightness -->
     <linearGradient id="glossOverlay" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.45"/>
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.4"/>
       <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#FF00CC" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#F2A93C" stop-opacity="0"/>
     </linearGradient>
 
     <!-- Subtle Inner Glow & Drop Shadow Filter for Document -->
     <filter id="documentShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#21005E" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#0B1440" flood-opacity="0.4"/>
     </filter>
 
-    <!-- Glowing Checkmark Circle Gradient -->
+    <!-- Marigold Checkmark Badge Gradient -->
     <linearGradient id="badgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6E3AFF"/>
-      <stop offset="100%" stop-color="#5011FF"/>
+      <stop offset="0%" stop-color="#F2A93C"/>
+      <stop offset="100%" stop-color="#B87A16"/>
     </linearGradient>
   </defs>
 
@@ -51,15 +51,15 @@
     <path d="M 330 104 V 144 A 16 16 0 0 0 346 160 H 386 Z" fill="#F8FAFF"/>
   </g>
 
-  <!-- Document Content: Vibrant Purple Rounded Lines -->
-  <!-- Line 1 (Top Bar - High Contrast Vibrant Purple) -->
-  <rect x="172" y="198" width="160" height="16" rx="8" fill="#5835FF"/>
+  <!-- Document Content: Cobalt Ink lines on the page (literal ink-saver concept) -->
+  <!-- Line 1 (Top Bar - deep cobalt ink) -->
+  <rect x="172" y="198" width="160" height="16" rx="8" fill="#3654D9"/>
   
-  <!-- Line 2 (Middle Bar - Medium Purple) -->
-  <rect x="172" y="233" width="126" height="16" rx="8" fill="#8868FF"/>
+  <!-- Line 2 (Middle Bar - medium cobalt) -->
+  <rect x="172" y="233" width="126" height="16" rx="8" fill="#5B7FFF"/>
   
-  <!-- Line 3 (Bottom Bar - Light Lavender Purple) -->
-  <rect x="172" y="268" width="146" height="16" rx="8" fill="#BEA8FF"/>
+  <!-- Line 3 (Bottom Bar - soft cobalt) -->
+  <rect x="172" y="268" width="146" height="16" rx="8" fill="#8FA6FF"/>
 
   <!-- Checkmark Badge Container -->
   <g>

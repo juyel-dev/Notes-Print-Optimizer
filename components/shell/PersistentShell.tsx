@@ -286,30 +286,30 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
         )}
         {children}
       </main>
-      {/* Premium Floating Glass Footer — Emerald Student Identity */}
+      {/* Premium Floating Glass Footer — Cobalt Ink Student Identity */}
       <footer className="mt-8 px-3 pb-4 sm:px-4">
         <div className="mx-auto max-w-6xl">
           {/* Bow top — inverted curved corners */}
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-emerald-500/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl shadow-emerald-900/10">
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-[#5B7FFF]/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl shadow-[#0B1440]/20">
             {/* Top bow gradient line */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#8FA6FF]/20 to-transparent" />
             {/* Liquid glass glow */}
-            <div aria-hidden="true" className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 blur-3xl" />
+            <div aria-hidden="true" className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#5B7FFF]/10 via-[#8FA6FF]/10 to-[#F2A93C]/10 blur-3xl" />
 
             <div className="relative px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
               {/* Top: Logo + Tagline — fixed phone alignment, no center ugly */}
               <div className="flex flex-row items-center justify-between gap-3 border-b border-white/[0.06] pb-5">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/20">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#3654D9] via-[#5B7FFF] to-[#F2A93C] text-white shadow-lg shadow-[#5B7FFF]/20">
                     <span className="text-sm font-black">P</span>
                   </div>
                   <div className="min-w-0 text-left">
                     <div className="text-sm font-bold tracking-tight text-white truncate">Print Optimizer</div>
-                    <div className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-[11px] font-semibold text-transparent truncate">Made for Students, by Students</div>
+                    <div className="bg-gradient-to-r from-[#8FA6FF] via-[#B7C4FF] to-[#F2A93C] bg-clip-text text-[11px] font-semibold text-transparent truncate">Made for Students, by Students</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-emerald-600/20 bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                  <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#3654D9]/20 bg-[#3654D9] px-3 py-1 text-[11px] font-bold text-white shadow-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> 100% Offline
                   </span>
                   {/* Language — HI/EN, EN on */}
@@ -325,10 +325,10 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
                 <div className="min-w-0">
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-100">Tools</h4>
                   <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
-                    <li><Link href="/tools/dark-print/" className="hover:text-emerald-300 transition-colors">Dark Notes → Print</Link></li>
-                    <li><Link href="/tools/n-up/" className="hover:text-emerald-300 transition-colors">N-up PDF</Link></li>
-                    <li><Link href="/tools/merge-pdf/" className="hover:text-emerald-300 transition-colors">Merge PDF</Link></li>
-                    <li><Link href="/tools/image-to-pdf/" className="hover:text-emerald-300 transition-colors">Image → PDF</Link></li>
+                    <li><Link href="/tools/dark-print/" className="hover:text-[#8FA6FF] transition-colors">Dark Notes → Print</Link></li>
+                    <li><Link href="/tools/n-up/" className="hover:text-[#8FA6FF] transition-colors">N-up PDF</Link></li>
+                    <li><Link href="/tools/merge-pdf/" className="hover:text-[#8FA6FF] transition-colors">Merge PDF</Link></li>
+                    <li><Link href="/tools/image-to-pdf/" className="hover:text-[#8FA6FF] transition-colors">Image → PDF</Link></li>
                   </ul>
                 </div>
                 <div className="min-w-0">
@@ -363,13 +363,13 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
                             legalHeader?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           }, 300);
                         }}
-                        className="hover:text-emerald-300 transition-colors text-left"
+                        className="hover:text-[#8FA6FF] transition-colors text-left"
                       >
                         LEGAL
                       </button>
                     </li>
                     <li>
-                      <a href="mailto:myself.juyel.dev@gmail.com" className="hover:text-emerald-300 transition-colors">Contact</a>
+                      <a href="mailto:myself.juyel.dev@gmail.com" className="hover:text-[#8FA6FF] transition-colors">Contact</a>
                     </li>
                   </ul>
                 </div>
