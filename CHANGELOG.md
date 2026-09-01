@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Full color-system rebrand — "Cobalt Ink":** replaced the Emerald/Mint/Teal/Cyan identity with a cobalt-blue primary (`#5B7FFF`/`#3654D9`) + marigold accent (`#F2A93C`) — literal ink + highlighter concept for a print-optimizer tool. `success` is now a true green (`#34C77B`) instead of doubling as cyan/info, so "done" states read unambiguously. Light theme background moved from a cool blue-gray to a warm paper cream (`#F7F5EF`) to lean into the paper/print concept. Every text/background pairing (both themes) was verified against real WCAG contrast math (script-computed, not eyeballed) — all pass AA (≥4.5:1) or better. All 12 tool-card gradients in `lib/tools/registry.ts` redesigned within the new palette while keeping each tool visually distinct. Propagated to `app/manifest.ts` `theme_color`, `app/layout.tsx` mask-icon + meta theme-color script, `components/ui/ThemeToggle.tsx`, and `public/sw.js` offline fallback page. Fixed 5 components (`LandingHero`, `PersistentShell`, `ToolsBox`, `ProcessingSettingsPanel`, `Header`) that hardcoded raw Tailwind palette classes instead of the semantic design tokens — now theme-token-driven (or explicitly fixed-hex where a surface is intentionally always-white/always-dark regardless of theme). `AGENT.md`/`README.md` theme-identity lines updated; historical CHANGELOG entries left untouched.
 ### Security
 
 - **Real clickjacking protection:** added `vercel.json` with `X-Frame-Options: DENY`, HSTS, `Permissions-Policy` (camera=self only), `X-Content-Type-Options`, `Referrer-Policy` as actual HTTP response headers — the previous `<meta http-equiv>` CSP could not carry `frame-ancestors`/`X-Frame-Options` (browsers ignore both when set via `<meta>`), so the app had no real frame protection despite appearing to.

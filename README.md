@@ -26,7 +26,7 @@
 | Purpose | 12-tool suite for students: dark-slide whitening, enhance, protect, PDF↔images, merge/split, image→PDF, plus utility/text/QR. Saves ink & paper. |
 | Tagline | *Every PDF, print-perfect — merge, split, protect, whiten & enhance, plus JPG/PNG image conversion* (`app/layout.tsx:18`) |
 | Stack | Next.js 15.5 (App Router, `output:'export'`), React 19, TS 5.9 strict, Tailwind v4, pdfjs-dist 4.10, pdf-lib 1.17, Rust→WASM (`wasm/src`), `motion`, `lucide-react` |
-| Theme identity | Emerald → Mint → Teal → Cyan `#10B981→#6EE7B7→#14B8A6→#06B6D4` + liquid glass. Violet (`#243BFF/#4338ca`) removed Aug 2026 — do NOT reintroduce. |
+| Theme identity | Cobalt Ink → Marigold `#3654D9→#5B7FFF→#F2A93C` + liquid glass. Rebrand 2026-09 retired Emerald/Mint/Teal/Cyan (`#10B981→#6EE7B7→#14B8A6→#06B6D4`) and the earlier violet/indigo (`#243BFF/#4338ca`) — none of those hexes should be reintroduced as primary/accent. |
 | Runtime | **Fully client-side, zero server.** Static export `out/` → Vercel (portable to any static host). No upload except optional feedback. |
 | License | Juyel Source License (JSL) v1.0 (`LICENSE`, `public/content/JSL_LICENSE.md`) |
 | CI | `ci.yml` required check `ci` (strict, admins enforced) + `lighthouse` + `budget` |
@@ -105,7 +105,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 
 **What adding a tool MUST do (atomic):**
 
-1. Append one `ToolDefinition` to `TOOL_REGISTRY` (unique `id`, stable `slug`, unique `seoTitle`/`seoDescription`, `aliases`/`keywords`, `category`, `icon`, `gradient` emerald family, `chips`, `cta`).
+1. Append one `ToolDefinition` to `TOOL_REGISTRY` (unique `id`, stable `slug`, unique `seoTitle`/`seoDescription`, `aliases`/`keywords`, `category`, `icon`, `gradient` cobalt/marigold family, `chips`, `cta`).
 2. Add slug to `public/sw.js:TOOL_ROUTES` (precache — 100% offline guarantee). Keep `getAllToolSlugs().length === TOOL_ROUTES.length` — enforced by `tests/unit/siteContract.test.ts`.
 3. Route already works via `app/(app)/tools/[slug]/page.tsx` (`generateStaticParams` from registry). No extra page needed.
 4. Add `CATEGORY_ORDER` placement if new category — and update `ToolsBox.tsx:labelMap`.
@@ -131,7 +131,7 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 ```
 app/                         App Router (output:'export', trailingSlash:true)
   layout.tsx                 fonts (Plus Jakarta Sans/Outfit/Geist Mono), metadataBase=SITE_URL, OG cdn, CSP, theme script
-  (app)/page.tsx             LandingHero (emerald) + ToolsBox (12 cards)
+  (app)/page.tsx             LandingHero (cobalt ink) + ToolsBox (12 cards)
   (app)/tools/[slug]/page.tsx  prerendered per TOOL_REGISTRY (dynamicParams=false)
   manifest.ts / sitemap.ts / robots.ts / offline/
 components/
