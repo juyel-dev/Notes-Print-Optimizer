@@ -148,6 +148,26 @@ if (msg.type === 'BUFFER_STATS') return;
 
 ---
 
+## 9. `lib/optimizer/features.ts` — FeatureFlagManager / `featureFlags` (removed 2026-09-01)
+
+**মোছার আগে:** পুরো `lib/optimizer/features.ts` — 14টা `FeatureDefinition`, localStorage persistence (`npo_feature_flags_v2`), listener system, `canUseOffscreenCanvas()`/`canCreateImageBitmap()` helpers।
+
+**কেন মরা:** `rg "from '@/lib/optimizer/features'"` পুরো repo-তে zero হিট — কোনো component/hook কখনো `featureFlags` singleton import করেনি। `canUseOffscreenCanvas` আলাদাভাবে `lib/workers/WorkerManager.ts`-এ inline duplicate ছিল (সেটাই আসল ব্যবহৃত কপি) — দুটো drift করার ঝুঁকিতে ছিল।
+
+**ফেরাতে হলে:** `git show <commit>^:lib/optimizer/features.ts > lib/optimizer/features.ts`। আবার ব্যবহার করতে চাইলে একটা real settings UI-তে wire করতে হবে, নাহলে duplicate-ই থেকে যাবে।
+
+---
+
+## 10. `lib/pipeline/checkpoint/CheckpointManager.ts` — crash-resume system (removed 2026-09-01)
+
+**মোছার আগে:** IndexedDB-backed `CheckpointManager` ক্লাস (`save`/`load`/`remove`/`listSnapshots`/`markPageDone`/`getResumePages`), `lib/pipeline/index.ts`-এ exported, feature-flag `pipeline.checkpoint_resume` (default `true`, `stable: true`)।
+
+**কেন মরা:** শুধু `tests/unit/largeDocument.test.ts`, `tests/stress/memoryLeak.test.ts`, `tests/stress/largeDocumentStress.test.ts` — এই তিনটা test file ছাড়া কোথাও import হয় না। `workflowReducer`/pipeline-এর কোনো real code path checkpoint save/resume কল করে না — অর্থাৎ "resume after crash" ফিচারটা কখনো ship হয়নি, শুধু scaffold + tests ছিল। README.md §7-এ এটা live infra হিসেবে document করা ছিল, যেটা ভুল ছিল (এখন ঠিক করা হয়েছে)।
+
+**ফেরাতে হলে:** `git show <commit>^:lib/pipeline/checkpoint/CheckpointManager.ts > lib/pipeline/checkpoint/CheckpointManager.ts`, `lib/pipeline/index.ts`-এ export লাইনটা ফেরান, আর তিনটা test file-এ related `describe` block গুলো ফেরাতে হবে (একই কমিটে diff দেখুন)। প্রকৃত resume-after-crash feature বানাতে চাইলে এটাকে `workflowReducer`/optimization loop-এর সাথে actually wire করতে হবে — শুধু ক্লাস ফেরালেই হবে না।
+
+---
+
 ## কীভাবে রোলব্যাক করবেন
 
 ```bash

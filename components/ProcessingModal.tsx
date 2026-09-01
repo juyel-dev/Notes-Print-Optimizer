@@ -57,7 +57,14 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ progress, phas
               <span className="text-primary-soft font-mono font-bold">{progress.percent}%</span>
             </div>
 
-            <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2 border border-elevated/50">
+            <div
+              className="h-3 w-full overflow-hidden rounded-full bg-surface-2 border border-elevated/50"
+              role="progressbar"
+              aria-valuenow={progress.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={progress.currentAction || 'Processing document'}
+            >
               <div
                 className="h-full rounded-full bg-gradient-to-r from-primary via-accent-soft to-success transition-[width] duration-200 ease-out"
                 style={{ width: `${Math.max(5, progress.percent)}%` }}

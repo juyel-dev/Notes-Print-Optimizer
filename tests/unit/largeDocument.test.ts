@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { MemoryGuard, memoryGuard } from '../../lib/pipeline/MemoryGuard';
-import { CheckpointManager } from '../../lib/pipeline/checkpoint/CheckpointManager';
 import { computeScheduleProfile } from '../../lib/pipeline/types';
 
 describe('MemoryGuard', () => {
@@ -33,72 +32,6 @@ describe('MemoryGuard', () => {
     guard.trackAllocation(99999);
     guard.reset();
     expect(guard.getHighWaterMarkMB()).toBe(0);
-  });
-});
-
-describe('CheckpointManager', () => {
-  const cp = new CheckpointManager();
-
-  it('should save and load a checkpoint', async () => {
-    await cp.save('test-doc', {
-      documentId: 'test-doc',
-      totalPages: 5,
-      completedPages: [1, 2, 3],
-      engineVersion: 'v2',
-      params: { preset: 'DARK_SLIDE' },
-      layoutConfig: { format: 'A4' },
-    });
-    const loaded = await cp.load('test-doc');
-    expect(loaded).not.toBeNull();
-    expect(loaded!.totalPages).toBe(5);
-    expect(loaded!.completedPages).toEqual([1, 2, 3]);
-  });
-
-  it('getResumePages should return unprocessed pages', async () => {
-    const pending = await cp.getResumePages('test-doc', 5);
-    expect(pending).toEqual([4, 5]);
-  });
-
-  it('should return empty if document unknown', async () => {
-    const pending = await cp.getResumePages('unknown-doc', 10);
-    expect(pending).toEqual([]);
-  });
-
-  it('should remove a checkpoint', async () => {
-    await cp.remove('test-doc');
-    const loaded = await cp.load('test-doc');
-    expect(loaded).toBeNull();
-  });
-
-  it('listSnapshots should return summaries', async () => {
-    await cp.save('list-test', {
-      documentId: 'list-test',
-      totalPages: 10,
-      completedPages: [1, 2, 3, 4, 5],
-      engineVersion: 'v2',
-      params: {},
-      layoutConfig: {},
-    });
-    const snapshots = await cp.listSnapshots();
-    expect(snapshots.length).toBeGreaterThanOrEqual(1);
-    const found = snapshots.find(s => s.documentId === 'list-test');
-    expect(found).toBeDefined();
-    expect(found!.completedCount).toBe(5);
-    await cp.remove('list-test');
-  });
-
-  it('markPageDone should add a page to completed list', async () => {
-    await cp.save('done-test', {
-      documentId: 'done-test', totalPages: 3, completedPages: [],
-      engineVersion: 'v2', params: {}, layoutConfig: {},
-    });
-    await cp.markPageDone('done-test', 1);
-    await cp.markPageDone('done-test', 3);
-    const record = await cp.load('done-test');
-    expect(record!.completedPages).toContain(1);
-    expect(record!.completedPages).toContain(3);
-    expect(record!.completedPages).not.toContain(2);
-    await cp.remove('done-test');
   });
 });
 
