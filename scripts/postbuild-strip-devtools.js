@@ -43,22 +43,57 @@ function neutralizeDevtools() {
   }
 
   if (devtoolsFiles.length === 0) {
-    console.log('[postbuild] no devtools chunks found (already clean?)');
-    return;
+    console.log('[postbuild] no devtools chunks found in chunks dir by known signature');
+  } else {
+    // 2. Shrink each devtools chunk to a stub that marks it as loaded.
+    for (const f of devtoolsFiles) {
+      const full = path.join(CHUNKS_DIR, f);
+      const buf = fs.readFileSync(full);
+      const match = buf.slice(0, 4096).toString('utf8').match(/\.push\(\[\[(\d+)/);
+      const chunkId = match ? match[1] : '0';
+      const stub = `(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[${chunkId}],{}]);`;
+      fs.writeFileSync(full, stub);
+      console.log(`[postbuild] stubbed ${f} -> chunk ${chunkId} (${stub.length} bytes)`);
+    }
+    console.log('[postbuild] devtools chunks neutralized: ' + devtoolsFiles.join(', '));
   }
 
-  // 2. Shrink each devtools chunk to a stub that marks it as loaded.
-  for (const f of devtoolsFiles) {
-    const full = path.join(CHUNKS_DIR, f);
-    const buf = fs.readFileSync(full);
-    const match = buf.slice(0, 4096).toString('utf8').match(/\.push\(\[\[(\d+)/);
-    const chunkId = match ? match[1] : '0';
-    const stub = `(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[${chunkId}],{}]);`;
-    fs.writeFileSync(full, stub);
-    console.log(`[postbuild] stubbed ${f} -> chunk ${chunkId} (${stub.length} bytes)`);
+  // 3. Verify the postcondition directly instead of trusting the pre-scan
+  //    count: walk every .js file under the export output and confirm none
+  //    of the devtools signature strings survive anywhere. This catches
+  //    both "we stubbed the wrong file" and "Next renamed the chunk so our
+  //    2KB-head signature check missed it entirely" — either way the 217KB
+  //    payload would otherwise ship silently with only a log line to notice.
+  const leftover = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.js')) {
+        const content = fs.readFileSync(full, 'utf8');
+        if (
+          content.includes('next-devtools') ||
+          content.includes('dev-overlay') ||
+          content.includes('devtools-panel')
+        ) {
+          leftover.push(full);
+        }
+      }
+    }
+  };
+  walk(OUT_DIR);
+
+  if (leftover.length > 0) {
+    console.error('[postbuild] FAILED — devtools signature still present after neutralization:');
+    for (const f of leftover) console.error('  ' + f);
+    console.error(
+      '[postbuild] Next.js likely changed the devtools chunk shape. Update the signature ' +
+        'strings/detection logic at the top of this script before shipping — do not ignore this.'
+    );
+    process.exit(1);
   }
 
-  console.log('[postbuild] devtools chunks neutralized: ' + devtoolsFiles.join(', '));
+  console.log('[postbuild] verified: no devtools signature anywhere in export output');
 }
 
 neutralizeDevtools();
