@@ -12,8 +12,8 @@ const heroStats = [
 
 /**
  * Best-practice hero — Print Optimizer is now multi-tool (merge / whiten / enhance).
- * Aurora Dark gradient (#243BFF → #5B35FF → #A12CFF) stays as brand, but copy is
- * generic. No dark-slides-only messaging. CTA points to ToolsBox (not Upload).
+ * Cobalt Ink → Marigold gradient stays as brand, but copy is generic. No
+ * dark-slides-only messaging. CTA points to ToolsBox (not Upload).
  */
 export const LandingHero: React.FC = () => {
   const scrollToTools = () => {
@@ -27,24 +27,26 @@ export const LandingHero: React.FC = () => {
   return (
     <section
       aria-label="Print Optimizer — made for students"
-      className="relative overflow-hidden rounded-2xl border border-emerald-500/10 bg-gradient-to-b from-emerald-950/40 via-surface/60 to-surface/40 px-5 py-7 sm:py-9 text-center animate-slide-up"
+      className="relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-b from-primary-faint/40 via-surface/60 to-surface/40 px-5 py-7 sm:py-9 text-center animate-slide-up"
     >
-    <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
-    <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-16 h-72 w-72 rounded-full bg-teal-500/8 blur-3xl" />
+    <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+    <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-16 h-72 w-72 rounded-full bg-accent/8 blur-3xl" />
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
 
     <div className="relative flex flex-col items-center gap-3.5">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/20 bg-white px-3 py-1 text-xs font-bold tracking-wide text-emerald-800 shadow-sm">
+      {/* Badge is always white regardless of theme, so its text uses the
+          fixed AA-on-white cobalt value rather than the theme token. */}
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#22368F]/20 bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#22368F] shadow-sm">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-strong" />
         </span>
         Trusted by 50,000+ NEET • JEE • Boards Students
       </span>
 
       <h1 className="max-w-3xl text-balance text-[26px] font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
         Your Notes,{' '}
-        <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-primary-soft via-primary to-accent bg-clip-text text-transparent">
           Print-Ready in Seconds
         </span>
       </h1>
@@ -58,17 +60,18 @@ export const LandingHero: React.FC = () => {
         type="button"
         onClick={scrollToTools}
         aria-label="Scroll to tools"
-        className="mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-lg shadow-emerald-500/20 ring-1 ring-emerald-500/20 transition-all hover:shadow-xl hover:shadow-emerald-500/25 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+        className="mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-strong via-primary to-accent px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-lg shadow-primary/20 ring-1 ring-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25 hover:from-primary-deep hover:via-primary-strong hover:to-accent-deep active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
       >
         <ArrowDown className="h-3.5 w-3.5 shrink-0 animate-bounce" aria-hidden="true" />
         Explore tools for your notes
       </button>
 
-      {/* Hint chips — student-focused, liquid glass */}
+      {/* Hint chips — student-focused, liquid glass. Always-white cards, same
+          fixed-on-white treatment as the badge above. */}
       <div className="hidden w-full max-w-2xl grid-cols-4 gap-2 sm:grid">
         {heroStats.map((stat) => (
-          <div key={stat.label} className="flex flex-col items-center gap-1 rounded-xl border border-emerald-700/20 bg-white px-2 py-2.5 shadow-sm">
-            <stat.icon className="h-3.5 w-3.5 text-emerald-700" />
+          <div key={stat.label} className="flex flex-col items-center gap-1 rounded-xl border border-[#22368F]/20 bg-white px-2 py-2.5 shadow-sm">
+            <stat.icon className="h-3.5 w-3.5 text-[#22368F]" />
             <span className="text-2xs font-semibold tracking-wide text-slate-900">{stat.label}</span>
             <span className="hidden text-[9px] leading-none text-slate-600 sm:block">{stat.sub}</span>
           </div>

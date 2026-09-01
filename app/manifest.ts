@@ -15,9 +15,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: `${basePath}/`,
     display: 'standalone',
     background_color: '#020617',
-    /* Static by PWA platform design — brand indigo reads as intentional on
-       both light and dark headers (runtime toggle only drives meta theme-color). */
-    theme_color: '#4338ca',
+    /* Static by PWA platform design. Rebrand 2026-09: Cobalt Ink primary
+       (#3654D9) replaces the old violet/indigo leftover — matches
+       --color-primary-strong in app/globals.css. Runtime toggle only
+       drives the meta theme-color, not this manifest value. */
+    theme_color: '#3654d9',
     orientation: 'portrait-primary',
     categories: ['education', 'productivity', 'utilities'],
     prefer_related_applications: false,

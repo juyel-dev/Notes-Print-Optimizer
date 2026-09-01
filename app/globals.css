@@ -2,8 +2,15 @@
 @import "tw-animate-css";
 
 /* ------------------------------------------------------------------ */
-/* Design tokens (Tailwind v4 @theme) — Emerald/Mint/Teal/Cyan identity */
-/* Student-focused: fresh, calm, print-ready. Violet kept minimal.     */
+/* Design tokens (Tailwind v4 @theme) — "Cobalt Ink" identity          */
+/* Rebrand 2026-09: replaces the generic Emerald/Mint/Teal/Cyan SaaS   */
+/* palette. Concept: a fountain-pen cobalt-ink primary (the literal    */
+/* "ink" this app saves) paired with a warm marigold accent (a         */
+/* highlighter-pen pop, and a nod to the app's South Asian student     */
+/* audience). True green is reserved for `success` only — it no       */
+/* longer doubles as the brand color, so "done" states read clearly.   */
+/* Every text/bg pairing below is WCAG-AA verified (>=4.5:1), computed */
+/* against the actual bg/surface tokens, not eyeballed.                */
 /* ------------------------------------------------------------------ */
 @theme {
   /* Fonts (Plus Jakarta Sans self-hosted via next/font) */
@@ -17,27 +24,27 @@
   /* Micro type tier — sanctioned floor for chips/badges/captions. */
   --text-2xs: 0.6875rem;
 
-  /* Semantic colors — Emerald/Mint/Teal/Cyan */
-  --color-bg: #020617; /* slate-950 page background */
-  --color-surface: #0f172a; /* slate-900 cards */
-  --color-surface-2: #1e293b; /* slate-800 wells / inputs */
-  --color-elevated: #334155; /* slate-700 borders on dark */
-  --color-line: #e2e8f0; /* slate-200 borders on white paper surfaces */
+  /* Semantic colors — Cobalt Ink + Marigold */
+  --color-bg: #020617; /* near-black page background (unchanged — neutral, not brand-carrying) */
+  --color-surface: #0f172a; /* cards */
+  --color-surface-2: #1e293b; /* wells / inputs */
+  --color-elevated: #334155; /* borders on dark */
+  --color-line: #e2e8f0; /* borders on white paper surfaces */
 
-  --color-primary: #10b981; /* emerald-500 — main brand */
-  --color-primary-strong: #059669; /* emerald-600 buttons */
-  --color-primary-deep: #047857; /* emerald-700 hover */
-  --color-primary-faint: #022c22; /* emerald-950 deep wells */
-  --color-primary-soft: #34d399; /* emerald-400 links/focus */
-  --color-accent: #14b8a6; /* teal-500 — secondary */
-  --color-accent-soft: #2dd4bf; /* teal-400 */
-  --color-accent-deep: #0f766e; /* teal-700 */
+  --color-primary: #5b7fff; /* cobalt ink — main brand, 5.7:1 on bg */
+  --color-primary-strong: #3654d9; /* buttons, 6.1:1 white-on-fill */
+  --color-primary-deep: #28409e; /* hover */
+  --color-primary-faint: #0b1440; /* deep wells */
+  --color-primary-soft: #8fa6ff; /* links/focus, 8.7:1 on bg */
+  --color-accent: #f2a93c; /* marigold — secondary/highlighter, 10.1:1 on bg */
+  --color-accent-soft: #ffc773; /* 13.1:1 on bg */
+  --color-accent-deep: #b87a16;
 
-  --color-success: #06b6d4; /* cyan-500 — success/info */
-  --color-success-strong: #0891b2; /* cyan-600 */
-  --color-success-deep: #0e7490; /* cyan-700 */
-  --color-success-soft: #22d3ee; /* cyan-400 */
-  --color-success-faint: #083344; /* cyan-950 */
+  --color-success: #34c77b; /* true green — reserved for done/success only, 9.2:1 on bg */
+  --color-success-strong: #22a866;
+  --color-success-deep: #17825a;
+  --color-success-soft: #6ee7a8; /* 13.1:1 on bg */
+  --color-success-faint: #06231a;
   --color-warning: #fbbf24; /* amber-400 */
   --color-warning-strong: #f59e0b; /* amber-500 */
   --color-warning-soft: #fde047; /* amber-300 */
@@ -48,13 +55,9 @@
   --color-danger-soft: #fca5a5; /* red-300 */
   --color-danger-faint: #450a0a; /* red-950 */
 
-  --color-ink: #f1f5f9; /* slate-100 primary text */
-  --color-ink-muted: #94a3b8; /* slate-400 secondary text */
+  --color-ink: #f1f5f9; /* primary text */
+  --color-ink-muted: #94a3b8; /* secondary text */
   --color-ink-faint: #7e8ca8; /* WCAG-AA (5.3:1 on surface) tertiary text */
-
-  /* Violet — minimal use only (tiny accents) */
-  --color-violet: #8b5cf6;
-  --color-violet-soft: #a78bfa;
 
   /* Component radii */
   --radius-btn: 0.75rem;
@@ -73,9 +76,9 @@
   /* Type scale */
   --text-display: 2rem;
 
-  /* Brand gradient — Emerald → Teal → Cyan (Student Mint) */
-  --gradient-brand: linear-gradient(90deg, #10b981 0%, #14b8a6 35%, #06b6d4 70%, #0ea5e9 100%);
-  --gradient-brand-soft: linear-gradient(90deg, #34d399 0%, #2dd4bf 50%, #22d3ee 100%);
+  /* Brand gradient — Cobalt Ink → Marigold (ink meets highlighter) */
+  --gradient-brand: linear-gradient(90deg, #3654d9 0%, #5b7fff 45%, #f2a93c 100%);
+  --gradient-brand-soft: linear-gradient(90deg, #8fa6ff 0%, #a9b8ff 45%, #ffc773 100%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -84,28 +87,31 @@
 /* absence of the attribute = dark (the designed default).             */
 /* ------------------------------------------------------------------ */
 [data-theme='light'] {
-  --color-bg: #f4f6fb;
+  /* Warm paper cream instead of the old cool blue-gray — leans into the
+     "print/paper" identity instead of reading as generic SaaS gray. */
+  --color-bg: #f7f5ef;
   --color-surface: #ffffff;
-  --color-surface-2: #edf0f7;
-  --color-elevated: #d9deeb;
-  --color-line: #c9d0e0;
+  --color-surface-2: #f0ede4;
+  --color-elevated: #ded8c8;
+  --color-line: #d8d2c2;
 
   /* On light surfaces, "soft" accents must stay readable as text/icons,
-     so soft variants map to their deeper saturated stops. */
-  --color-primary: #059669;
-  --color-primary-strong: #047857;
-  --color-primary-deep: #065f46;
-  --color-primary-faint: #d1fae5;
-  --color-primary-soft: #059669;
-  --color-accent: #0f766e;
-  --color-accent-soft: #0d9488;
-  --color-accent-deep: #115e59;
+     so soft variants map to their deeper saturated stops (verified AA
+     on both --color-bg and pure white --color-surface). */
+  --color-primary: #2f49c7; /* 6.7:1 on bg / 7.2:1 on surface */
+  --color-primary-strong: #22368f; /* 10.5:1 white-on-fill */
+  --color-primary-deep: #1b2b73;
+  --color-primary-faint: #e4e9ff;
+  --color-primary-soft: #2f49c7;
+  --color-accent: #96590a; /* deep marigold — 5.2:1 on bg / 5.6:1 on surface */
+  --color-accent-soft: #96590a;
+  --color-accent-deep: #7a4808;
 
-  --color-success: #0e7490; /* cyan-700 — AA on white */
-  --color-success-strong: #0891b2; /* cyan-600 */
-  --color-success-deep: #0e7490; /* cyan-700 */
-  --color-success-soft: #0e7490;
-  --color-success-faint: #ecfeff;
+  --color-success: #157a4c; /* true green — 4.9:1 on bg / 5.4:1 on surface */
+  --color-success-strong: #0f633d;
+  --color-success-deep: #0f633d;
+  --color-success-soft: #157a4c;
+  --color-success-faint: #e6f7ee;
   --color-warning: #b45309;
   --color-warning-strong: #d97706;
   --color-warning-soft: #92400e;
@@ -116,13 +122,13 @@
   --color-danger-soft: #b91c1c;
   --color-danger-faint: #fef2f2;
 
-  --color-ink: #10192e;
-  --color-ink-muted: #475569;
-  --color-ink-faint: #64748b;
+  --color-ink: #1c1b17; /* warm near-black, ties to ink/paper concept */
+  --color-ink-muted: #5c574a;
+  --color-ink-faint: #6b664f; /* 5.3:1 on bg — AA for small text, not just large/UI */
 
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px -16px rgb(16 24 40 / 0.12);
-  --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18), 0 4px 8px -4px rgb(16 24 40 / 0.08);
-  --shadow-float: 0 20px 50px -12px rgb(16 24 40 / 0.22);
+  --shadow-card: 0 1px 2px rgb(28 27 23 / 0.06), 0 8px 24px -16px rgb(28 27 23 / 0.12);
+  --shadow-pop: 0 12px 32px -8px rgb(28 27 23 / 0.18), 0 4px 8px -4px rgb(28 27 23 / 0.08);
+  --shadow-float: 0 20px 50px -12px rgb(28 27 23 / 0.22);
 }
 
 [data-theme='light'] ::-webkit-scrollbar-thumb {
@@ -138,8 +144,8 @@ html[data-theme='light'] {
 @media (min-width: 1024px) {
   [data-theme='light'] .app-shell-bg {
     background-image:
-      radial-gradient(60rem 30rem at 50% -10%, rgba(16, 185, 129, 0.05), transparent 70%),
-      radial-gradient(50rem 26rem at 100% 112%, rgba(20, 184, 166, 0.04), transparent 70%);
+      radial-gradient(60rem 30rem at 50% -10%, rgba(47, 73, 199, 0.05), transparent 70%),
+      radial-gradient(50rem 26rem at 100% 112%, rgba(150, 89, 10, 0.04), transparent 70%);
   }
 }
 
@@ -236,12 +242,12 @@ html, body {
 }
 
 /* Desktop-only ambient background: soft subtle radial glow.
-   Student Mint — Emerald top -> Teal bottom, liquid glass. */
+   Cobalt Ink top -> Marigold bottom, liquid glass. */
 @media (min-width: 1024px) {
   .app-shell-bg {
     background-image:
-      radial-gradient(60rem 30rem at 50% -10%, rgba(16, 185, 129, 0.06), transparent 70%),
-      radial-gradient(50rem 26rem at 100% 112%, rgba(20, 184, 166, 0.05), transparent 70%);
+      radial-gradient(60rem 30rem at 50% -10%, rgba(91, 127, 255, 0.07), transparent 70%),
+      radial-gradient(50rem 26rem at 100% 112%, rgba(242, 169, 60, 0.05), transparent 70%);
     background-repeat: no-repeat, no-repeat;
     background-size: auto, auto;
     background-position: center top, center bottom;

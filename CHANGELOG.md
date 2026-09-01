@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Full color-system rebrand — "Cobalt Ink":** replaced the Emerald/Mint/Teal/Cyan identity with a cobalt-blue primary (`#5B7FFF`/`#3654D9`) + marigold accent (`#F2A93C`) — literal ink + highlighter concept for a print-optimizer tool. `success` is now a true green (`#34C77B`) instead of doubling as cyan/info, so "done" states read unambiguously. Light theme background moved from a cool blue-gray to a warm paper cream (`#F7F5EF`) to lean into the paper/print concept. Every text/background pairing (both themes) was verified against real WCAG contrast math (script-computed, not eyeballed) — all pass AA (≥4.5:1) or better. All 12 tool-card gradients in `lib/tools/registry.ts` redesigned within the new palette while keeping each tool visually distinct. Propagated to `app/manifest.ts` `theme_color`, `app/layout.tsx` mask-icon + meta theme-color script, `components/ui/ThemeToggle.tsx`, and `public/sw.js` offline fallback page. Fixed 5 components (`LandingHero`, `PersistentShell`, `ToolsBox`, `ProcessingSettingsPanel`, `Header`) that hardcoded raw Tailwind palette classes instead of the semantic design tokens — now theme-token-driven (or explicitly fixed-hex where a surface is intentionally always-white/always-dark regardless of theme). `AGENT.md`/`README.md` theme-identity lines updated; historical CHANGELOG entries left untouched.
+
 ### Added
 
 - **N-up PDF tool — live preview & merge flow:** `lib/nup/nupLayout.ts` pure geometry (A4/Letter, portrait/landscape, 1/2/4/6/9-up) + `lib/nup/nupService.ts` single-parse vector; `components/nup/NupLivePreview.tsx` instant top-to-bottom preview (20 pre-render), `app/(app)/tools/n-up/page.tsx` auto-merge → layout → export. Order `8-up (2×4) before 9-up (3×3)` fixed (`d999346` era).

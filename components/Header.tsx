@@ -173,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ring-1 ${
                         isActive
-                          ? 'bg-white text-indigo-700 ring-white/20'
+                          ? 'bg-white text-[#22368F] ring-white/20'
                           : isCompleted
                             ? 'bg-success-strong text-white ring-success/30'
                             : 'bg-elevated text-ink ring-primary/20'

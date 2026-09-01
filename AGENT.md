@@ -49,7 +49,7 @@ Suite: Vitest 434 tests / 41 files + Playwright 22. Never hardcode `241` — old
 
 ## 5. Theme & PWA
 
-- **Theme:** Emerald/Mint/Teal/Cyan `#10B981/#6EE7B7/#14B8A6/#06B6D4` + glass. Violet removed — do NOT reintroduce.
+- **Theme:** Cobalt Ink + Marigold `#5B7FFF/#3654D9/#F2A93C` + glass. Rebrand 2026-09 — Emerald/Mint/Teal/Cyan retired (see CHANGELOG). Do NOT reintroduce violet/indigo (`#243BFF`/`#4338ca`) or the old teal/cyan (`#14B8A6`/`#06B6D4`) as primary/accent — those are now retired brand hexes too.
 - **Icons:** `public/icon-master.png` → `scripts/apply-icon-art.mjs` → `icon-*-v2.png` — never reuse name.
 - **SW:** `public/sw.js v37` — precaches `/, /offline/, 12×/tools/<slug>/, icons, vendor/pdf*.mjs, wasm/*`. Bump `VERSION` on precache change.
 
