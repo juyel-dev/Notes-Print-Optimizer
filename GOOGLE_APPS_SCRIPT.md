@@ -22,7 +22,7 @@ If `NEXT_PUBLIC_FEEDBACK_URL` is unset, **Send Feedback** is hidden — app stil
 ### Step 1 — Create project
 
 1. Open https://script.google.com/
-2. **+ New project** → name `PW Notes Feedback Relay`.
+2. **+ New project** → name `Notes Print Optimizer Feedback Relay`.
 
 ### Step 2 — Paste authoritative code
 

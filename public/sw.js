@@ -1,7 +1,7 @@
 const VERSION = 'v37';
-const CACHE = `pw-optimizer-${VERSION}`;
-const STATIC_CACHE = `pw-optimizer-static-${VERSION}`;
-const DYNAMIC_CACHE = `pw-optimizer-dynamic-${VERSION}`;
+const CACHE = `npo-${VERSION}`;
+const STATIC_CACHE = `npo-static-${VERSION}`;
+const DYNAMIC_CACHE = `npo-dynamic-${VERSION}`;
 
 // Derive basePath from the SW's own URL (e.g. /Notes-Print-Optimizer/sw.js -> /Notes-Print-Optimizer)
 const BASE = self.location.pathname.replace(/\/sw\.js$/, '') || '';
