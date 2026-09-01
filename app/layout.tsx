@@ -145,6 +145,11 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+// CSP hash-source: if you edit this script's contents, you MUST regenerate
+// the 'sha256-...' value in the CSP <meta> tag below (a mismatched hash
+// silently drops the script in the browser - only a console warning, no
+// visible error to most users). tests/unit/csp.test.ts asserts these stay
+// in sync so a mismatch fails CI instead of shipping silently.
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('po:theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#f4f6fb':'#020617')}catch(e){}})()`;
 
 export default function RootLayout({
@@ -162,7 +167,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'"
+          content="default-src 'self'; script-src 'self' 'sha256-jEm2/dX1ZunJzLc1X6D/gs7o0c4/zyjHqTY3F6po064=' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'"
         />
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta
