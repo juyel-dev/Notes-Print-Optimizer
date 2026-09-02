@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search, SearchX, X } from 'lucide-react';
 import { ToolCard } from './ToolCard';
-import { TOOL_REGISTRY, getToolCategories, toolHref, type ToolCategory, type ToolDefinition } from '@/lib/tools/registry';
+import { TOOL_REGISTRY, getToolCategories, isNewTool, toolHref, type ToolCategory, type ToolDefinition } from '@/lib/tools/registry';
 import { searchTools } from '@/lib/tools/search';
 
 /** Most-requested conversion pair — pinned as quick pills under the search box. */
@@ -150,6 +150,7 @@ export const ToolsBox: React.FC = () => {
                 chips={tool.chips}
                 cta={tool.cta}
                 href={toolHref(tool.id)}
+                isNew={isNewTool(tool)}
               />
             );
           })}

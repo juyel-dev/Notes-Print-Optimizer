@@ -110,7 +110,7 @@ const RotaryKnob: React.FC<{
           cy="16"
           r="12"
           fill="none"
-          stroke="#6366f1"
+          stroke="#5B7FFF"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeDasharray={`${pct * 75.4} 75.4`}

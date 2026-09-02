@@ -6,6 +6,7 @@ import {
   X,
   CheckCircle2,
   RefreshCw,
+  Search,
 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -134,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="text-[17px] font-bold tracking-[-0.02em] sm:text-[18px] lg:text-[19px]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              <span className="bg-gradient-to-r from-[#5B8CFF] via-[#8B6BFF] to-[#C14DFF] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary-strong via-primary to-accent bg-clip-text text-transparent">
                 Print
               </span>{' '}
               <span className="text-ink">Optimizer</span>
@@ -190,6 +191,18 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right: Theme + Start Over */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event('po:open-command-palette'))}
+              aria-label="Search tools"
+              className="hidden h-9 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 text-xs font-semibold text-ink-muted shadow-sm transition-colors hover:bg-elevated hover:text-ink sm:flex"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Search</span>
+              <kbd className="ml-1 rounded border border-elevated bg-surface-2 px-1 py-0.5 text-[10px] font-bold text-ink-faint">
+                ⌘K
+              </kbd>
+            </button>
             <ThemeToggle />
             {currentPhase > 1 && onReset && (
               <button
@@ -208,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div aria-hidden="true" className="h-1 w-full bg-surface-2/60">
           <div
             aria-hidden="true"
-            className="h-full rounded-full bg-gradient-to-r from-primary via-accent-soft to-success shadow-[0_0_8px_rgba(99,102,241,0.35)] transition-[width] duration-300 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-primary via-accent-soft to-success shadow-[0_0_8px_rgba(91,127,255,0.35)] transition-[width] duration-300 ease-out"
             style={{ width: showStepper ? `${(currentPhase / 4) * 100}%` : '0%' }}
           />
         </div>
