@@ -25,9 +25,9 @@
 | Product | **Print Optimizer — PW Notes Print Suite** (brand `Print Optimizer`) |
 | Purpose | 12-tool suite for students: dark-slide whitening, enhance, protect, PDF↔images, merge/split, image→PDF, plus utility/text/QR. Saves ink & paper. |
 | Tagline | *Every PDF, print-perfect — merge, split, protect, whiten & enhance, plus JPG/PNG image conversion* (`app/layout.tsx:18`) |
-| Stack | Next.js 15.5 (App Router, `output:'export'`), React 19, TS 5.9 strict, Tailwind v4, pdfjs-dist 4.10, pdf-lib 1.17, Rust→WASM (`wasm/src`), `motion`, `lucide-react` |
+| Stack | Next.js 15.5 (App Router, hybrid — see Runtime row), React 19, TS 5.9 strict, Tailwind v4, pdfjs-dist 4.10, pdf-lib 1.17, Rust→WASM (`wasm/src`), `motion`, `lucide-react` |
 | Theme identity | Cobalt Ink → Marigold `#3654D9→#5B7FFF→#F2A93C` + liquid glass. Rebrand 2026-09 retired Emerald/Mint/Teal/Cyan (`#10B981→#6EE7B7→#14B8A6→#06B6D4`) and the earlier violet/indigo (`#243BFF/#4338ca`) — none of those hexes should be reintroduced as primary/accent. |
-| Runtime | **Fully client-side, zero server.** Static export `out/` → Vercel (portable to any static host). No upload except optional feedback. |
+| Runtime | **All PDF/image processing is client-side, zero server involvement — that does not change.** Build mode changed 2026-09: `output:'export'` removed (hybrid Next.js server build) specifically to allow future server-only routes (accounts/auth/dashboard — see `docs/hybrid-architecture-migration.md`). Every current page still has zero server-side data dependency, so Next.js still prerenders all of them to static HTML by default — this is not expected to change today's behavior or performance. Deployed on Vercel. Static-export "deploy to any static host" portability is intentionally given up in exchange — see the migration doc for the full tradeoff and the decision rule for when a server route is actually worth adding. |
 | License | Juyel Source License (JSL) v1.0 (`LICENSE`, `public/content/JSL_LICENSE.md`) |
 | CI | `ci.yml` required check `ci` (strict, admins enforced) + `lighthouse` + `budget` |
 
@@ -59,10 +59,10 @@ Prereq: Node 20+ (`.nvmrc` → `20`), npm 10+. Rust toolchain only for `build:wa
 | Lint | `npm run lint` | `eslint.config.mjs` — `next/core-web-vitals` |
 | Unit + integration + bench | `npm run test` | `vitest run` — see CI output for current test/file count; never hardcode it here — gate is *all green* |
 | Benchmarks (all) | `npm run test:bench` | `phase0Baseline`, `sharpenShootout`, `kernelProfile`, `realPdfBaseline` |
-| E2E smoke | `npm run test:smoke` | `playwright` chromium (22 tests) — `npx serve out -l 4180` first |
+| E2E smoke | `npm run test:smoke` | `playwright` chromium (22 tests) — `npm run start` first (real server; hybrid mode, see Runtime row) |
 | CI full | `npm run test:ci` | vitest + bench + smoke |
-| Production build | `npm run build` | `next build && postbuild-strip-devtools.js` → `out/` (trailingSlash). Known warnings: `next/no-img-element` in `EnhanceWorkbenchView/ProcessingModal/ImagesResultView`, `no-unused-vars` `phaseName/isProcessing`, `exhaustive-deps` `PersistentShell` — do not chase |
-| Serve export | `npx serve out -l 4180 --no-clipboard` | `next start` **FAILS** with `output:'export'` |
+| Production build | `npm run build` | `next build && postbuild-strip-devtools.js` → `.next/` (hybrid). Known warnings: `next/no-img-element` in `EnhanceWorkbenchView/ProcessingModal/ImagesResultView`, `no-unused-vars` `phaseName/isProcessing`, `exhaustive-deps` `PersistentShell` — do not chase |
+| Serve build | `npm run start` | real Next.js server, hybrid mode. (Pre-2026-09 this row said `next start` **FAILS** under `output:'export'` — that constraint is gone now that export mode is removed; see `docs/hybrid-architecture-migration.md`.) |
 | WASM rebuild | `npm run build:wasm` | `wasm-pack build` → `public/wasm/` — binary is committed |
 | Gen fixtures | `npm run fixtures:gen` | `scripts/gen-pdf-fixtures.mjs` — fixed-seed LCG, deterministic |
 | Gen goldens | `PDF_UPDATE_GOLDENS=1 npm run test` | deliberate only — see §9 invariants |
@@ -129,7 +129,7 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 ## 7. Architecture map
 
 ```
-app/                         App Router (output:'export', trailingSlash:true)
+app/                         App Router (hybrid mode 2026-09+, trailingSlash:true — see Runtime row)
   layout.tsx                 fonts (Plus Jakarta Sans/Outfit/Geist Mono), metadataBase=SITE_URL, OG cdn, CSP, theme script
   (app)/page.tsx             LandingHero (cobalt ink) + ToolsBox (12 cards)
   (app)/tools/[slug]/page.tsx  prerendered per TOOL_REGISTRY (dynamicParams=false)

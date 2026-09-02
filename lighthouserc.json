@@ -1,7 +1,10 @@
 {
   "ci": {
     "collect": {
-      "staticDistDir": "./out",
+      "startServerCommand": "npm run start",
+      "startServerReadyPattern": "Ready in",
+      "startServerReadyTimeout": 30000,
+      "url": ["http://localhost:3000/"],
       "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--headless --no-sandbox --disable-gpu",
@@ -9,6 +12,7 @@
         "maxWaitForLoad": 45000
       }
     },
+
     "assert": {
       "assertions": {
         "categories:performance": ["error", { "minScore": 0.95 }],
