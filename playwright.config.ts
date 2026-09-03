@@ -14,9 +14,11 @@ export default defineConfig({
     { name: 'webkit', use: { browserName: 'webkit' } },
   ],
   webServer: {
-    command: 'npx serve out -l 3000',
+    // Real Next.js server (hybrid mode) — out/ no longer exists once
+    // output:'export' is removed. See docs/hybrid-architecture-migration.md.
+    command: 'npm run start',
     port: 3000,
-    timeout: 10000,
+    timeout: 30000,
     reuseExistingServer: true,
   },
 });
