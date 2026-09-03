@@ -25,13 +25,18 @@ Everything below assumed a static `out/` directory of plain files. Once `output:
 - **`package.json`** — `"start": "next start"` already existed (unused under export mode, since `next start` fails outright when `output: 'export'` is set) and now actually works; added `wait-on` as a devDependency for the budget job's server-readiness wait.
 - **`README.md`** — `Stack`/`Runtime` rows, the local-dev command table, and the architecture-map ASCII diagram all documented `output:'export'` as current fact. Updated to describe hybrid mode and point here for the reasoning, rather than silently going stale (the exact failure mode `README.md`'s own "never hardcode count" note elsewhere in this file was written to avoid).
 
-## Verification caveat — read before assuming this is fully proven
+## Verification status — updated 2026-09-03 (was: sandbox caveat, now verified)
 
-This migration's local verification in the sandbox that authored it was limited to `tsc --noEmit`, `npm run lint`, and `vitest run` — a full `next build` could not be run end-to-end (Google Fonts fetch blocked by sandbox network restrictions, same limitation noted on every prior PR from this session). That means:
+The sandbox that authored this migration could only run `tsc --noEmit`, `npm run lint`, and `vitest run` (Google Fonts fetch blocked by sandbox network restrictions). Full end-to-end verification was completed 2026-09-03 on a networked machine against this branch's head — results:
 
-- **`npm run start` was never actually run against a real hybrid build in that environment.** The `startServerReadyPattern: "Ready in"` in `lighthouserc.json` is Next.js's typical startup log line, but it was not confirmed against this exact app/Next version's real output — verify this against an actual `next start` log before trusting the Lighthouse CI job to detect server-ready correctly.
-- Service worker / offline / PWA behavior under hybrid-mode HTML serving (vs. literal static files) needs real verification, not just "should still work because it's client-side." Test the offline fallback route and a fresh install specifically.
-- The two rewritten CI jobs (`lighthouse`, `budget` in `lighthouse.yml`) have not run in real CI yet as of this doc being written — expect the first run to need at least minor iteration.
+- **`npm run build` SUCCEEDS end-to-end** (Next.js 15.5.23, `✓ Compiled successfully`, `Generating static pages (20/20)`, route table `○ /` + `● /tools/[slug]` all 12, postbuild verified). No build fix was needed — the prime suspect (fonts egress) does not reproduce with network access.
+- **`npm run start` boots correctly.** Real stdout on boot includes `✓ Ready in 1033ms` — `lighthouserc.json`'s `startServerReadyPattern: "Ready in"` matches as a substring. No pattern change needed.
+- **Rewritten CI jobs PASS in real GitHub Actions on this branch's head:** `lighthouse` 2m29s, `budget` 5m5s, `ci` 2m38s (all green, no iteration needed beyond what is noted below).
+- **SW / offline / PWA verified under hybrid serving** (real Chromium, `next start`): manual `serviceWorker.register('/sw.js')` → `activated` → offline `reload /` renders with title, offline deep-link `/tools/merge-pdf/` resolves from cache with `#tool-seo-title`, `/sw.js` (v37) + `/manifest.webmanifest` + `/offline/` all 200, all 12 `/tools/<slug>/` routes 200 with unique SEO titles. No SW-related console errors.
+- **Known non-regressions (identical pre/post migration, by code inspection + test):**
+  - Offline subresource 504s for never-visited route chunks (`/_next/static/chunks/app/(app)/tools/[slug]/page-*.js`) and lazy footer social SVGs (`/icons/social/*.svg`) — by SW design (HTML precached, per-route JS runtime-cached on first online visit). Same `PRECACHE_URLS` and same fetch handler under static export; not a hybrid regression.
+  - SW auto-registration race: `PersistentShell.tsx` registers on `window 'load'`, but `document.readyState` is already `complete` by hydration on fast loads, so the listener never fires and no SW registers until a slower load. Pre-existing on `main` (identical code path under static export) — reported, not fixed here to keep this migration behavior-only. Fix (register immediately when `document.readyState === 'complete'`) is a separate follow-up.
+  - `scripts/postbuild-strip-devtools.js` mode detection gated on `out/` existence, but a stale `out/` from an earlier export build lingers next to a fresh hybrid `.next/` and misdirects the scan (found 2026-09-03: script scanned stale `out/` instead of `.next/`). Fixed on this branch: script now scans every existing client-static dir (`.next/static` + `out/_next/static`) instead of picking one by heuristic.
 
 ## Rollback
 
