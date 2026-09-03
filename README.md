@@ -22,7 +22,7 @@
 
 | Field | Value |
 |---|---|
-| Product | **Print Optimizer — PW Notes Print Suite** (brand `Print Optimizer`) |
+| Product | **Print Optimizer — Notes Print Suite** (brand `Print Optimizer`). Formerly documented internally as "PW Notes Print Suite" — renamed 2026-09 to remove an unlicensed reference to a specific commercial coaching brand (PhysicsWallah); see CHANGELOG. |
 | Purpose | 12-tool suite for students: dark-slide whitening, enhance, protect, PDF↔images, merge/split, image→PDF, plus utility/text/QR. Saves ink & paper. |
 | Tagline | *Every PDF, print-perfect — merge, split, protect, whiten & enhance, plus JPG/PNG image conversion* (`app/layout.tsx:18`) |
 | Stack | Next.js 15.5 (App Router, hybrid — see Runtime row), React 19, TS 5.9 strict, Tailwind v4, pdfjs-dist 4.10, pdf-lib 1.17, Rust→WASM (`wasm/src`), `motion`, `lucide-react` |
@@ -120,9 +120,9 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 ## 6. PWA & Service Worker
 
 - **Manifest:** `app/manifest.ts` — `id/start_url/scope = BASE_PATH + /`, `name Print Optimizer`, `theme_color #020617` (dark) / `#f4f6fb` (light via `THEME_INIT_SCRIPT` in `app/layout.tsx:165`), `background #020617`, `display standalone`, icons `icon-192-v2.png / icon-512-v2.png / icon-maskable-v2.svg` (cache-busted `-v2` — never reuse name).
-- **SW:** `public/sw.js` — `VERSION='v37'` → `CACHE='pw-optimizer-v37'` + `STATIC`/`DYNAMIC` variants. `BASE` derived from `self.location.pathname` for subpath deploys. `PRECACHE_URLS = [/, /offline/, ...TOOL_ROUTES, icons, vendor/pdf*.mjs, wasm/npo_wasm.*]`.
+- **SW:** `public/sw.js` — `VERSION='v37'` → `CACHE='npo-v37'` (renamed 2026-09 from `pw-optimizer-*`, see identity note above) + `STATIC`/`DYNAMIC` variants. `BASE` derived from `self.location.pathname` for subpath deploys. `PRECACHE_URLS = [/, /offline/, ...TOOL_ROUTES, icons, vendor/pdf*.mjs, wasm/npo_wasm.*]`.
   - `install`: `skipWaiting` + `Promise.allSettled(precache)` — deliberate for 100% offline (see comment `public/sw.js:1`).
-  - `activate`: delete old `pw-optimizer-*` keeps 3.
+  - `activate`: delete any cache key not in the current version's keep-set (auto-purges old-prefix caches too).
   - `fetch`: navigate `network-first → DYNAMIC_CACHE → /offline/ 503 html`; wasm `network-first → STATIC_CACHE`; static assets (js/css/png/svg/mjs/woff) `cache-first`; else `stale-while-revalidate`; `message SKIP_WAITING`.
 - **Bump rule:** Any precache change → `VERSION++`. Icons: generate via `scripts/apply-icon-art.mjs` from `public/icon-master.png` — never hand-edit `-v2`.
 
@@ -175,8 +175,8 @@ Text/utility tools (word-count, case-convert, password-gen, qr-gen) are pure cli
 
 | Engine | ID | Default | Notes |
 |---|---|---|---|
-| V1 | `pw-pixel-v1` | No | Parallel pool — measured 2.4× slower + 11× mem on 100p real PDF — DO NOT default |
-| V2 | `pw-pixel-v2` | **Yes** | Sequential, memory-safe — production |
+| V1 | `npo-pixel-v1` | No | Parallel pool — measured 2.4× slower + 11× mem on 100p real PDF — DO NOT default |
+| V2 | `npo-pixel-v2` | **Yes** | Sequential, memory-safe — production |
 
 State: `workflowReducer` (single source) + `MetricsBus` (`page:phases`, `doc:phases`). (Note: an IndexedDB-backed `CheckpointManager`/crash-resume system was scaffolded but never wired into the pipeline — removed 2026-09-01 as dead code; see `docs/rollback-dead-code-2026-08-27.md` for restore instructions if resume-after-crash is prioritized later.)
 

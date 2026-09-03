@@ -67,7 +67,7 @@
     "postcss": "^8.5.23",
     "nanoid": "^3.3.17"
   },
-  "description": "Mobile-first adaptive print optimizer and PDF engine for PW lecture notes",
+  "description": "Mobile-first adaptive print optimizer and PDF engine for student lecture notes",
   "author": "juyel-dev",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {

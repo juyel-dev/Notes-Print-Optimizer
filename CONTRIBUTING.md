@@ -109,7 +109,7 @@ Keep one logical change per commit. Never mix.
 - **Never regen goldens** without `PDF_UPDATE_GOLDENS=1` + justification; goldens are byte-exact acceptance.
 - **Never commit secrets** (tokens, private URLs).
 - **Never reuse PWA icon filenames** — `-v2` cache-busted, always generate via `scripts/apply-icon-art.mjs`.
-- **Never change engine default** (`pw-pixel-v2` sequential) without paired A/B on real fixtures (`ENGINEERING_ASSESSMENT.md §8` — V1 2.4× slower / 11× mem).
+- **Never change engine default** (`npo-pixel-v2` sequential) without paired A/B on real fixtures (`ENGINEERING_ASSESSMENT.md §8` — V1 2.4× slower / 11× mem).
 - **Static-only invariant:** no server PDF processing (`SECURITY.md`).
 - **Never edit `out/`** — build output.
 - **Always bump `public/sw.js:VERSION`** when precache changes.

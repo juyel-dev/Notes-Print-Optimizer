@@ -423,7 +423,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
           </div>
           <h4 className="text-sm font-bold text-success-soft">Thank you for your feedback!</h4>
           <p className="text-xs text-success-soft/80 max-w-md">
-            Your rating and diagnostics have been sent to our Telegram channel. Your feedback directly helps us improve PW Notes Print Optimizer.
+            Your rating and diagnostics have been sent to our Telegram channel. Your feedback directly helps us improve Notes Print Optimizer.
           </p>
           <button
             type="button"

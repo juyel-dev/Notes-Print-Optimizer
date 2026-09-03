@@ -120,9 +120,9 @@ function freeCanvas(c: OffscreenCanvas | HTMLCanvasElement, isOffscreen: boolean
 /* ------------------------------------------------------------------ */
 
 export class ProcessingEngineV2 implements IProcessingEngine {
-  readonly id = 'pw-pixel-v2';
+  readonly id = 'npo-pixel-v2';
   readonly version: EngineVersion = 'v2';
-  readonly name = 'PW Pipeline Engine v2';
+  readonly name = 'Notes Print Optimizer Pipeline Engine v2';
   readonly description =
     'Memory-optimized sequential pipeline for large documents on low-RAM devices';
 

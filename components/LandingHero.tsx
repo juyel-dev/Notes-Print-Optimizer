@@ -35,13 +35,15 @@ export const LandingHero: React.FC = () => {
 
     <div className="relative flex flex-col items-center gap-3.5">
       {/* Badge is always white regardless of theme, so its text uses the
-          fixed AA-on-white cobalt value rather than the theme token. */}
+          fixed AA-on-white cobalt value rather than the theme token.
+          Was a fabricated "50,000+" stat with a live-pulse dot — replaced
+          with a real, verifiable capability claim instead of unverified
+          social proof. The pulse animation was dropped along with it: a
+          "live" indicator next to a static fact (not a live counter) was
+          never semantically honest to begin with, not just a style choice. */}
       <span className="inline-flex items-center gap-1.5 rounded-full border border-[#22368F]/20 bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#22368F] shadow-sm">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-strong" />
-        </span>
-        Trusted by 50,000+ NEET • JEE • Boards Students
+        <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        100% On-Device — Files Never Leave Your Phone
       </span>
 
       <h1 className="max-w-3xl text-balance text-[26px] font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
@@ -52,7 +54,7 @@ export const LandingHero: React.FC = () => {
       </h1>
 
       <p className="max-w-xl text-pretty text-xs leading-relaxed text-ink-muted sm:text-sm">
-        PW, Allen, Unacademy — bring dark slides, handwritten sheets & PYQs. Whiten, N-up 4 per sheet,
+        Bring dark-mode slide decks, handwritten sheets &amp; PYQs from any coaching platform. Whiten, N-up 4 per sheet,
         <span className="font-semibold text-ink"> on your device</span> — offline, private, no upload.
       </p>
 
@@ -63,7 +65,7 @@ export const LandingHero: React.FC = () => {
         className="mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-strong via-primary to-accent px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-lg shadow-primary/20 ring-1 ring-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25 hover:from-primary-deep hover:via-primary-strong hover:to-accent-deep active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
       >
         <ArrowDown className="h-3.5 w-3.5 shrink-0 animate-bounce" aria-hidden="true" />
-        Explore tools for your notes
+        Pick a tool below to get started
       </button>
 
       {/* Hint chips — student-focused, liquid glass. Always-white cards, same
