@@ -6,11 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { ProcessingModal } from '@/components/ProcessingModal';
 import { PlatformUIOrchestrator } from '@/components/views/PlatformUIOrchestrator';
+import { CommandPalette } from '@/components/CommandPalette';
 import { usePageHandlers } from '@/lib/workflow/usePageHandlers';
 import { useMonitor } from '@/lib/monitoring/useMonitor';
 import { ToastProvider } from '@/components/shared/Toast';
 import { SeoVisibilityContext } from '@/components/seo/SeoVisibilityContext';
 import { modeForSlug, toolHref } from '@/lib/tools/registry';
+import { recordToolVisit } from '@/lib/services/RecentToolsService';
 import type { ToolMode } from '@/lib/enhance/types';
 import type { WorkflowState, WorkflowActions, WorkflowHandlers } from '@/components/views/types';
 import type { HandoffPageInput } from '@/lib/services/EnhanceHandoffService';
@@ -47,6 +49,13 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
     const match = pathname.match(/^\/tools\/([^/]+)/);
     return match ? modeForSlug(match[1]) : null;
   }, [pathname]);
+
+  // Track visits for the "Continue where you left off" chip on the landing
+  // page — a visit, not a completion, so it's a proxy for interest, not
+  // proof the tool was actually used successfully.
+  useEffect(() => {
+    if (toolMode) recordToolVisit(toolMode);
+  }, [toolMode]);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -221,6 +230,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
       <SeoVisibilityContext.Provider value={{ visible: seoVisible, setVisible: setSeoVisibleOther }}>
+        <CommandPalette />
         <div className="min-h-screen bg-bg app-shell-bg text-ink font-sans flex flex-col pb-safe">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Header

@@ -30,6 +30,16 @@ export interface ToolDefinition {
   gradient: string;
   chips: string[];
   cta: string;
+  /**
+   * ISO date (YYYY-MM-DD) the tool actually shipped, for the "New" badge.
+   * Left undefined on the original 12 tools deliberately — this session's
+   * environment only has a shallow git clone, so their real ship dates
+   * aren't verifiable here, and a guessed date would be exactly the kind
+   * of fabricated claim already removed elsewhere (see CHANGELOG). Set
+   * this honestly on every tool added from here on; getToolCategories/
+   * isNewTool below only ever reads real data, never estimates.
+   */
+  addedAt?: string;
 }
 
 export const TOOL_REGISTRY: ToolDefinition[] = [
@@ -285,4 +295,15 @@ export function getAllToolSlugs(): string[] {
 
 export function getToolById(id: ToolMode): ToolDefinition | undefined {
   return TOOL_REGISTRY.find((tool) => tool.id === id);
+}
+
+const NEW_BADGE_WINDOW_DAYS = 30;
+
+/** True only for tools with a real, set `addedAt` within the last 30 days. */
+export function isNewTool(tool: ToolDefinition, now: Date = new Date()): boolean {
+  if (!tool.addedAt) return false;
+  const added = new Date(tool.addedAt);
+  if (Number.isNaN(added.getTime())) return false;
+  const ageDays = (now.getTime() - added.getTime()) / (1000 * 60 * 60 * 24);
+  return ageDays >= 0 && ageDays <= NEW_BADGE_WINDOW_DAYS;
 }

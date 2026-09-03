@@ -1,4 +1,6 @@
 import { LandingHero } from '@/components/LandingHero';
+import { LandingBanner } from '@/components/LandingBanner';
+import { RecentToolsChip } from '@/components/RecentToolsChip';
 import { ToolsBox } from '@/components/tools/ToolsBox';
 
 /**
@@ -10,6 +12,8 @@ export default function HomePage() {
   return (
     <div className="animate-enter flex w-full max-w-full min-w-0 flex-col gap-5 md:gap-6">
       <LandingHero />
+      <LandingBanner />
+      <RecentToolsChip />
       <ToolsBox />
     </div>
   );
