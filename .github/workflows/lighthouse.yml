@@ -25,16 +25,17 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline --no-fund
 
+      # Hybrid build (no more static out/ dir) — root path, matching
+      # production Vercel exactly like ci.yml's build. Subpath (basePath)
+      # testing was only meaningful for static-host portability, which this
+      # migration deliberately gives up — see docs/hybrid-architecture-migration.md.
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_BASE_PATH: ''
           NEXT_PUBLIC_FEEDBACK_URL: ${{ vars.NEXT_PUBLIC_FEEDBACK_URL || 'https://script.google.com/macros/s/AKfycbyYBvhRphdbvTAEI-hktpUWcpYyFjdsOjSHhHwuQyt0K310uqIX3ManTNfQ1Kx7UEtw/exec' }}
 
-      - name: Prune non-indexable routes from static export
-        run: rm -rf out/404.html out/404
-
-      - name: Run Lighthouse
+      - name: Run Lighthouse against a real Next.js server
         uses: treosh/lighthouse-ci-action@v12
         with:
           configPath: './lighthouserc.json'
@@ -57,22 +58,20 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_BASE_PATH: ''
           NEXT_PUBLIC_FEEDBACK_URL: ${{ vars.NEXT_PUBLIC_FEEDBACK_URL || 'https://script.google.com/macros/s/AKfycbyYBvhRphdbvTAEI-hktpUWcpYyFjdsOjSHhHwuQyt0K310uqIX3ManTNfQ1Kx7UEtw/exec' }}
 
+      # Real Next.js server (next start) instead of serving a static out/
+      # directory — out/ no longer exists once output:'export' is removed.
       - name: Start server
         run: |
-          mkdir -p serve-root
-          cp -r out serve-root/${{ github.event.repository.name }}
-          npx serve serve-root -l 3000 &
-
-      - name: Wait for server
-        run: sleep 3
+          npm run start &
+          npx wait-on http://localhost:3000 -t 30000
 
       - name: Check Performance Budgets (95+ lock) — all routes
         run: |
           set -e
-          BASE="http://localhost:3000/${{ github.event.repository.name }}"
+          BASE="http://localhost:3000"
           URLS=(
             "$BASE/"
             "$BASE/tools/dark-print/"
