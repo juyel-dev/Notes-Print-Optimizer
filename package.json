@@ -28,7 +28,7 @@
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.553.0",
     "motion": "^12.23.24",
-    "next": "^15.5.22",
+    "next": "^15.5.25",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "qr-code-styling": "^1.9.2",
