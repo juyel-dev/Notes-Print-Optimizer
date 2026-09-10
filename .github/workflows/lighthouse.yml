@@ -1,9 +1,16 @@
 name: Lighthouse CI
 
+# Deliberately NOT on pull_request — lighthouse (3 runs) + budget (13
+# routes) together used to add 6-10 minutes to every small PR push, which
+# was the actual complaint: fast iteration during active development was
+# getting blocked by a heavy quality gate that only matters right before
+# shipping. Now runs on push to main (the real release gate) and
+# workflow_dispatch (manual, e.g. to check a branch before merging without
+# waiting for it to land). ci.yml (lint/typecheck/test/build/smoke) still
+# runs on every PR for fast feedback — this workflow is the slow,
+# release-time check, not the per-commit one.
 on:
   push:
-    branches: ["main", "master"]
-  pull_request:
     branches: ["main", "master"]
   workflow_dispatch:
 
@@ -44,6 +51,27 @@ jobs:
 
   budget:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # One job per route instead of one job looping over all 13 — this is
+      # what actually cuts the wall-clock time, not just the trigger
+      # change. Each still pays its own npm ci + build + server-boot cost,
+      # but they all pay it in parallel instead of 13x sequentially.
+      matrix:
+        route:
+          - ""
+          - "tools/dark-print/"
+          - "tools/enhance-light-pdf/"
+          - "tools/protect-pdf/"
+          - "tools/pdf-to-images/"
+          - "tools/merge-pdf/"
+          - "tools/split-pdf/"
+          - "tools/image-to-pdf/"
+          - "tools/password-generator/"
+          - "tools/qr-generator/"
+          - "tools/word-counter/"
+          - "tools/case-converter/"
+          - "tools/n-up/"
     steps:
       - uses: actions/checkout@v4
 
@@ -68,47 +96,27 @@ jobs:
           npm run start &
           npx wait-on http://localhost:3000 -t 30000
 
-      - name: Check Performance Budgets (95+ lock) — all routes
+      - name: Check Performance Budget (95+ lock) — ${{ matrix.route }}
         run: |
           set -e
-          BASE="http://localhost:3000"
-          URLS=(
-            "$BASE/"
-            "$BASE/tools/dark-print/"
-            "$BASE/tools/enhance-light-pdf/"
-            "$BASE/tools/protect-pdf/"
-            "$BASE/tools/pdf-to-images/"
-            "$BASE/tools/merge-pdf/"
-            "$BASE/tools/split-pdf/"
-            "$BASE/tools/image-to-pdf/"
-            "$BASE/tools/password-generator/"
-            "$BASE/tools/qr-generator/"
-            "$BASE/tools/word-counter/"
-            "$BASE/tools/case-converter/"
-            "$BASE/tools/n-up/"
-          )
-          for URL in "${URLS[@]}"; do
-            echo "→ $URL"
-            rm -f ./lh.json
-            npx lighthouse "$URL" \
-              --output=json \
-              --output-path=./lh.json \
-              --chrome-flags="--headless --no-sandbox --disable-gpu" \
-              --preset=desktop \
-              --only-categories=performance,accessibility,best-practices,seo \
-              || true
-            node -e "
-              const r=require('./lh.json');
-              const thresholds={performance:70, accessibility:90, 'best-practices':95, seo:95};
-              let fail=false;
-              for(const c of Object.keys(thresholds)){
-                const s=Math.round(r.categories[c].score*100);
-                const min=thresholds[c];
-                console.log('  '+c+': '+s+' (min '+min+')');
-                if(s<min){ console.log('::error::'+c+' '+s+' < '+min+' at '+process.argv[1]); fail=true; }
-              }
-              if(fail) process.exit(1);
-              console.log('  ✓ '+process.argv[1]+' passed');
-            " "$URL"
-          done
-          echo "All budgets 95+ passed for ${#URLS[@]} URLs"
+          URL="http://localhost:3000/${{ matrix.route }}"
+          echo "→ $URL"
+          npx lighthouse "$URL" \
+            --output=json \
+            --output-path=./lh.json \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --preset=desktop \
+            --only-categories=performance,accessibility,best-practices,seo
+          node -e "
+            const r=require('./lh.json');
+            const thresholds={performance:70, accessibility:90, 'best-practices':95, seo:95};
+            let fail=false;
+            for(const c of Object.keys(thresholds)){
+              const s=Math.round(r.categories[c].score*100);
+              const min=thresholds[c];
+              console.log('  '+c+': '+s+' (min '+min+')');
+              if(s<min){ console.log('::error::'+c+' '+s+' < '+min+' at ${{ matrix.route }}'); fail=true; }
+            }
+            if(fail) process.exit(1);
+            console.log('  ✓ ${{ matrix.route }} passed');
+          "

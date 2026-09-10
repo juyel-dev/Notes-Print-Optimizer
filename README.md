@@ -185,7 +185,7 @@ State: `workflowReducer` (single source) + `MetricsBus` (`page:phases`, `doc:pha
 | Workflow | File | Jobs | Triggers |
 |---|---|---|---|
 | ci | `.github/workflows/ci.yml` (61L) | `npm ci → lint → tsc → vitest → audit high → build (BASE_PATH='') → playwright chromium smoke (grep-invert worker pool runtime)` | push/PR `main,master`, dispatch |
-| lighthouse | `.github/workflows/lighthouse.yml` (115L) | `lighthouse` (`lighthouserc.json` asserts: perf `error 0.95`, **a11y `warn 0.90`**, best-practices `error 0.95`, seo `error 0.95`, resource caps `doc 15k / script 380k / css 80k / image 500k / 3rd-party 2`) + `budget` (12 URLs: `/`, all 12 `/tools/<slug>/` loops, thresholds `perf70 a11y90 best93 seo95`) | push/PR `main,master` |
+| lighthouse | `.github/workflows/lighthouse.yml` | `lighthouse` (`lighthouserc.json` asserts: perf `error 0.95`, a11y `error 0.90`, best-practices `error 0.95`, seo `error 0.95`, resource caps `doc 15k / script 380k / css 80k / image 500k / 3rd-party 2`) + `budget` (13 routes: `/`, all 12 `/tools/<slug>/`, one matrix job per route running in parallel instead of one job looping over all 13, thresholds `perf70 a11y90 best95 seo95`) | push `main,master` only + `workflow_dispatch` — deliberately NOT on PR (2026-09: was adding 6-10min to every small PR push; this is the release-time gate, `ci` above stays the fast per-PR one) |
 | wasm-build | `.github/workflows/wasm-build.yml` (39L) | `wasm-pack build` → artifact | `workflow_dispatch` only |
 
 Known: GH runners occasionally hang on Playwright browser install (~1h) — cancel & re-run.
