@@ -16,6 +16,8 @@ export interface ToolCardProps {
   /** True only when the registry's real addedAt is inside the recency
    *  window — see isNewTool() in lib/tools/registry.ts. Never guessed. */
   isNew?: boolean;
+  /** Flagship tool highlighted on mobile viewports */
+  isPrimary?: boolean;
 }
 
 /**
@@ -31,18 +33,26 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   cta,
   href,
   isNew,
+  isPrimary,
 }) => (
   <Link
     href={href}
     prefetch={false}
     aria-label={`${title} — ${description}${isNew ? ' — New' : ''}`}
-    className="group relative w-full min-h-[150px] h-full rounded-2xl bg-gradient-to-br p-[1.5px] text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/15 active:scale-[0.98] active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+    className={`group relative w-full min-h-[150px] h-full rounded-2xl bg-gradient-to-br p-[1.5px] text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/15 active:scale-[0.98] active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft ${
+      isPrimary ? 'col-span-2 sm:col-span-1' : ''
+    }`}
     style={{ backgroundImage: gradient }}
   >
     <span className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-60 group-active:opacity-100" aria-hidden="true" />
     {isNew && (
       <span className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
         New
+      </span>
+    )}
+    {isPrimary && !isNew && (
+      <span className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-primary-strong px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
+        Popular
       </span>
     )}
     <span className="flex h-full flex-col gap-3 rounded-[calc(1rem-1.5px)] bg-bg/85 px-4 py-4 backdrop-blur-sm transition-colors duration-200 group-hover:bg-surface/90">
