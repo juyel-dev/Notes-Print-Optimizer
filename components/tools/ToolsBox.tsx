@@ -57,7 +57,9 @@ export const ToolsBox: React.FC = () => {
     >
       <div className="flex items-center justify-between px-1">
         <h2 className="text-sm font-bold tracking-wide text-ink">Choose a Tool for Your Notes</h2>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#22368F]/20 bg-white px-2.5 py-1 text-[11px] font-bold text-[#22368F] shadow-sm">12 Free • No sign-up</span>
+        <span className="text-xs font-semibold text-ink-muted">
+          {visibleTools.length} {visibleTools.length === 1 ? 'tool' : 'tools'}
+        </span>
       </div>
 
       {/* Search — student-friendly */}
@@ -151,6 +153,7 @@ export const ToolsBox: React.FC = () => {
                 cta={tool.cta}
                 href={toolHref(tool.id)}
                 isNew={isNewTool(tool)}
+                isPrimary={tool.id === 'dark-print'}
               />
             );
           })}

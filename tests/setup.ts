@@ -45,3 +45,21 @@ if (typeof HTMLCanvasElement === 'undefined') {
     }
   };
 }
+
+if (typeof window !== 'undefined') {
+  try {
+    let store: Record<string, string> = {};
+    const mockStorage = {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => { store[key] = String(value); },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => { store = {}; },
+      get length() { return Object.keys(store).length; },
+      key: (i: number) => Object.keys(store)[i] ?? null,
+    };
+    Object.defineProperty(window, 'localStorage', { value: mockStorage, configurable: true, writable: true });
+  } catch {
+    // ignore
+  }
+}
+
