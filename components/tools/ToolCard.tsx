@@ -13,16 +13,14 @@ export interface ToolCardProps {
   cta: string;
   /** Public tool route — cards are crawlable links, not state buttons. */
   href: string;
-  /** True only when the registry's real addedAt is inside the recency
-   *  window — see isNewTool() in lib/tools/registry.ts. Never guessed. */
+  /** True only when the registry has a real addedAt date within the badge window. */
   isNew?: boolean;
-  /** Flagship tool highlighted on mobile viewports */
-  isPrimary?: boolean;
 }
 
 /**
- * Premium tool card — mobile tools box entry.
- * 44px+ touch target, 150ms press feedback, no layout shift.
+ * Quiet task card — the tool grid should read as one coherent system, not
+ * twelve separate promotional banners. Brand color lives in the icon; the
+ * card surface stays neutral so scanning remains easy.
  */
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
@@ -33,54 +31,62 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   cta,
   href,
   isNew,
-  isPrimary,
 }) => (
   <Link
     href={href}
     prefetch={false}
     aria-label={`${title} — ${description}${isNew ? ' — New' : ''}`}
-    className={`group relative w-full min-h-[150px] h-full rounded-2xl bg-gradient-to-br p-[1.5px] text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/15 active:scale-[0.98] active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft ${
-      isPrimary ? 'col-span-2 sm:col-span-1' : ''
-    }`}
-    style={{ backgroundImage: gradient }}
+    className="group relative flex min-h-[148px] h-full w-full flex-col rounded-2xl border border-elevated bg-surface/80 p-4 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/30 hover:bg-surface hover:shadow-lg hover:shadow-black/10 active:translate-y-0 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
   >
-    <span className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-60 group-active:opacity-100" aria-hidden="true" />
     {isNew && (
-      <span className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
+      <span className="absolute right-3 top-3 rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-accent">
         New
       </span>
     )}
-    {isPrimary && !isNew && (
-      <span className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-primary-strong px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
-        Popular
+
+    <span className="flex items-start justify-between gap-3">
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-md shadow-black/10"
+        style={{ backgroundImage: gradient }}
+      >
+        <Icon className="h-[21px] w-[21px] text-white" aria-hidden="true" />
       </span>
-    )}
-    <span className="flex h-full flex-col gap-3 rounded-[calc(1rem-1.5px)] bg-bg/85 px-4 py-4 backdrop-blur-sm transition-colors duration-200 group-hover:bg-surface/90">
-      <span className="flex items-center justify-between">
-        <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg shadow-black/20 transition-transform duration-200 group-hover:scale-105 group-active:scale-100"
-          style={{ backgroundImage: gradient }}
+
+      <span className="inline-flex items-center gap-1 pt-1 text-xs font-bold text-ink-faint transition-colors group-hover:text-primary-soft">
+        {cta}
+        <svg
+          viewBox="0 0 24 24"
+          className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden="true"
         >
-          <Icon className="text-white" style={{ width: 22, height: 22 }} aria-hidden="true" />
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-surface-2/80 px-2.5 py-1 text-xs font-bold tracking-wide text-ink transition-colors duration-200 group-hover:bg-white group-hover:text-slate-900">
-          {cta}
-          <svg viewBox="0 0 24 24" className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
+          <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </span>
-      <span className="flex flex-col gap-1 min-w-0">
-        <span className="text-sm font-bold text-ink leading-tight">{title}</span>
-        <span className="text-xs leading-snug text-ink-muted line-clamp-2">{description}</span>
+    </span>
+
+    <span className="mt-3 flex min-w-0 flex-col gap-1">
+      <span className="text-sm font-bold leading-tight tracking-[-0.01em] text-ink">
+        {title}
       </span>
-      <span className="flex flex-wrap gap-1.5">
-        {chips.map((chip) => (
-          <span key={chip} className="rounded-full border border-elevated/60 bg-surface/60 px-2 py-0.5 text-xs font-semibold text-ink-muted">
+      <span className="line-clamp-2 text-xs leading-relaxed text-ink-muted">
+        {description}
+      </span>
+    </span>
+
+    {chips.length > 0 && (
+      <span className="mt-auto flex flex-wrap gap-1.5 pt-3">
+        {chips.slice(0, 2).map((chip) => (
+          <span
+            key={chip}
+            className="rounded-full bg-surface-2/70 px-2 py-0.5 text-[10px] font-semibold text-ink-faint"
+          >
             {chip}
           </span>
         ))}
       </span>
-    </span>
+    )}
   </Link>
 );
