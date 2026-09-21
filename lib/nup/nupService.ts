@@ -54,6 +54,21 @@ export interface BuildResult {
 }
 
 /**
+ * "Same as original" passthrough — no N-up grid, no paper resize, no
+ * margins/borders/numbers. The input bytes (already-whitened pages in
+ * dark-print, merged upload in the standalone tool) become the download
+ * as-is: one output sheet per input page. Zero pdf-lib work, instant.
+ */
+export function buildOriginalPassthrough(inputBytes: Uint8Array, pageCount: number): BuildResult {
+  const copy = inputBytes.slice();
+  return {
+    blob: new Blob([copy.buffer as ArrayBuffer], { type: 'application/pdf' }),
+    sheets: Math.max(1, pageCount),
+    ms: 0,
+  };
+}
+
+/**
  * Build the N-up document — vector-preserving, rotation-aware.
  * Perf: source parsed ONCE, every page embedded ONCE via one batch embedPages,
  * then drawn per sheet. Yields to the UI thread every few sheets.
