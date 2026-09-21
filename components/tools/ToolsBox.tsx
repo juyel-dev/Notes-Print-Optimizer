@@ -1,29 +1,23 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Search, SearchX, X } from 'lucide-react';
 import { ToolCard } from './ToolCard';
-import { TOOL_REGISTRY, getToolCategories, isNewTool, toolHref, type ToolCategory, type ToolDefinition } from '@/lib/tools/registry';
+import {
+  TOOL_REGISTRY,
+  getToolCategories,
+  isNewTool,
+  toolHref,
+  type ToolCategory,
+} from '@/lib/tools/registry';
 import { searchTools } from '@/lib/tools/search';
 
-/** Most-requested conversion pair — pinned as quick pills under the search box. */
-const QUICK_TOOL_IDS = ['to-pdf', 'to-images'] as const;
-
-const QUICK_LABELS: Record<(typeof QUICK_TOOL_IDS)[number], string> = {
-  'to-pdf': 'Image → PDF',
-  'to-images': 'PDF → Images',
-};
-
 /**
- * Tool selector shown on all surfaces (mobile / tablet / desktop).
- * Stacked on mobile, 2-column grid from sm+ — upload stays primary above it.
- * Registry-driven: searchable by title/alias/keyword with fuzzy fallback;
- * category shortcut chips appear automatically once >1 category exists.
+ * Tool discovery is the main landing-page surface: one search field,
+ * lightweight category filters, then a consistent grid of task cards.
  *
- * Cards are real <Link>s to /tools/<slug>/ — the URL is the source of
- * truth for the active tool (deep-linkable + crawlable), so this component
- * needs no navigation props.
+ * Cards are real <Link>s to /tools/<slug>/ — the URL remains the source of
+ * truth for the active tool (deep-linkable + crawlable).
  */
 export const ToolsBox: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -31,18 +25,12 @@ export const ToolsBox: React.FC = () => {
 
   const categories = useMemo(() => getToolCategories(TOOL_REGISTRY), []);
 
-  const quickTools = useMemo(
-    () =>
-      QUICK_TOOL_IDS.map((id) => TOOL_REGISTRY.find((t) => t.id === id)).filter(
-        (t): t is ToolDefinition => Boolean(t),
-      ),
-    [],
-  );
-
   const visibleTools = useMemo(
     () =>
       searchTools(
-        activeCategory === 'all' ? TOOL_REGISTRY : TOOL_REGISTRY.filter((t) => t.category === activeCategory),
+        activeCategory === 'all'
+          ? TOOL_REGISTRY
+          : TOOL_REGISTRY.filter((tool) => tool.category === activeCategory),
         query,
       ),
     [activeCategory, query],
@@ -52,24 +40,34 @@ export const ToolsBox: React.FC = () => {
     <section
       id="tools"
       aria-label="Choose a tool"
-      className="flex flex-col gap-3 animate-slide-up scroll-mt-20"
-      style={{ animationDelay: '80ms' }}
+      className="flex scroll-mt-20 flex-col gap-4"
     >
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-bold tracking-wide text-ink">Choose a Tool for Your Notes</h2>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#22368F]/20 bg-white px-2.5 py-1 text-[11px] font-bold text-[#22368F] shadow-sm">12 Free • No sign-up</span>
+      <div className="flex flex-col gap-1 px-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-lg font-extrabold tracking-tight text-ink sm:text-xl">
+            Choose what you need
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-ink-muted sm:text-sm">
+            Search by task, filter by type, and open a tool in one click.
+          </p>
+        </div>
+        <span className="text-xs font-semibold text-ink-faint">
+          {visibleTools.length} {visibleTools.length === 1 ? 'tool' : 'tools'}
+        </span>
       </div>
 
-      {/* Search — student-friendly */}
       <div role="search" className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
+        <Search
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+          aria-hidden="true"
+        />
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search — PYQ, dark slides, handwritten, image to pdf…"
+          placeholder="Search tools — dark notes, merge, image to PDF…"
           aria-label="Search tools"
-          className="h-11 w-full rounded-xl border border-elevated bg-surface/80 pl-10 pr-10 text-sm text-ink placeholder:text-ink-faint transition-colors focus:border-primary/30 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+          className="h-12 w-full rounded-xl border border-elevated bg-surface/90 pl-10 pr-10 text-sm text-ink shadow-sm placeholder:text-ink-faint transition-[border-color,box-shadow] focus:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15"
         />
         {query && (
           <button
@@ -83,25 +81,9 @@ export const ToolsBox: React.FC = () => {
         )}
       </div>
 
-      {/* Quick image-conversion shortcuts — top user intent, one tap away */}
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Quick image tools">
-        {quickTools.map((tool) => (
-          <Link
-            key={tool.id}
-            href={toolHref(tool.id)}
-            prefetch={false}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 text-xs font-bold text-ink transition-colors hover:border-primary/40 hover:text-primary-soft"
-          >
-            <tool.icon className="h-3.5 w-3.5" aria-hidden="true" />
-            {QUICK_LABELS[tool.id as (typeof QUICK_TOOL_IDS)[number]]}
-          </Link>
-        ))}
-      </div>
-
-      {/* Category shortcut chips — horizontal scroll, future-proof for many categories */}
       {categories.length > 1 && (
         <div
-          className="flex flex-nowrap gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+          className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="group"
           aria-label="Filter tools by category"
         >
@@ -109,35 +91,34 @@ export const ToolsBox: React.FC = () => {
             const active = activeCategory === cat;
             const labelMap: Record<string, string> = {
               all: 'All',
-              pdf: 'PDF Tools',
-              image: 'Image Tools',
-              security: 'Security Tools',
-              utility: 'Utility Tools',
-              text: 'Text Tools',
+              pdf: 'PDF',
+              image: 'Images',
+              security: 'Security',
+              utility: 'Utility',
+              text: 'Text',
             };
-            const label = labelMap[cat as string] ?? String(cat);
+
             return (
               <button
                 key={cat}
                 type="button"
                 aria-pressed={active}
                 onClick={() => setActiveCategory(cat)}
-                className={`h-8 shrink-0 snap-start rounded-full border px-3.5 text-xs font-bold capitalize transition-colors ${
+                className={
                   active
-                    ? 'border-primary-strong bg-primary-strong text-white shadow-sm'
-                    : 'border-elevated bg-surface text-ink-muted hover:text-ink'
-                }`}
+                    ? 'h-8 shrink-0 rounded-full border border-primary-strong bg-primary-strong px-3.5 text-xs font-bold text-white shadow-sm transition-colors'
+                    : 'h-8 shrink-0 rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted transition-colors hover:border-primary/30 hover:text-ink'
+                }
               >
-                {label}
+                {labelMap[cat] ?? String(cat)}
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Cards */}
       {visibleTools.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+        <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleTools.map((tool) => {
             const Icon = tool.icon;
             return (
@@ -156,7 +137,7 @@ export const ToolsBox: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-elevated bg-surface/50 px-4 py-8 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-elevated bg-surface/50 px-4 py-10 text-center">
           <SearchX className="h-6 w-6 text-ink-faint" aria-hidden="true" />
           <p className="text-sm font-bold text-ink">No tool found</p>
           <p className="text-xs text-ink-muted">

@@ -217,14 +217,15 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Progress line — premium 1px with glow */}
-        <div aria-hidden="true" className="h-1 w-full bg-surface-2/60">
-          <div
-            aria-hidden="true"
-            className="h-full rounded-full bg-gradient-to-r from-primary via-accent-soft to-success shadow-[0_0_8px_rgba(91,127,255,0.35)] transition-[width] duration-300 ease-out"
-            style={{ width: showStepper ? `${(currentPhase / 4) * 100}%` : '0%' }}
-          />
-        </div>
+        {showStepper && (
+          <div aria-hidden="true" className="h-0.5 w-full bg-surface-2/60">
+            <div
+              aria-hidden="true"
+              className="h-full rounded-full bg-gradient-to-r from-primary via-accent-soft to-success transition-[width] duration-300 ease-out"
+              style={{ width: `${(currentPhase / 4) * 100}%` }}
+            />
+          </div>
+        )}
       </header>
 
       {/* Mobile Drawer (Hamburger Side Sheet) */}

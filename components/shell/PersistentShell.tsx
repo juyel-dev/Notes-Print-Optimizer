@@ -296,134 +296,54 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
         )}
         {children}
       </main>
-      {/* Premium Floating Glass Footer — Cobalt Ink Student Identity */}
-      <footer className="mt-8 px-3 pb-4 sm:px-4">
-        <div className="mx-auto max-w-6xl">
-          {/* Bow top — inverted curved corners */}
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-[#5B7FFF]/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl shadow-[#0B1440]/20">
-            {/* Top bow gradient line */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#8FA6FF]/20 to-transparent" />
-            {/* Liquid glass glow */}
-            <div aria-hidden="true" className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#5B7FFF]/10 via-[#8FA6FF]/10 to-[#F2A93C]/10 blur-3xl" />
-
-            <div className="relative px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-              {/* Top: Logo + Tagline — fixed phone alignment, no center ugly */}
-              <div className="flex flex-row items-center justify-between gap-3 border-b border-white/[0.06] pb-5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#3654D9] via-[#5B7FFF] to-[#F2A93C] text-white shadow-lg shadow-[#5B7FFF]/20">
-                    <span className="text-sm font-black">P</span>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <div className="text-sm font-bold tracking-tight text-white truncate">Print Optimizer</div>
-                    <div className="bg-gradient-to-r from-[#8FA6FF] via-[#B7C4FF] to-[#F2A93C] bg-clip-text text-[11px] font-semibold text-transparent truncate">Made for Students, by Students</div>
-                  </div>
+      <footer className="mt-12 px-3 pb-5 sm:px-4">
+        <div className="mx-auto max-w-6xl border-t border-elevated/70 pt-6 sm:pt-7">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#3654D9] via-[#5B7FFF] to-[#F2A93C] text-white shadow-md shadow-[#5B7FFF]/15">
+                  <span className="text-sm font-black">P</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-[#3654D9]/20 bg-[#3654D9] px-3 py-1 text-[11px] font-bold text-white shadow-sm">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> 100% Offline
-                  </span>
-                  {/* Language — HI/EN, EN on */}
-                  <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-1 text-[11px] font-semibold">
-                    <span className="px-2.5 py-1 text-slate-400">HI</span>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-slate-900 shadow-sm">EN</span>
-                  </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold tracking-tight text-ink">Print Optimizer</div>
+                  <div className="text-[11px] font-semibold text-ink-muted">Made for students · 100% offline</div>
                 </div>
               </div>
-
-              {/* Middle: 4 columns — premium, no mismatch */}
-              <div className="grid grid-cols-2 gap-5 py-5 sm:grid-cols-4 lg:gap-6">
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-100">Tools</h4>
-                  <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
-                    <li><Link href="/tools/dark-print/" className="hover:text-[#8FA6FF] transition-colors">Dark Notes → Print</Link></li>
-                    <li><Link href="/tools/n-up/" className="hover:text-[#8FA6FF] transition-colors">N-up PDF</Link></li>
-                    <li><Link href="/tools/merge-pdf/" className="hover:text-[#8FA6FF] transition-colors">Merge PDF</Link></li>
-                    <li><Link href="/tools/image-to-pdf/" className="hover:text-[#8FA6FF] transition-colors">Image → PDF</Link></li>
-                  </ul>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-100">For Students</h4>
-                  <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
-                    <li className="text-slate-200">NEET • JEE • Boards</li>
-                    <li>Coaching &amp; Self-Study</li>
-                    <li>PYQ & Handwritten</li>
-                  </ul>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-100">Community</h4>
-                  <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
-                    <li><a href="https://github.com/juyel-dev/Notes-Print-Optimizer" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a></li>
-                    <li><a href="https://github.com/juyel-dev/Notes-Print-Optimizer/issues" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Issues</a></li>
-                    <li><a href="https://t.me/PrintOptimizer_chat" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discussions</a></li>
-                    <li><a href="https://github.com/juyel-dev/Notes-Print-Optimizer/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contributing</a></li>
-                  </ul>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-100">Legal</h4>
-                  <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const btn = document.querySelector<HTMLButtonElement>('[aria-label="Toggle App Menu"]');
-                          btn?.click();
-                          setTimeout(() => {
-                            const legalHeader = document.getElementById('menu-header-legal');
-                            legalHeader?.click();
-                            legalHeader?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 300);
-                        }}
-                        className="hover:text-[#8FA6FF] transition-colors text-left"
-                      >
-                        LEGAL
-                      </button>
-                    </li>
-                    <li>
-                      <a href="mailto:myself.juyel.dev@gmail.com" className="hover:text-[#8FA6FF] transition-colors">Contact</a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Bottom: Social with real SVGs + Love red heart aura */}
-              <div className="flex flex-col items-center gap-4 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-between">
-                <div className="flex items-center gap-1.5">
-                  {[
-                    { id: 'instagram', href: '#', label: 'Instagram', file: 'instagram.svg' },
-                    { id: 'telegram', href: 'https://t.me/PrintOptimizer_chat', label: 'Telegram', file: 'telegram.svg' },
-                    { id: 'x', href: '#', label: 'X', file: 'x.svg' },
-                    { id: 'reddit', href: '#', label: 'Reddit', file: 'reddit.svg' },
-                    { id: 'github', href: 'https://github.com/juyel-dev/Notes-Print-Optimizer', label: 'GitHub', file: 'github.svg' },
-                  ].map((s) => (
-                    <a
-                      key={s.id}
-                      href={s.href}
-                      target={s.href.startsWith('http') ? '_blank' : undefined}
-                      rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      aria-label={s.label}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] hover:bg-white hover:border-white/20 transition-colors group"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/icons/social/${s.file}`} alt="" aria-hidden="true" className="h-4 w-4 object-contain opacity-80 group-hover:opacity-100" loading="lazy" />
-                    </a>
-                  ))}
-                </div>
-
-                <div className="flex flex-col items-center gap-1 text-center sm:items-end sm:text-right">
-                  <p className="text-xs font-medium text-slate-200 text-pretty">
-                    Made with <span className="inline-flex items-center justify-center text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse">♥</span> for Students • 100% Offline
-                  </p>
-                  <p className="text-[11px] text-slate-700">
-                    © 2026 Juyel Hossain • JSL v1.0 • <span className="tabular-nums">v36</span>
-                  </p>
-                </div>
-              </div>
+              <p className="mt-3 max-w-md text-xs leading-relaxed text-ink-muted">
+                Whiten, enhance, convert, merge and arrange student notes without sending your documents to a server.
+              </p>
             </div>
+
+            <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-7 gap-y-2 text-xs font-semibold text-ink-muted sm:grid-cols-3 sm:text-right">
+              <Link href="/tools/dark-print/" className="transition-colors hover:text-primary-soft">Dark Notes → Print</Link>
+              <Link href="/tools/n-up/" className="transition-colors hover:text-primary-soft">N-up PDF</Link>
+              <Link href="/tools/merge-pdf/" className="transition-colors hover:text-primary-soft">Merge PDF</Link>
+              <Link href="/tools/image-to-pdf/" className="transition-colors hover:text-primary-soft">Image → PDF</Link>
+              <a href="https://github.com/juyel-dev/Notes-Print-Optimizer" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary-soft">GitHub</a>
+              <a href="https://t.me/PrintOptimizer_chat" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary-soft">Discussions</a>
+              <a href="mailto:myself.juyel.dev@gmail.com" className="transition-colors hover:text-primary-soft">Contact</a>
+              <button
+                type="button"
+                onClick={() => {
+                  const btn = document.querySelector<HTMLButtonElement>('[aria-label="Toggle App Menu"]');
+                  btn?.click();
+                  setTimeout(() => {
+                    const legalHeader = document.getElementById('menu-header-legal');
+                    legalHeader?.click();
+                    legalHeader?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
+                className="text-left transition-colors hover:text-primary-soft"
+              >
+                Legal
+              </button>
+            </nav>
           </div>
-          <p className="mt-3 text-center text-[10px] leading-relaxed text-slate-600">
-            Built for NEET, JEE, Boards &amp; every student — any coaching platform&apos;s notes, one tap to
-            print.
-          </p>
+
+          <div className="mt-6 flex flex-col gap-1 border-t border-elevated/50 pt-4 text-[11px] text-ink-faint sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Juyel Hossain · JSL v1.0</p>
+            <p>Print Optimizer · Student Notes Suite · v37</p>
+          </div>
         </div>
       </footer>
         </div>

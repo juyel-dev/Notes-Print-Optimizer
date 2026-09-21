@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Download,
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CheckCircle2,
   RotateCcw,
-  Check,
 } from 'lucide-react';
 import { WorkflowUIProps } from './types';
 import { UploadArea } from '@/components/UploadArea';
@@ -18,23 +17,18 @@ import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { PageGrid } from '@/components/PageGrid';
 import { PageSequencePreview } from '@/components/PageSequencePreview';
 import { WhiteBoxEditor } from '@/components/whitebox/WhiteBoxEditor';
-import { InfoTooltip } from '@/components/InfoTooltip';
-import { GridFormatPicker } from '@/components/GridFormatPicker';
 import { Button } from '@/components/ui/Button';
 import { PhaseErrorBoundary } from '@/components/shared/PhaseErrorBoundary';
 import { CardSkeleton } from '@/components/shared/LoadingSkeleton';
 import { EmptyPhaseState } from '@/components/shared/EmptyPhaseState';
 import { buildExcludedSet } from '@/lib/workflow/phaseUtils';
-
-const FullPdfViewerPreview = dynamic(() => import('@/components/preview/FullPdfViewerPreview').then(m => m.FullPdfViewerPreview), {
-  loading: () => <CardSkeleton />,
-});
+import { PrintLayoutStep } from '@/components/layout/PrintLayoutStep';
+import { LayoutService } from '@/lib/services/LayoutService';
+import { ExportService } from '@/lib/services/ExportService';
+import type { NupOptions } from '@/lib/nup/nupLayout';
+import type { BuildResult } from '@/lib/nup/nupService';
 
 const FeedbackSection = dynamic(() => import('@/components/FeedbackSection').then(m => m.FeedbackSection), {
-  loading: () => <CardSkeleton />,
-});
-
-const MarginSettings = dynamic(() => import('@/components/MarginSettings').then(m => m.MarginSettings), {
   loading: () => <CardSkeleton />,
 });
 
@@ -71,14 +65,8 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
     masterParams,
     processingToggles,
     isPreviewProcessing,
-    layoutConfig,
-    layoutDirty,
-    finalSheetPreviews,
-    finalMetrics,
-    finalPrintPdfBlob,
     analysisTimeMs,
     optimizationTimeMs,
-    layoutTimeMs,
   } = state;
 
   const {
@@ -105,12 +93,6 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
     handleReprocess: onReprocess,
     handlePreviewReprocess: onPreviewReprocess,
     handleResetSettings: onResetSettings,
-    handleApplyLayout: onApplyLayout,
-    handleSelectLayoutFormat: onSelectLayoutFormat,
-    handleToggleOrientation: onToggleOrientation,
-    handleToggleBorders: onToggleBorders,
-    handleTogglePageNumbers: onTogglePageNumbers,
-    handleDownloadFinalPrintPdf: onDownloadFinalPrintPdf,
     handleProceedToPhase4: onProceedToPhase4,
     handleResetWorkflow: onResetWorkflow,
   } = handlers;
@@ -121,8 +103,70 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
 
   // Output name for the final print PDF, shared by phase 3 and phase 4 downloads.
   const [printBase, setPrintBase] = useState(() =>
-    uploadedItems[0]?.name ? uploadedItems[0].name.replace(/\.pdf$/i, '') : 'PW_Print_Ready_Notes',
+    uploadedItems[0]?.name ? uploadedItems[0].name.replace(/\.pdf$/i, '') : 'Print_Ready_Notes',
   );
+
+  // --- Phase 3 (Layout) local state ------------------------------------
+  // Deliberately NOT in the shared workflowReducer. Phase 3's entire input
+  // is flattenedLayoutInput (bytes produced from Phase 1/2's finalized
+  // active pages, computed once when entering Phase 3 — see
+  // handleProceedToLayout below); its entire output is layoutResult. No
+  // other phase reads or writes either piece, so Phase 3 (this component's
+  // use of PrintLayoutStep) can be modified/replaced independently of
+  // Phase 1/2, and vice versa — see PrintLayoutStep.tsx's own doc comment.
+  const [flattenedLayoutInput, setFlattenedLayoutInput] = useState<{ bytes: Uint8Array; pageCount: number } | null>(null);
+  const [flattenError, setFlattenError] = useState<string | null>(null);
+  const [layoutResult, setLayoutResult] = useState<{ result: BuildResult; opts: NupOptions } | null>(null);
+
+  const handleProceedToLayout = useCallback(async () => {
+    setFlattenError(null);
+    setFlattenedLayoutInput(null);
+    onProceedToPhase3();
+    try {
+      const activePages = LayoutService.getActivePages(processedPages, excludedPages);
+      if (activePages.length === 0) {
+        setFlattenError('All pages are excluded — include at least one page to continue.');
+        return;
+      }
+      const { PdfExporter } = await import('@/lib/optimizer/pdfExporter');
+      const { bytes, pageCount } = await PdfExporter.flattenActivePagesToPdf(activePages, {
+        keepOriginalPages,
+        manualWhiteBoxRegions,
+        mergedPdfBytes,
+      });
+      setFlattenedLayoutInput({ bytes, pageCount });
+    } catch (e: unknown) {
+      setFlattenError(e instanceof Error ? e.message : 'Failed to prepare pages for layout.');
+    }
+  }, [onProceedToPhase3, processedPages, excludedPages, keepOriginalPages, manualWhiteBoxRegions, mergedPdfBytes]);
+
+  const handleLayoutGenerated = useCallback((result: BuildResult, opts: NupOptions) => {
+    setLayoutResult({ result, opts });
+    onProceedToPhase4();
+  }, [onProceedToPhase4]);
+
+  const handleDownloadLayoutResult = useCallback(() => {
+    if (!layoutResult) return;
+    const clean = printBase.trim() || 'Print_Ready_Notes';
+    ExportService.downloadBlob(layoutResult.result.blob, `${clean}-PrintReady.pdf`);
+  }, [layoutResult, printBase]);
+
+  // Ink-saved % — a real metric, computed independently of the old grid
+  // engine (LayoutEngine/compileSheetsAndExportPdf), directly from
+  // processedPages' own before/after ink-coverage data. Same formula the
+  // old engine used internally; kept because it's genuinely useful,
+  // user-facing information, not decoration.
+  const inkSavedPct = useMemo(() => {
+    const activePages = LayoutService.getActivePages(processedPages, excludedPages);
+    if (activePages.length === 0) return null;
+    const avgBefore = activePages.reduce((s, p) => s + p.inkCoverageBeforePct, 0) / activePages.length;
+    const avgAfter = activePages.reduce(
+      (s, p) => s + (keepOriginalPages.has(p.pageIndex) ? p.inkCoverageBeforePct : p.inkCoverageAfterPct),
+      0,
+    ) / activePages.length;
+    if (avgBefore <= 0) return null;
+    return Math.max(0, Math.round(((avgBefore - avgAfter) / avgBefore) * 100));
+  }, [processedPages, excludedPages, keepOriginalPages]);
 
   // Manual region editor — which page is being edited (null = closed)
   const [editingPageIdx, setEditingPageIdx] = useState<number | null>(null);
@@ -291,7 +335,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={onProceedToPhase3}
+                  onClick={handleProceedToLayout}
                   disabled={isProcessing}
                   className="flex-1 md:flex-none"
                 >
@@ -310,139 +354,32 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
           />
         ))}
 
-      {/* PHASE 3: LAYOUT & GENERATE */}
+      {/* PHASE 3: LAYOUT & GENERATE — self-contained N-up step. Its entire
+          input is flattenedLayoutInput (produced above the moment Phase 2's
+          active pages are finalized); it has no knowledge of
+          excludedPages/keepOriginalPages/manualWhiteBoxRegions/mergedPdfBytes
+          or any other Phase 1/2 internals, and Phase 1/2 have no knowledge
+          of its N-up config shape either — see PrintLayoutStep.tsx. */}
       {currentPhase === 3 &&
         (processedPages.length > 0 ? (
           <PhaseErrorBoundary phaseName="Layout & Generate">
             <div className="animate-enter flex flex-col gap-4 md:gap-5">
-              <section className="flex flex-col gap-4 rounded-2xl border border-surface-2 bg-surface/90 p-3.5 shadow-lg sm:p-4 lg:p-5 sm:shadow-xl">
-                <div className="border-b border-surface-2 pb-2 sm:pb-3">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-xs font-bold text-ink sm:text-sm">N-Up Grid Format</h3>
-                    <InfoTooltip
-                      title="Grid Layout Benefits"
-                      content="Put several slides on one sheet to save paper and printing cost."
-                      position="right"
-                    />
-                  </div>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    Select page density per printed A4 sheet.
-                  </p>
-                </div>
-
-                <GridFormatPicker
-                  gridFormat={layoutConfig.gridFormat}
-                  onSelect={onSelectLayoutFormat}
+              {flattenError ? (
+                <EmptyPhaseState
+                  title="Couldn't prepare pages for layout"
+                  message={flattenError}
+                  onBack={() => setCurrentPhase(2)}
+                  backLabel="Back to Whiten"
                 />
-
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-2 pt-3 text-xs">
-                  <button
-                    type="button"
-                    onClick={onToggleOrientation}
-                    className="flex h-11 items-center gap-1.5 rounded-xl border border-elevated bg-surface-2 px-3 font-semibold text-ink hover:bg-elevated transition-colors"
-                  >
-                    Orientation: <strong className="text-primary-soft">{layoutConfig.orientation}</strong>
-                  </button>
-
-                  <div className="flex items-center gap-4 font-medium text-ink-muted">
-                    <label className="flex min-h-11 cursor-pointer select-none items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={layoutConfig.showSlideBorders}
-                        onChange={onToggleBorders}
-                        className="h-5 w-5 rounded-sm border-elevated text-primary-strong"
-                      />
-                      <span>Slide Borders</span>
-                    </label>
-
-                    <label className="flex min-h-11 cursor-pointer select-none items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={layoutConfig.showPageNumbers}
-                        onChange={onTogglePageNumbers}
-                        className="h-5 w-5 rounded-sm border-elevated text-primary-strong"
-                      />
-                      <span>Page Numbers</span>
-                    </label>
-                  </div>
-                </div>
-
-                <MarginSettings
-                  layoutConfig={layoutConfig}
-                  onUpdateOuterMargins={handlers.handleUpdateOuterMargins}
-                  onUpdateInnerMargin={handlers.handleUpdateInnerMargin}
-                />
-              </section>
-
-              {/* Apply layout */}
-              <div className="relative">
-                <Button
-                  fullWidth
-                  size="lg"
-                  variant={layoutDirty && !isProcessing ? 'primary' : 'secondary'}
-                  loading={isProcessing}
-                  disabled={!layoutDirty || isPreviewProcessing}
-                  onClick={onApplyLayout}
-                >
-                  {!isProcessing && <Check className={`h-4 w-4 ${layoutDirty ? '' : 'opacity-40'}`} />}
-                  {isProcessing ? 'Rendering Layout...' : layoutDirty ? 'Apply & Render Preview' : 'Layout Applied'}
-                </Button>
-                {layoutDirty && !isProcessing && (
-                  <span className="absolute -top-5 right-0 text-xs font-medium text-warning">Unsaved changes</span>
-                )}
-              </div>
-
-              {finalSheetPreviews.length > 0 && (
-                <FullPdfViewerPreview
-                  sheetPreviews={finalSheetPreviews}
-                  layoutConfig={layoutConfig}
-                  title="A4 Print Sheet Preview"
+              ) : (
+                <PrintLayoutStep
+                  flattenedPdfBytes={flattenedLayoutInput?.bytes ?? null}
+                  totalPages={flattenedLayoutInput?.pageCount ?? 0}
+                  onGenerated={handleLayoutGenerated}
+                  onBack={enhanceHandoffActive && onBackToEnhance ? onBackToEnhance : () => setCurrentPhase(2)}
+                  backLabel={enhanceHandoffActive && onBackToEnhance ? 'Back to Enhance' : 'Back to Whiten'}
                 />
               )}
-
-              {/* Output name — consumed by the Download button in the ActionBar */}
-              {finalPrintPdfBlob && (
-                <div className="rounded-2xl border border-surface-2 bg-surface/80 p-4">
-                  <FileNameField
-                    baseName={printBase}
-                    onChange={setPrintBase}
-                    suffix="-PrintReady.pdf"
-                    label="Print PDF filename"
-                  />
-                  <p className="mt-1.5 text-2xs text-ink-faint">Used by the Download button below.</p>
-                </div>
-              )}
-
-              <ActionBar>
-                {enhanceHandoffActive ? (
-                  onBackToEnhance && (
-                    <Button variant="secondary" size="md" onClick={onBackToEnhance}>
-                      <ArrowLeft className="h-4 w-4" /> Back to Enhance
-                    </Button>
-                  )
-                ) : (
-                  <Button variant="secondary" size="md" onClick={() => setCurrentPhase(2)}>
-                    <ArrowLeft className="h-4 w-4" /> Back
-                  </Button>
-                )}
-
-                <div className="flex flex-1 items-center justify-end gap-2 md:flex-none">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => onDownloadFinalPrintPdf(printBase)}
-                    disabled={!finalPrintPdfBlob}
-                    className="flex-1 md:flex-none"
-                  >
-                    <Download className="h-4 w-4" /> Download
-                  </Button>
-
-                  <Button variant="secondary" size="lg" onClick={onProceedToPhase4}>
-                    Finish
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </div>
-              </ActionBar>
             </div>
           </PhaseErrorBoundary>
         ) : (
@@ -456,7 +393,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
 
       {/* PHASE 4: DONE */}
       {currentPhase === 4 &&
-        (finalPrintPdfBlob ? (
+        (layoutResult ? (
           <PhaseErrorBoundary phaseName="Complete">
             <div className="animate-enter mx-auto flex max-w-xl flex-col items-center gap-5 text-center">
               <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-success-strong/30 bg-surface/90 p-6 shadow-lg sm:p-8 sm:shadow-xl">
@@ -471,18 +408,24 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                   Your notes have been stripped of dark backgrounds, sharpened, and formatted for paper-saving printouts.
                 </p>
 
-                {finalMetrics && (
+                {inkSavedPct !== null && (
                   <div className="mt-2 flex items-center gap-2 text-xs font-bold">
-                    <span className="rounded-lg border border-success-strong/30 bg-success-strong/20 px-3 py-1 text-success-soft">
-                      Paper Saved: ~75%
-                    </span>
                     <span className="rounded-lg border border-primary/30 bg-primary/20 px-3 py-1 text-primary-soft">
-                      Ink Saved: ~{finalMetrics.inkSavedPct}%
+                      Ink Saved: ~{inkSavedPct}%
                     </span>
                   </div>
                 )}
 
-                <Button variant="secondary" size="md" onClick={() => onDownloadFinalPrintPdf(printBase)}>
+                <div className="mt-1 w-full max-w-xs">
+                  <FileNameField
+                    baseName={printBase}
+                    onChange={setPrintBase}
+                    suffix="-PrintReady.pdf"
+                    label="Print PDF filename"
+                  />
+                </div>
+
+                <Button variant="secondary" size="md" onClick={handleDownloadLayoutResult}>
                   <Download className="h-4 w-4" />
                   Download Print PDF Again
                 </Button>
@@ -495,17 +438,27 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                 uploadedFileSizesMB={uploadedItems.map((item) => (item.file?.size || 0) / (1024 * 1024))}
                 mergedPdfSizeMB={(mergedPdfBlob?.size || 0) / (1024 * 1024)}
                 totalInputPages={processedPages.length || mergedPageDataUrls.length}
-                totalOutputPages={finalSheetPreviews.length}
+                totalOutputPages={layoutResult.result.sheets}
                 excludedPagesCount={excludedPages.size}
                 totalOriginalSizeMB={
                   uploadedItems.reduce((acc, item) => acc + (item.file?.size || 0), 0) / (1024 * 1024)
                 }
-                finalMetrics={finalMetrics}
-                layoutConfig={layoutConfig}
-                finalPrintPdfBlob={finalPrintPdfBlob}
+                finalMetrics={{
+                  totalOptimizedSizeMB: layoutResult.result.blob.size / (1024 * 1024),
+                  inkSavedPct: inkSavedPct ?? 0,
+                  processingTimeMs: layoutResult.result.ms,
+                }}
+                layoutConfig={{
+                  gridFormat: layoutResult.opts.format,
+                  paperSize: layoutResult.opts.paper,
+                  orientation: layoutResult.opts.orientation,
+                  showSlideBorders: layoutResult.opts.borders,
+                  showPageNumbers: layoutResult.opts.numbers,
+                }}
+                finalPrintPdfBlob={layoutResult.result.blob}
                 analysisTimeMs={analysisTimeMs}
                 optimizationTimeMs={optimizationTimeMs}
-                layoutTimeMs={layoutTimeMs}
+                layoutTimeMs={layoutResult.result.ms}
               />
 
               <Button variant="secondary" size="md" onClick={onResetWorkflow}>
