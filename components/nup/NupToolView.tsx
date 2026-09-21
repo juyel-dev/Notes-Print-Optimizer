@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Check,
   Download,
+  FileCheck2,
   FileText,
   Grid2x2Check,
   Loader2,
@@ -24,7 +25,7 @@ import {
   type NupOrientation,
   type NupPaper,
 } from '@/lib/nup/nupLayout';
-import { buildNup, loadNupDeps, mergeBytes, type BuildResult } from '@/lib/nup/nupService';
+import { buildNup, buildOriginalPassthrough, loadNupDeps, mergeBytes, type BuildResult } from '@/lib/nup/nupService';
 import { NupLivePreview } from './NupLivePreview';
 
 export interface NupToolViewProps {
@@ -66,12 +67,18 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
   const [innerMm, setInnerMm] = useState(3);
   const [borders, setBorders] = useState(true);
   const [numbers, setNumbers] = useState(true);
+  // "Same as original" — skip the N-up grid, hand merged pages back untouched.
+  const [sameAsOriginal, setSameAsOriginal] = useState(false);
   const [result, setResult] = useState<BuildResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const opts: NupOptions = useMemo(
     () => ({ format, paper, orientation, margins: { outer: outerMm, inner: innerMm }, borders, numbers }),
     [format, paper, orientation, outerMm, innerMm, borders, numbers],
+  );
+  const previewOpts: NupOptions = useMemo(
+    () => (sameAsOriginal ? { ...opts, format: '1x1', borders: false, numbers: false } : opts),
+    [sameAsOriginal, opts],
   );
   const grid = useMemo(() => nupGrid(format, orientation), [format, orientation]);
   const perSheet = grid.cols * grid.rows;
@@ -165,6 +172,11 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
     setBusy(true);
     setError(null);
     try {
+      if (sameAsOriginal) {
+        setResult(buildOriginalPassthrough(mergedBytes, totalPages));
+        setStep('done');
+        return;
+      }
       const r = await buildNup(mergedBytes, opts, (d, t) => setProgress(`Building sheet ${d}/${t}…`));
       setResult(r);
       setStep('done');
@@ -189,7 +201,9 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
     if (!result) return;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(result.blob);
-    a.download = `n-up-${format}-${paper.toLowerCase()}-${orientation.toLowerCase()}.pdf`;
+    a.download = sameAsOriginal
+      ? 'original-pages.pdf'
+      : `n-up-${format}-${paper.toLowerCase()}-${orientation.toLowerCase()}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -298,11 +312,17 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
           <section aria-label="Layout options" className="rounded-2xl border border-surface-2 bg-surface/90 p-3.5 shadow-lg sm:p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-ink">Pages per sheet</span>
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary-soft">
-                {totalPages} → {totalSheets} sheet{totalSheets === 1 ? '' : 's'}
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${
+                sameAsOriginal
+                  ? 'border-success-strong/40 bg-success-strong/15 text-success-soft'
+                  : 'border-primary/30 bg-primary/10 text-primary-soft'
+              }`}>
+                {sameAsOriginal
+                  ? `${totalPages} original page${totalPages === 1 ? '' : 's'} · no layout`
+                  : `${totalPages} → ${totalSheets} sheet${totalSheets === 1 ? '' : 's'}`}
               </span>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5" role="radiogroup" aria-label="N-up format">
+            <div className={`mt-2 grid grid-cols-3 gap-2 transition-opacity sm:grid-cols-5 ${sameAsOriginal ? 'pointer-events-none opacity-40 select-none' : ''}`} role="radiogroup" aria-label="N-up format" aria-disabled={sameAsOriginal}>
               {NUP_FORMATS.map((o) => (
                 <button key={o.format} type="button" role="radio" aria-checked={format === o.format} onClick={() => setFormat(o.format)}
                   className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-2.5 transition active:scale-[0.97] ${
@@ -340,9 +360,20 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
                   ))}
                 </div>
               </div>
+              <div role="group" aria-label="Output style" className="flex flex-col gap-1.5 sm:ml-auto">
+                <span className="text-xs font-bold text-ink-muted">Output</span>
+                <div className="inline-flex rounded-full border border-elevated bg-surface-2/50 p-0.5">
+                  <button type="button" onClick={() => setSameAsOriginal((v) => !v)} aria-pressed={sameAsOriginal}
+                    title="Skip the N-up grid — download every page exactly as it is"
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold transition active:scale-[0.97] ${sameAsOriginal ? 'bg-success-strong text-white shadow-sm' : 'text-ink-muted hover:text-ink'}`}>
+                    <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Same as original
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-surface-2 pt-3">
+            <div className={`mt-4 grid grid-cols-2 gap-4 border-t border-surface-2 pt-3 transition-opacity ${sameAsOriginal ? 'pointer-events-none opacity-40 select-none' : ''}`} aria-disabled={sameAsOriginal}>
               <label className="block">
                 <span className="flex items-center justify-between text-xs font-bold text-ink-muted">
                   Outer margin <span className="tabular-nums text-primary-soft">{outerMm} mm</span>
@@ -361,7 +392,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
               </label>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-surface-2 pt-3">
+            <div className={`mt-3 flex flex-wrap items-center gap-3 border-t border-surface-2 pt-3 transition-opacity ${sameAsOriginal ? 'pointer-events-none opacity-40 select-none' : ''}`} aria-disabled={sameAsOriginal}>
               <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink">
                 <input type="checkbox" checked={borders} onChange={(e) => setBorders(e.target.checked)} className="h-4 w-4 rounded border-elevated accent-[var(--color-primary)]" /> Cell borders
               </label>
@@ -379,7 +410,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
               </button>
               <button type="button" onClick={generate} disabled={busy || totalPages === 0}
                 className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary active:scale-[0.98] disabled:opacity-40">
-                {busy ? (<><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{progress ?? 'Building…'}</>) : (`Generate ${perSheet}-up PDF`)}
+                {busy ? (<><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{progress ?? 'Building…'}</>) : sameAsOriginal ? (<><Download className="h-4 w-4" aria-hidden="true" />Download original PDF</>) : (`Generate ${perSheet}-up PDF`)}
               </button>
             </div>
           </section>
@@ -389,17 +420,26 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-ink">Live preview</span>
               <span className="rounded-full border border-elevated bg-surface-2/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-ink-muted">
-                {orientation === 'LANDSCAPE' ? 'landscape' : 'portrait'} · your pages
+                {sameAsOriginal ? 'original · your pages' : `${orientation === 'LANDSCAPE' ? 'landscape' : 'portrait'} · your pages`}
               </span>
             </div>
 
-            <NupLivePreview mergedBytes={mergedBytes} opts={opts} totalPages={totalPages} />
+            <NupLivePreview mergedBytes={mergedBytes} opts={previewOpts} totalPages={totalPages} />
 
             <ul className="flex flex-col gap-1 border-t border-surface-2 pt-2 text-[11px] leading-relaxed text-ink-muted">
-              <li className="flex justify-between"><span>Format</span><span className="font-bold text-ink">{perSheet} per sheet · {grid.cols}×{grid.rows}</span></li>
-              <li className="flex justify-between"><span>Cell size</span><span className="font-bold tabular-nums text-ink">{Math.round(planSheet(opts).cellW / 2.8346)}×{Math.round(planSheet(opts).cellH / 2.8346)} mm</span></li>
-              <li className="flex justify-between"><span>Margins</span><span className="font-bold tabular-nums text-ink">{outerMm} mm outer · {innerMm} mm gap</span></li>
-              <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} pages → {totalSheets} sheets</span></li>
+              {sameAsOriginal ? (
+                <>
+                  <li className="flex justify-between"><span>Format</span><span className="font-bold text-ink">Original 1:1 · no layout</span></li>
+                  <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} page{totalPages === 1 ? '' : 's'} unchanged</span></li>
+                </>
+              ) : (
+                <>
+                  <li className="flex justify-between"><span>Format</span><span className="font-bold text-ink">{perSheet} per sheet · {grid.cols}×{grid.rows}</span></li>
+                  <li className="flex justify-between"><span>Cell size</span><span className="font-bold tabular-nums text-ink">{Math.round(planSheet(opts).cellW / 2.8346)}×{Math.round(planSheet(opts).cellH / 2.8346)} mm</span></li>
+                  <li className="flex justify-between"><span>Margins</span><span className="font-bold tabular-nums text-ink">{outerMm} mm outer · {innerMm} mm gap</span></li>
+                  <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} pages → {totalSheets} sheets</span></li>
+                </>
+              )}
             </ul>
           </section>
         </div>
@@ -416,7 +456,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-sm font-bold text-ink">{result.sheets} sheet{result.sheets === 1 ? '' : 's'} ready · {perSheet}-up · {paper} {orientation.toLowerCase()}</p>
+            <p className="text-sm font-bold text-ink">{result.sheets} {sameAsOriginal ? `original page${result.sheets === 1 ? '' : 's'} ready · no layout` : `sheet${result.sheets === 1 ? '' : 's'} ready · ${perSheet}-up · ${paper} ${orientation.toLowerCase()}`}</p>
             <p className="text-xs tabular-nums text-ink-muted">{totalPages} pages → {result.sheets} sheets · {fmtBytes(result.blob.size)} · built in {(result.ms / 1000).toFixed(1)}s</p>
           </div>
           <div className="mt-4 flex gap-2">
@@ -429,7 +469,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
               <RotateCcw className="h-4 w-4" aria-hidden="true" /> Again
             </button>
           </div>
-          <p className="mt-2 text-center text-[11px] text-ink-faint">Vector output — text stays razor-sharp at any print size.</p>
+          <p className="mt-2 text-center text-[11px] text-ink-faint">{sameAsOriginal ? 'Untouched pages — exactly as uploaded, just merged.' : 'Vector output — text stays razor-sharp at any print size.'}</p>
         </section>
       )}
     </div>
