@@ -1,14 +1,15 @@
 # Scalable Hybrid Architecture — Implementation Spec
-> **Version 1.0 — 2026-09-01 — Status: DRAFT (awaiting approval)**
+> **Version 1.1 — 2026-09-21 — Status: DRAFT (awaiting approval)**
 > **Principle: One-by-one, perfect each step, future-proof from day 1.** No big-bang.
+> **v1.1 note:** v1.0 assumed `static export` as the starting point. Since then PR #73 already migrated the app to hybrid (`output:'export'` removed, `.next/` + `next start`, see `docs/hybrid-architecture-migration.md`) and PR #74 replaced dark-print Step 3 with the standalone N-up engine. Phase 1 below is updated: the config-removal step is DONE, the micro-API routes are still open.
 
 ---
 
 ## 0. Purpose & How to Use This Spec
 
-**For:** `juyel-dev/Notes-Print-Optimizer` — current `static export` (12 tools, `sw.js v37`, `340KB` First Load, 100% offline) → **scalable hybrid** (static core + serverless backend) to support 100+ tools + 7 future pillars without rewrite.
+**For:** `juyel-dev/Notes-Print-Optimizer` — current `hybrid` (12 tools, `sw.js v37`, `340KB` First Load, 100% offline; `output:'export'` already removed by PR #73) → **scalable hybrid** (static core + serverless backend) to support 100+ tools + 7 future pillars without rewrite.
 
-**How:** Each **Phase = 1 PR, 1 checklist, 1 gate**. Merge only when `tsc + lint + vitest (436) + build + smoke + lighthouse` green. No parallel phases. Review after each phase.
+**How:** Each **Phase = 1 PR, 1 checklist, 1 gate**. Merge only when `tsc + lint + vitest (443, measured 2026-09-21) + build + smoke + lighthouse` green. No parallel phases. Review after each phase.
 
 **Future demands this spec already covers (from Juyel's 2-year plan):**
 `WebRTC study rooms | Print shop API + Global network (50+ cities) | Plugin SDK + Marketplace | Pro (Stripe) | White-label (institute branding) | AI study assistant | + analytics/ads/online features`
@@ -19,7 +20,7 @@
 
 | Dimension | Current (static) | Target (scalable hybrid) | Why |
 |---|---|---|---|
-| **Deploy** | `next.config.ts: output:'export'` → `out/` static → Vercel static / GitHub Pages | **Hybrid:** `output` removed, `app/(app)/tools/*` stays `force-static` (SSG), `app/api/*` is serverless (Node/Edge). Same `out/` for core, `vercel.json` routes API. | Offline core + online features co-exist |
+| **Deploy** | ~~`next.config.ts: output:'export'` → `out/` static → Vercel static / GitHub Pages~~ **DONE (PR #73):** `output` removed, `.next/` + `next start`, all 20 pages prerendered static by default | **Scalable hybrid:** `app/(app)/tools/*` stays `force-static` (SSG), `app/api/*` is serverless (Node/Edge). `vercel.json` routes API. | Offline core + online features co-exist |
 | **Bundle** | `ToolsBox` imports all 12 registries → 340KB shared | **Per-tool dynamic `import()`** → 340KB stays even at 120 tools. Heavy libs (pdfjs, qr) lazy. | 100+ tools without bag weight |
 | **Registry** | `lib/tools/registry.ts` 12 entries in bundle | **Light registry (metadata) + `public/tools/<slug>.json` heavy** + `tier: 'free'|'pro'` + `plugin: boolean` | Plugin SDK + Pro gating = 1 line |
 | **SW** | `public/sw.js v37` precaches 12/12 | **Core precache (/, /offline/, top 8) + runtime cache** for rest (stale-while-revalidate, 50MB quota) | 100 tools → no 50MB quota blow |
@@ -59,24 +60,24 @@
 - [ ] **0.4** Add `lib/tools/registry.ts` fields (non-breaking, default `free`): `tier?: 'free'|'pro'`, `plugin?: boolean`, `apiVersion?: 'v1'` — keep 12 entries as `tier:'free'`
 - [ ] **0.5** Add test `tests/unit/features.test.ts` — flags parse, tenant fallback
 - [ ] **0.6** Update `README.md §10`, `AGENT.md §3` — document `features.ts` + `tenant.ts` contract
-- [ ] **Gate:** `tsc 0` `lint 0 err` `vitest 436` `build 20/20` `smoke 22` `lighthouse pass` — **no bundle size increase**
+- [ ] **Gate:** `tsc 0` `lint 0 err` `vitest 443` `build 20/20` `smoke 22` `lighthouse pass` — **no bundle size increase**
 
 **Future-proof note:** Every later phase will gate behind `features.<flag>` — we can ship Pro/AI code but keep flag `false` until ready.
 
 ---
 
-### Phase 1 — Hybrid Skeleton (1 PR, 2 days) — **THE CRITICAL MIGRATION**
-*Goal: Static → Hybrid without breaking offline. This is the only PR that touches `next.config.ts`.*
+### Phase 1 — Hybrid Skeleton (1 PR, 2 days) — **THE CRITICAL MIGRATION — config half DONE (PR #73), API routes still open**
+*Goal: Static → Hybrid without breaking offline. The `next.config.ts` half is already merged; this phase now only adds the micro-API skeleton.*
 
-- [ ] **1.1** `next.config.ts`: remove `output:'export'`, add `// Hybrid: app/(app) is static, app/api is serverless — do not re-add output:'export' without RFC` comment. Keep `trailingSlash:true` (SW relies).
+- [x] **1.1** ~~`next.config.ts`: remove `output:'export'`~~ **DONE via PR #73** (plus `lighthouserc.json`/`playwright.config.ts` `next start` switch, postbuild scan-all-dirs fix). Keep `trailingSlash:true` (SW relies). Rule stands: do not re-add `output:'export'` without RFC.
 - [ ] **1.2** Create `app/api/health/route.ts` — `GET → { ok:true, version:'1.0' }` — proves serverless works, no DB
 - [ ] **1.3** Create `app/api/analytics/route.ts` — `POST { event, tool, anonId }` → log to `console` + `Vercel Analytics` stub (no PII, respects `features.analytics` flag). Offline → queue in `localStorage` + sync on `online` event (future)
 - [ ] **1.4** Create `app/api/ads-config/route.ts` — `GET → { enabled: features.ads, slots: [] }` — empty now, but ad network can be plugged later without app redeploy (just env)
-- [ ] **1.5** `vercel.json` — already has headers (PR #66), add `rewrites` if needed (none now, keep static `out/` compatibility)
+- [ ] **1.5** `vercel.json` — already has headers (PR #66), add `rewrites`/`routes` for `/api/*` when the first route lands (none now)
 - [ ] **1.6** `app/layout.tsx` CSP — keep `unsafe-inline` (PR #69 lesson) — add comment `// Hybrid: CSP stays unsafe-inline until nonce-per-inline-script is feasible for static RSC`
 - [ ] **1.7** `public/sw.js` — add comment `// Hybrid: /api/* never cached by SW (see fetch handler bypass)` — ensure `fetch` handler returns `fetch(event.request)` for `url.pathname.startsWith('/api/')`
 - [ ] **1.8** Update `README.md §2` (topology: Vercel now hybrid, not just static), `SECURITY.md` (new `/api/*` invariants)
-- [ ] **Gate:** `build` must produce **both** `out/` for static + `.vercel/output` for API (check `vercel build` locally if possible, else `next build` still succeeds). `smoke` with `npx serve out` still 22 pass. New `health` endpoint `curl /api/health` 200.
+- [ ] **Gate:** `next build` 20/20 static + `npm run start` boots (`Ready in` pattern). `smoke` still 22 pass. New `health` endpoint `curl /api/health` 200.
 
 **Future-proof note:** After this, every online feature is just a new `app/api/<domain>/v1/route.ts` — no more `next.config.ts` changes.
 
@@ -132,7 +133,7 @@ Each has its own `features.<flag>` — ship code with flag `false`, flip when re
 
 | Risk | Mitigation | Checkpoint |
 |---|---|---|
-| `next.config.ts` hybrid breaks `npx serve out` (offline) | Phase 1 keeps `trailingSlash` + `sw.js` bypass for `/api/*`, `smoke` must still pass with `serve out` | Phase 1 gate |
+| `next.config.ts` hybrid breaks offline (`npx serve out` era is over — PR #73) | Phase 1 keeps `trailingSlash` + `sw.js` bypass for `/api/*`, `smoke` must still pass against `next start` | Phase 1 gate |
 | Bundle bloat at 100 tools | Phase 2 dynamic + light registry + analyzer budget 400KB | Phase 2 gate |
 | CSP again blocks inline scripts (PR #69 repeat) | Keep `unsafe-inline` until nonce-per-script, `csp.test.ts` guards it | Every PR `csp.test` |
 | Analytics breaks privacy (static → not) | `SECURITY.md` per-API invariant, no PDF leaves device, analytics only `{tool, event}` | Phase 3 review |
