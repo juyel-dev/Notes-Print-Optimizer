@@ -19,12 +19,31 @@ import {
   X,
 } from 'lucide-react';
 
-import { LayoutConfig, OptimizationMetrics } from '@/lib/optimizer/types';
 import { FeedbackCategory, FeedbackUserInput, PdfStats, ProcessingSettings } from '@/lib/feedback/types';
 import { buildFeedbackPayload } from '@/lib/feedback/payloadBuilder';
 import { sendFeedbackToGas } from '@/lib/feedback/gasClient';
 import { GOOGLE_APPS_SCRIPT_CODE } from '@/lib/feedback/gasScriptTemplate';
 import { useDialogFocus } from '@/lib/ui/useDialogFocus';
+
+// Deliberately narrower than the full LayoutConfig/OptimizationMetrics types
+// — this component only ever reads these 7 fields for diagnostics, so its
+// props shouldn't force every caller to depend on those larger shared
+// types (or construct fake zeroed-out fields just to satisfy them). Both
+// LayoutConfig and the N-up-based layout step's own NupOptions/BuildResult
+// are structurally compatible with these narrower shapes via a small
+// adapter at the call site — see WorkflowView.tsx.
+interface FeedbackDiagnosticMetrics {
+  totalOptimizedSizeMB: number;
+  inkSavedPct: number;
+  processingTimeMs?: number;
+}
+interface FeedbackDiagnosticLayout {
+  gridFormat: string;
+  paperSize: string;
+  orientation: string;
+  showSlideBorders: boolean;
+  showPageNumbers: boolean;
+}
 
 interface FeedbackSectionProps {
   currentPhase: number;
@@ -36,8 +55,8 @@ interface FeedbackSectionProps {
   totalOutputPages: number;
   excludedPagesCount: number;
   totalOriginalSizeMB: number;
-  finalMetrics: OptimizationMetrics | null;
-  layoutConfig: LayoutConfig;
+  finalMetrics: FeedbackDiagnosticMetrics | null;
+  layoutConfig: FeedbackDiagnosticLayout | null;
   finalPrintPdfBlob: Blob | null;
   analysisTimeMs?: number;
   optimizationTimeMs?: number;
@@ -139,11 +158,11 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
 
   // Compile Processing Settings
   const getProcessingSettings = (): ProcessingSettings => ({
-    gridFormat: layoutConfig.gridFormat,
-    paperSize: layoutConfig.paperSize,
-    orientation: layoutConfig.orientation,
-    showBorders: layoutConfig.showSlideBorders,
-    showPageNumbers: layoutConfig.showPageNumbers,
+    gridFormat: layoutConfig?.gridFormat ?? 'n/a',
+    paperSize: layoutConfig?.paperSize ?? 'n/a',
+    orientation: layoutConfig?.orientation ?? 'n/a',
+    showBorders: layoutConfig?.showSlideBorders ?? false,
+    showPageNumbers: layoutConfig?.showPageNumbers ?? false,
   });
 
   // Handle Submit
@@ -423,7 +442,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
           </div>
           <h4 className="text-sm font-bold text-success-soft">Thank you for your feedback!</h4>
           <p className="text-xs text-success-soft/80 max-w-md">
-            Your rating and diagnostics have been sent to our Telegram channel. Your feedback directly helps us improve PW Notes Print Optimizer.
+            Your rating and diagnostics have been sent to our Telegram channel. Your feedback directly helps us improve Notes Print Optimizer.
           </p>
           <button
             type="button"

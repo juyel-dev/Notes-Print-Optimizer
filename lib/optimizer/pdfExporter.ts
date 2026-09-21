@@ -178,6 +178,97 @@ export class PdfExporter {
     return { jpegBuffer, width, height };
   }
 
+  /**
+   * Resolves the FINAL image to draw for one page — the exact per-page
+   * decision (kept-original swap, manual white-box region compositing,
+   * fallback to the plain processed bitmap) that used to live inline
+   * inside compileSheetsAndExportPdf's chunk loop. Extracted so the grid
+   * composer AND flattenActivePagesToPdf (the step-2 -> step-3 boundary
+   * for the N-up-based layout step) share one implementation of this
+   * logic instead of two copies that could drift.
+   */
+  public static async resolveFinalPageImage(
+    p: ProcessedPage,
+    opts?: { keepOriginalPages?: Set<number>; manualWhiteBoxRegions?: Record<number, import('../kernels/whiteBox').WhiteBoxRegion[]>; mergedPdfBytes?: Uint8Array | null },
+  ): Promise<ImageData> {
+    const keepOriginal = opts?.keepOriginalPages;
+    const manualRegions = opts?.manualWhiteBoxRegions;
+    const mergedBytes = opts?.mergedPdfBytes ?? null;
+
+    if (keepOriginal?.has(p.pageIndex) && mergedBytes) {
+      try {
+        return await this.loadOriginalImageData(p, mergedBytes, p.width);
+      } catch (err) {
+        console.warn(`[export] Original render failed for page ${p.pageIndex + 1}, using processed:`, err);
+      }
+    }
+    const img = await this.loadPageImageDataOrBlank(p);
+    const userRects = manualRegions?.[p.pageIndex];
+    if (userRects && userRects.length > 0 && mergedBytes && !keepOriginal?.has(p.pageIndex)) {
+      try {
+        // Render original at same width → same scale. orig is FULL-page,
+        // img is CROPPED (if banner crop >0). Compute cropped height for
+        // dimension check and pass cropTopPx so cropped regions map to
+        // full src: srcRow = y + cropTopPx.
+        const orig = await this.loadOriginalImageData(p, mergedBytes, img.width);
+        const cTop = Math.floor(orig.height * ((p.parameters.bannerCropTopPct ?? 0) / 100));
+        const cBot = Math.floor(orig.height * ((p.parameters.bannerCropBottomPct ?? 0) / 100));
+        const croppedH = orig.height - cTop - cBot;
+        const wDiff = Math.abs(orig.width - img.width);
+        const hDiff = Math.abs(croppedH - img.height);
+        const { compositeWhiteBoxRegions, denormalizeRegions } = await import('../kernels/whiteBox');
+        if (wDiff > 2 || hDiff > 2) {
+          console.warn(`[export] Dimension mismatch for manual composite page ${p.pageIndex + 1}: opt ${img.width}x${img.height} vs orig cropped ${orig.width}x${croppedH} (full ${orig.width}x${orig.height} cTop=${cTop} cBot=${cBot}) wDiff=${wDiff} hDiff=${hDiff} — compositing anyway`);
+        }
+        // Manual regions stored NORMALIZED (grid ratio) → denormalize to current img pixels
+        // Back-compat: pixel regions (width>=12) pass through unchanged
+        const pixelRects = denormalizeRegions(userRects, img.width, img.height);
+        compositeWhiteBoxRegions(img.data, orig.data, img.width, img.height, pixelRects, cTop);
+      } catch (err) {
+        console.warn(`[export] Manual region composite failed for page ${p.pageIndex + 1}:`, err);
+      }
+    }
+    return img;
+  }
+
+  /**
+   * Step-2 -> step-3 boundary for the N-up-based layout step. Resolves
+   * every active page to its FINAL image (same per-page rules as the grid
+   * composer, via resolveFinalPageImage) and embeds each as its own
+   * full-size PDF page — no grid, no margins, no borders, no page numbers.
+   * Those all get added exactly once, later, by the N-up engine
+   * (lib/nup/nupLayout.ts + nupService.ts's buildNup) — this function's
+   * only job is producing one clean, final, single PDF that buildNup can
+   * treat as its plain single-document input, so the layout step never
+   * needs to know about excludedPages/keepOriginalPages/manualWhiteBox
+   * Regions at all.
+   */
+  public static async flattenActivePagesToPdf(
+    activePages: ProcessedPage[],
+    opts?: { keepOriginalPages?: Set<number>; manualWhiteBoxRegions?: Record<number, import('../kernels/whiteBox').WhiteBoxRegion[]>; mergedPdfBytes?: Uint8Array | null },
+    onProgress?: (current: number, total: number) => void,
+  ): Promise<{ bytes: Uint8Array; pageCount: number }> {
+    const pdfDoc = await PDFDocument.create();
+    for (let i = 0; i < activePages.length; i++) {
+      if (onProgress) onProgress(i + 1, activePages.length);
+      const imageData = await this.resolveFinalPageImage(activePages[i], opts);
+      const canvas = memoryManager.acquireCanvas(imageData.width, imageData.height);
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        ctx.putImageData(imageData, 0, 0);
+        const jpegBlob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.9));
+        if (jpegBlob && jpegBlob.size > 0) {
+          const embedded = await pdfDoc.embedJpg(await jpegBlob.arrayBuffer());
+          const pdfPage = pdfDoc.addPage([canvas.width, canvas.height]);
+          pdfPage.drawImage(embedded, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+        }
+      }
+      memoryManager.disposeCanvas(canvas);
+      await memoryManager.yieldToUI();
+    }
+    return { bytes: await pdfDoc.save(), pageCount: pdfDoc.getPageCount() };
+  }
+
   public static async compileSheetsAndExportPdf(
     activePages: ProcessedPage[],
     layoutConfig: LayoutConfig,
@@ -185,8 +276,6 @@ export class PdfExporter {
     opts?: { keepOriginalPages?: Set<number>; manualWhiteBoxRegions?: Record<number, import('../kernels/whiteBox').WhiteBoxRegion[]>; mergedPdfBytes?: Uint8Array | null },
   ): Promise<{ finalPdfBlob: Blob; sheetPreviews: string[]; metrics: OptimizationMetrics }> {
     const startTime = performance.now();
-    const keepOriginal = opts?.keepOriginalPages;
-    const mergedBytes = opts?.mergedPdfBytes ?? null;
     const { totalPerSheet } = LayoutEngine.getGridDimensions(layoutConfig.gridFormat);
     const totalSheets = Math.ceil(activePages.length / totalPerSheet);
     const sheetPreviews: string[] = [];
@@ -203,44 +292,9 @@ export class PdfExporter {
       /* Pinned pages render from the ORIGINAL merged PDF (pure source swap,
          zero reprocessing). Manual white-box regions are composited on top
          of the optimized bitmap (original pixels pasted back per rect/ellipse).
-         Falls back to the processed bitmap if any render fails. */
-      const manualRegions = opts?.manualWhiteBoxRegions;
-      const chunkImages = await Promise.all(chunk.map(async (p) => {
-        if (keepOriginal?.has(p.pageIndex) && mergedBytes) {
-          try {
-            return await this.loadOriginalImageData(p, mergedBytes, p.width);
-          } catch (err) {
-            console.warn(`[export] Original render failed for page ${p.pageIndex + 1}, using processed:`, err);
-          }
-        }
-        const img = await this.loadPageImageDataOrBlank(p);
-        const userRects = manualRegions?.[p.pageIndex];
-        if (userRects && userRects.length > 0 && mergedBytes && !keepOriginal?.has(p.pageIndex)) {
-          try {
-            // Render original at same width → same scale. orig is FULL-page,
-            // img is CROPPED (if banner crop >0). Compute cropped height for
-            // dimension check and pass cropTopPx so cropped regions map to
-            // full src: srcRow = y + cropTopPx.
-            const orig = await this.loadOriginalImageData(p, mergedBytes, img.width);
-            const cTop = Math.floor(orig.height * ((p.parameters.bannerCropTopPct ?? 0) / 100));
-            const cBot = Math.floor(orig.height * ((p.parameters.bannerCropBottomPct ?? 0) / 100));
-            const croppedH = orig.height - cTop - cBot;
-            const wDiff = Math.abs(orig.width - img.width);
-            const hDiff = Math.abs(croppedH - img.height);
-            const { compositeWhiteBoxRegions, denormalizeRegions } = await import('../kernels/whiteBox');
-            if (wDiff > 2 || hDiff > 2) {
-              console.warn(`[export] Dimension mismatch for manual composite page ${p.pageIndex + 1}: opt ${img.width}x${img.height} vs orig cropped ${orig.width}x${croppedH} (full ${orig.width}x${orig.height} cTop=${cTop} cBot=${cBot}) wDiff=${wDiff} hDiff=${hDiff} — compositing anyway`);
-            }
-            // Manual regions stored NORMALIZED (grid ratio) → denormalize to current img pixels
-            // Back-compat: pixel regions (width>=12) pass through unchanged
-            const pixelRects = denormalizeRegions(userRects, img.width, img.height);
-            compositeWhiteBoxRegions(img.data, orig.data, img.width, img.height, pixelRects, cTop);
-          } catch (err) {
-            console.warn(`[export] Manual region composite failed for page ${p.pageIndex + 1}:`, err);
-          }
-        }
-        return img;
-      }));
+         Falls back to the processed bitmap if any render fails. Shared with
+         flattenActivePagesToPdf via resolveFinalPageImage — see that method. */
+      const chunkImages = await Promise.all(chunk.map((p) => this.resolveFinalPageImage(p, opts)));
 
       const { jpegBuffer, width, height } = await this.composeSheetWithWorker(
         chunk, chunkImages, si, totalSheets, layoutConfig
@@ -269,6 +323,7 @@ export class PdfExporter {
     const pdfBytes = await pdfDoc.save();
     const finalPdfBlob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const elapsedMs = Math.round(performance.now() - startTime);
+    const keepOriginal = opts?.keepOriginalPages;
     /* Pinned-original pages save no ink — their "after" equals "before". */
     const avgBefore = activePages.reduce((s, p) => s + p.inkCoverageBeforePct, 0) / activePages.length;
     const avgAfter = activePages.reduce(

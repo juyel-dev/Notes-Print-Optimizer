@@ -1,12 +1,11 @@
 /**
- * Postbuild: neutralize the Next.js dev overlay from the static export.
+ * Postbuild: neutralize the Next.js dev overlay from the production build.
  *
  * Next.js 15.5.x has a bug where `next/dist/compiled/next-devtools` (~217 kB)
  * is unconditionally bundled into production builds via app-index.js with no
  * NODE_ENV guard. It renders nothing in production (no dev server to talk to)
- * but still downloads on every page. Since this is a static export
- * (`output: 'export'`) with no dev overlay functionality, we neutralize it
- * here.
+ * but still downloads on every page. We neutralize it here regardless of
+ * build mode.
  *
  * IMPORTANT: we must NOT delete the chunk. `main-app` (and every route chunk)
  * declares the devtools chunk as a webpack chunk dependency
@@ -18,18 +17,45 @@
  * id as loaded with zero modules. The <script> tag stays in the HTML (it now
  * points at a 60-byte file), the runtime proceeds, and the 217 kB payload is
  * eliminated.
+ *
+ * CLIENT_STATIC_DIRS points at whatever this build mode actually ships to the
+ * browser. Static export (`output: 'export'`) emits `out/_next/static/`;
+ * a normal server build (hybrid mode) emits `.next/static/` instead — and
+ * only that directory, never `.next/server/`, since server-only bundles are
+ * never sent to a browser and scanning them would just be noise.
+ *
+ * NOTE: `out/` existence alone does NOT prove export mode — a stale `out/`
+ * directory from an earlier export build can linger next to a fresh hybrid
+ * `.next/` (e.g. after switching branches without `npm run clean`). Gating
+ * on `out/` alone would then scan the stale output and silently skip the
+ * real hybrid chunks. So scan EVERY client-static dir that exists instead of
+ * picking one by heuristic.
  */
 const fs = require('fs');
 const path = require('path');
 
-const OUT_DIR = path.join(__dirname, '..', 'out');
-const CHUNKS_DIR = path.join(OUT_DIR, '_next', 'static', 'chunks');
+const REPO_ROOT = path.join(__dirname, '..');
+const CANDIDATE_STATIC_DIRS = [
+  path.join(REPO_ROOT, '.next', 'static'),
+  path.join(REPO_ROOT, 'out', '_next', 'static'),
+];
+const CLIENT_STATIC_DIRS = CANDIDATE_STATIC_DIRS.filter((d) =>
+  fs.existsSync(path.join(d, 'chunks')),
+);
 
 function neutralizeDevtools() {
-  if (!fs.existsSync(CHUNKS_DIR)) {
+  if (CLIENT_STATIC_DIRS.length === 0) {
     console.log('[postbuild] no chunks dir, skipping');
     return;
   }
+  for (const dir of CLIENT_STATIC_DIRS) {
+    neutralizeInDir(dir);
+  }
+}
+
+function neutralizeInDir(CLIENT_STATIC_DIR) {
+  const CHUNKS_DIR = path.join(CLIENT_STATIC_DIR, 'chunks');
+  console.log(`[postbuild] scanning ${path.relative(REPO_ROOT, CHUNKS_DIR)}`);
 
   // 1. Find devtools chunk files by content signature (check first 2 KB).
   const chunkFiles = fs.readdirSync(CHUNKS_DIR).filter((f) => f.endsWith('.js'));
@@ -81,7 +107,7 @@ function neutralizeDevtools() {
       }
     }
   };
-  walk(OUT_DIR);
+  walk(CLIENT_STATIC_DIR);
 
   if (leftover.length > 0) {
     console.error('[postbuild] FAILED — devtools signature still present after neutralization:');
@@ -93,7 +119,7 @@ function neutralizeDevtools() {
     process.exit(1);
   }
 
-  console.log('[postbuild] verified: no devtools signature anywhere in export output');
+  console.log(`[postbuild] verified: no devtools signature anywhere in ${path.relative(REPO_ROOT, CLIENT_STATIC_DIR)}`);
 }
 
 neutralizeDevtools();

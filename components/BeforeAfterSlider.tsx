@@ -233,7 +233,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={optUrl}
-              alt="Optimized PW Slide"
+              alt="Optimized page preview"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
               style={{ transform: `scale(${zoom})`, WebkitTouchCallout: 'none' } as React.CSSProperties}
@@ -251,7 +251,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={origUrl}
-              alt="Original Raw PW Slide"
+              alt="Original page preview"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
               style={{ transform: `scale(${zoom})`, WebkitTouchCallout: 'none' } as React.CSSProperties}

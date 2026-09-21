@@ -1,83 +1,73 @@
 'use client';
 
 import React from 'react';
-import { GraduationCap, ShieldCheck, LayoutGrid, Sparkles, ArrowDown } from 'lucide-react';
-
-const heroStats = [
-  { icon: GraduationCap, label: 'NEET • JEE', sub: 'Boards Ready' },
-  { icon: Sparkles, label: 'Dark → White', sub: 'Ink Saver' },
-  { icon: LayoutGrid, label: '4 per Sheet', sub: 'Smart N-Up' },
-  { icon: ShieldCheck, label: '100% Offline', sub: 'Private' },
-];
+import { ArrowDown, ShieldCheck } from 'lucide-react';
 
 /**
- * Best-practice hero — Print Optimizer is now multi-tool (merge / whiten / enhance).
- * Cobalt Ink → Marigold gradient stays as brand, but copy is generic. No
- * dark-slides-only messaging. CTA points to ToolsBox (not Upload).
+ * Landing hero — one clear promise, one primary action, and one quiet trust
+ * signal. Tool discovery belongs below; the hero should not compete with it.
  */
 export const LandingHero: React.FC = () => {
   const scrollToTools = () => {
     const el = document.getElementById('tools');
-    if (el) {
-      const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-    }
+    if (!el) return;
+
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    el.scrollIntoView({
+      behavior: reduced ? 'auto' : 'smooth',
+      block: 'start',
+    });
   };
 
   return (
     <section
       aria-label="Print Optimizer — made for students"
-      className="relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-b from-primary-faint/40 via-surface/60 to-surface/40 px-5 py-7 sm:py-9 text-center animate-slide-up"
+      className="relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-b from-primary-faint/35 via-surface/70 to-surface/50 px-4 py-7 text-center sm:px-6 sm:py-10"
     >
-    <div aria-hidden="true" className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-    <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-16 h-72 w-72 rounded-full bg-accent/8 blur-3xl" />
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-28 -right-16 h-60 w-60 rounded-full bg-accent/7 blur-3xl"
+      />
 
-    <div className="relative flex flex-col items-center gap-3.5">
-      {/* Badge is always white regardless of theme, so its text uses the
-          fixed AA-on-white cobalt value rather than the theme token. */}
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#22368F]/20 bg-white px-3 py-1 text-xs font-bold tracking-wide text-[#22368F] shadow-sm">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-strong" />
+      <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-3.5">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-surface/90 px-3 py-1 text-[11px] font-bold tracking-wide text-primary-soft shadow-sm backdrop-blur-sm sm:text-xs">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Private by default · 100% on-device
         </span>
-        Trusted by 50,000+ NEET • JEE • Boards Students
-      </span>
 
-      <h1 className="max-w-3xl text-balance text-[26px] font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
-        Your Notes,{' '}
-        <span className="bg-gradient-to-r from-primary-soft via-primary to-accent bg-clip-text text-transparent">
-          Print-Ready in Seconds
-        </span>
-      </h1>
+        <h1 className="text-balance text-3xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-5xl">
+          Your Notes.{' '}
+          <span className="bg-gradient-to-r from-primary-soft via-primary to-accent bg-clip-text text-transparent">
+            Print-Ready in Seconds.
+          </span>
+        </h1>
 
-      <p className="max-w-xl text-pretty text-xs leading-relaxed text-ink-muted sm:text-sm">
-        PW, Allen, Unacademy — bring dark slides, handwritten sheets & PYQs. Whiten, N-up 4 per sheet,
-        <span className="font-semibold text-ink"> on your device</span> — offline, private, no upload.
-      </p>
+        <p className="max-w-2xl text-pretty text-sm leading-relaxed text-ink-muted sm:text-base">
+          Whiten dark slides, clean up scans, arrange pages and convert files —
+          right in your browser, without sending your documents away.
+        </p>
 
-      <button
-        type="button"
-        onClick={scrollToTools}
-        aria-label="Scroll to tools"
-        className="mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-strong via-primary to-accent px-5 py-2.5 text-xs font-bold tracking-wide text-white shadow-lg shadow-primary/20 ring-1 ring-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25 hover:from-primary-deep hover:via-primary-strong hover:to-accent-deep active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
-      >
-        <ArrowDown className="h-3.5 w-3.5 shrink-0 animate-bounce" aria-hidden="true" />
-        Explore tools for your notes
-      </button>
+        <button
+          type="button"
+          onClick={scrollToTools}
+          aria-label="Choose a tool"
+          className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold tracking-wide text-white shadow-lg shadow-primary/20 ring-1 ring-primary/20 transition-all hover:bg-primary hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+        >
+          Choose a tool
+          <ArrowDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+        </button>
 
-      {/* Hint chips — student-focused, liquid glass. Always-white cards, same
-          fixed-on-white treatment as the badge above. */}
-      <div className="hidden w-full max-w-2xl grid-cols-4 gap-2 sm:grid">
-        {heroStats.map((stat) => (
-          <div key={stat.label} className="flex flex-col items-center gap-1 rounded-xl border border-[#22368F]/20 bg-white px-2 py-2.5 shadow-sm">
-            <stat.icon className="h-3.5 w-3.5 text-[#22368F]" />
-            <span className="text-2xs font-semibold tracking-wide text-slate-900">{stat.label}</span>
-            <span className="hidden text-[9px] leading-none text-slate-600 sm:block">{stat.sub}</span>
-          </div>
-        ))}
+        <p className="text-[11px] font-semibold tracking-wide text-ink-faint sm:text-xs">
+          Free to use · No account · No upload
+        </p>
       </div>
-    </div>
-  </section>
+    </section>
   );
 };

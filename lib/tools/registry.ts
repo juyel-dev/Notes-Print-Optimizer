@@ -30,6 +30,16 @@ export interface ToolDefinition {
   gradient: string;
   chips: string[];
   cta: string;
+  /**
+   * ISO date (YYYY-MM-DD) the tool actually shipped, for the "New" badge.
+   * Left undefined on the original 12 tools deliberately — this session's
+   * environment only has a shallow git clone, so their real ship dates
+   * aren't verifiable here, and a guessed date would be exactly the kind
+   * of fabricated claim already removed elsewhere (see CHANGELOG). Set
+   * this honestly on every tool added from here on; getToolCategories/
+   * isNewTool below only ever reads real data, never estimates.
+   */
+  addedAt?: string;
 }
 
 export const TOOL_REGISTRY: ToolDefinition[] = [
@@ -46,7 +56,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['optimize', 'convert', 'banner removal', 'slides'],
     category: 'pdf',
     icon: FileText,
-    gradient: 'linear-gradient(135deg, #3654D9 0%, #5B7FFF 55%, #8FA6FF 100%)',
+    gradient: 'linear-gradient(135deg, #3654D9 0%, #5B7FFF 58%, #8FA6FF 100%)',
     chips: ['Auto-whiten', 'Banner removal', 'Up to 10-up'],
     cta: 'Convert',
   },
@@ -63,7 +73,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['contrast', 'sharpen', 'handwritten notes', 'clean background'],
     category: 'pdf',
     icon: Contrast,
-    gradient: 'linear-gradient(135deg, #28409E 0%, #5B7FFF 55%, #F2A93C 100%)',
+    gradient: 'linear-gradient(135deg, #28409E 0%, #5B7FFF 58%, #F2A93C 100%)',
     chips: ['Darken ink', 'Contrast', 'Sharpen'],
     cta: 'Enhance',
   },
@@ -80,7 +90,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['aes', 'owner password', 'restrict', 'iso 32000', 'permissions'],
     category: 'security',
     icon: ShieldCheck,
-    gradient: 'linear-gradient(135deg, #0F633D 0%, #157A4C 55%, #34C77B 100%)',
+    gradient: 'linear-gradient(135deg, #28409E 0%, #5B7FFF 58%, #F2A93C 100%)',
     chips: ['AES-256', 'Open password', 'Print/Copy locks'],
     cta: 'Protect',
   },
@@ -97,7 +107,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['convert to image', 'render pages', 'dpi', 'resolution', 'zip export', 'photo', 'save pages as images'],
     category: 'image',
     icon: Images,
-    gradient: 'linear-gradient(135deg, #34C77B 0%, #5B7FFF 55%, #F2A93C 100%)',
+    gradient: 'linear-gradient(135deg, #5B7FFF 0%, #7C96FF 58%, #F2A93C 100%)',
     chips: ['JPG · PNG · WebP', 'Up to 300 DPI', 'One-click ZIP'],
     cta: 'Convert',
   },
@@ -114,7 +124,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['multiple pdfs', 'one file', 'order', 'sequence'],
     category: 'pdf',
     icon: Combine,
-    gradient: 'linear-gradient(135deg, #3654D9 0%, #6C87F5 55%, #F2A93C 100%)',
+    gradient: 'linear-gradient(135deg, #3654D9 0%, #6C87F5 58%, #F2A93C 100%)',
     chips: ['Up to 10 files', 'Smart Arrange', 'Custom filename'],
     cta: 'Merge',
   },
@@ -131,7 +141,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['extract pages', 'page range', 'parts', 'burst'],
     category: 'pdf',
     icon: Scissors,
-    gradient: 'linear-gradient(135deg, #F2A93C 0%, #5B7FFF 55%, #3654D9 100%)',
+    gradient: 'linear-gradient(135deg, #F2A93C 0%, #7C96FF 45%, #3654D9 100%)',
     chips: ['Extract range', 'Burst every N', 'ZIP export'],
     cta: 'Split',
   },
@@ -148,7 +158,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['convert images', 'combine photos', 'screenshots', 'one document', 'image', 'gallery'],
     category: 'image',
     icon: ImagePlus,
-    gradient: 'linear-gradient(135deg, #5B7FFF 0%, #28409E 55%, #0B1440 100%)',
+    gradient: 'linear-gradient(135deg, #5B7FFF 0%, #3654D9 58%, #28409E 100%)',
     chips: ['JPG · PNG · WebP', 'Fit or A4 pages', 'Reorderable'],
     cta: 'Create PDF',
   },
@@ -165,7 +175,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['generator', 'random', 'entropy', 'characters', 'symbols', 'security'],
     category: 'security',
     icon: KeyRound,
-    gradient: 'linear-gradient(135deg, #3654D9 0%, #34C77B 55%, #F2A93C 100%)',
+    gradient: 'linear-gradient(135deg, #3654D9 0%, #7C96FF 58%, #F2A93C 100%)',
     chips: ['Crypto-random', '8–64 chars', 'Bulk generate'],
     cta: 'Generate',
   },
@@ -182,7 +192,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['generator', 'scanner', 'png', 'svg', 'wifi', 'url', 'qr scan', 'qr code styling', 'camera'],
     category: 'utility',
     icon: QrCode,
-    gradient: 'linear-gradient(135deg, #5B7FFF 0%, #34C77B 55%, #F2A93C 100%)',
+    gradient: 'linear-gradient(135deg, #5B7FFF 0%, #8FA6FF 58%, #F2A93C 100%)',
     chips: ['Generate + Scan', 'Styled QR', 'Camera & image'],
     cta: 'Open Studio',
   },
@@ -199,7 +209,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['words', 'characters', 'sentences', 'paragraphs', 'essay', 'keywords', 'speaking time'],
     category: 'text',
     icon: Type,
-    gradient: 'linear-gradient(135deg, #F2A93C 0%, #EF4444 55%, #34C77B 100%)',
+    gradient: 'linear-gradient(135deg, #F2A93C 0%, #D6A64C 40%, #5B7FFF 100%)',
     chips: ['Live stats', 'Reading time', 'Top keywords'],
     cta: 'Count',
   },
@@ -216,7 +226,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['convert case', 'text transform', 'sentence case', 'pascalcase', 'alternating', 'inverse'],
     category: 'text',
     icon: CaseSensitive,
-    gradient: 'linear-gradient(135deg, #34C77B 0%, #3654D9 55%, #5B7FFF 100%)',
+    gradient: 'linear-gradient(135deg, #8FA6FF 0%, #5B7FFF 55%, #3654D9 100%)',
     chips: ['11 formats', 'One-tap copy', 'Live convert'],
     cta: 'Convert',
   },
@@ -232,7 +242,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     keywords: ['n-up', 'layout', 'handout', 'multiple pages', 'merge', 'sheets', 'print'],
     category: 'pdf',
     icon: LayoutGrid,
-    gradient: 'linear-gradient(135deg, #F2A93C 0%, #F97316 55%, #EF4444 100%)',
+    gradient: 'linear-gradient(135deg, #F2A93C 0%, #D89D37 45%, #3654D9 100%)',
     chips: ['Auto-merge', '1/2/4/6/9-up', 'A4/Letter'],
     cta: 'N-up',
   },
@@ -285,4 +295,15 @@ export function getAllToolSlugs(): string[] {
 
 export function getToolById(id: ToolMode): ToolDefinition | undefined {
   return TOOL_REGISTRY.find((tool) => tool.id === id);
+}
+
+const NEW_BADGE_WINDOW_DAYS = 30;
+
+/** True only for tools with a real, set `addedAt` within the last 30 days. */
+export function isNewTool(tool: ToolDefinition, now: Date = new Date()): boolean {
+  if (!tool.addedAt) return false;
+  const added = new Date(tool.addedAt);
+  if (Number.isNaN(added.getTime())) return false;
+  const ageDays = (now.getTime() - added.getTime()) / (1000 * 60 * 60 * 24);
+  return ageDays >= 0 && ageDays <= NEW_BADGE_WINDOW_DAYS;
 }

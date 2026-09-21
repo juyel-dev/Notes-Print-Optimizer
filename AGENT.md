@@ -57,7 +57,7 @@ Suite: Vitest 434 tests / 41 files + Playwright 22. Never hardcode `241` — old
 
 - Do not push to `juyel-dev:main` directly.
 - Do not regen goldens without `PDF_UPDATE_GOLDENS=1` + justification (`tests/fixtures/pdf/pdfGoldens.json` byte-exact).
-- Do not change engine default (`pw-pixel-v2` sequential is prod; V1 parallel 2.4× slower / 11× mem).
+- Do not change engine default (`npo-pixel-v2` sequential is prod; V1 parallel 2.4× slower / 11× mem).
 - Do not add network calls — `app/layout.tsx` CSP allows only `script.google.com` (feedback) + self/blob/data/wasm-unsafe-eval.
 - Do not edit `out/`; do not commit secrets.
 
