@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Performance
+
+- **Lighthouse CI no longer blocks every PR push.** `.github/workflows/lighthouse.yml`'s `lighthouse` and `budget` jobs (6-10 min combined) were running on every `pull_request` push, on top of the fast `ci` job — slowing down active-development iteration for a check that only matters right before shipping. Now triggers on `push` to `main`/`master` and `workflow_dispatch` only; `ci.yml` (lint/typecheck/test/build/smoke) stays on every PR for fast feedback. The `budget` job's 13-route check also moved from one job looping over all routes sequentially to a matrix strategy (one job per route, all in parallel) — same coverage, much less wall-clock time on the runs that do happen.
+
 ### Changed
 
 - **Removed unlicensed commercial-brand references (PW/PhysicsWallah, Allen, Unacademy) from the product's own identity and copy:** these had been baked in far beyond marketing text — the documented product name (`README.md`), `package.json` description, the user-facing feedback modal, accessibility alt text on the before/after slider, the footer tagline and footer list (two spots), the internal processing-engine id/name (`pw-pixel-v2` → `npo-pixel-v2`), the Service Worker cache-key prefix (`pw-optimizer-*` → `npo-*`; existing cache-cleanup logic auto-purges the old prefix, no migration needed), and the Google Apps Script setup doc. Left untouched: `lib/rearrange/normalizer.ts`'s `'pw'/'physicswallah'/'wallah'` noise-word list — that's filename normalization for *user-uploaded* files (e.g. `PW_Biology_Ch12.pdf`), not the app's own branding, and removing it would make that feature worse for the users it serves.
