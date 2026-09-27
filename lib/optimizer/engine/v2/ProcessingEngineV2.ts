@@ -38,6 +38,7 @@ import {
   createImageDataFromBuffer,
 } from '../../../kernels';
 import { ParameterGenerator } from '../../parameterGenerator';
+import { selectPresetForPage } from '../../recipeSelector';
 import { getPdfjsLib } from '../../pdfjsLoader';
 import { metricsBus } from '../../../metrics/MetricsBus';
 import { ensureWasmKernels, isWasmLoaded, getKernels } from '../../../wasm/loader';
@@ -218,6 +219,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       width: number;
       height: number;
       profile: PageProfile;
+      parameters: import('../../types').ProcessingParameters;
       whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
     }> = [];
 
@@ -251,6 +253,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     interface PendingProcess {
       pageIndex: number;
       profile: PageProfile;
+      parameters: import('../../types').ProcessingParameters;
       renderMs: number;
       analyzeMs: number;
       resultPromise: Promise<WorkerProcessResult>;
@@ -303,6 +306,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         width: optimizedImageData.width,
         height: optimizedImageData.height,
         profile: p.profile,
+        parameters: p.parameters,
         whiteBoxRegions,
       });
 
@@ -362,15 +366,19 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         if (localSignal.aborted) throw new DOMException('Aborted', 'AbortError');
       }
 
-      /* Phase 3: Process (merge preset defaults with user overrides).
-       * 'smart' inversion resolves per page — see resolveEffectiveInvertMode. */
-      const baseParams = ParameterGenerator.getPresetParameters(
-        profile.classification === 'DARK_SLIDE' ? 'PW_DARK_SLIDE' : 'LIGHT_HANDWRITTEN',
-      );
+      /* Phase 3: Select the recipe per page, then merge user overrides.
+       * Auto mode is now genuinely page-aware instead of choosing one
+       * document-wide preset for every page. Explicit user presets still win. */
+      const autoPreset = selectPresetForPage(profile);
+      const requestedPreset = input.customParams?.preset;
+      const selectedPreset = requestedPreset && requestedPreset !== 'AUTO_ADAPTIVE'
+        ? requestedPreset
+        : autoPreset;
+      const baseParams = ParameterGenerator.getPresetParameters(selectedPreset);
       const params = {
-        ...(input.customParams
-          ? { ...baseParams, ...input.customParams }
-          : baseParams),
+        ...baseParams,
+        ...(input.customParams ?? {}),
+        preset: selectedPreset,
         invertMode: resolveEffectiveInvertMode(
           input.customParams?.invertMode ?? baseParams.invertMode,
           profile.classification,
@@ -379,6 +387,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       pending = {
         pageIndex: i - 1,
         profile,
+        parameters: params,
         renderMs,
         analyzeMs,
         resultPromise: workerProcessor.processPage(srcImageData, i - 1, params, profile),
@@ -411,9 +420,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       pageIndex: m.pageIndex,
       thumbnailDataUrl: m.thumbnailUrl,
       profile: m.profile,
-      parameters: input.customParams
-        ? { ...ParameterGenerator.getPresetParameters(docProfile.recommendedPreset), ...input.customParams }
-        : ParameterGenerator.getPresetParameters(docProfile.recommendedPreset),
+      parameters: m.parameters,
       inkCoverageBeforePct: m.inkBefore,
       inkCoverageAfterPct: m.inkAfter,
       width: m.width,
