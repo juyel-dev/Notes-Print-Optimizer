@@ -123,7 +123,7 @@ describe('preservation guard', () => {
         bannerCropTopPct: 0,
         bannerCropBottomPct: 0,
         sharpenAmount: 0,
-        binarizationThreshold: 80,
+        binaizationThreshold: 80,
         autoWhiteBoxFix: false,
       },
       { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0.02 },
