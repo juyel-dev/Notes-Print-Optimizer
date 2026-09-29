@@ -124,4 +124,6 @@ export interface ProcessedPage {
   /** White boxes auto-restored from the original render (dark pages only).
    *  Powers the thumbnail badge and the future manual region editor. */
   whiteBoxRegions?: WhiteBoxRegion[];
+  /** True when the preservation guard softened the initial recipe. */
+  preservationGuardTriggered?: boolean;
 }

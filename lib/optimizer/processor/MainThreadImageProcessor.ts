@@ -34,6 +34,7 @@ export class MainThreadImageProcessor implements IImageProcessor {
       inkCoverageBeforePct: ib,
       inkCoverageAfterPct: ia,
       whiteBoxRegions: healed.whiteBoxRegions,
+      preservationGuardTriggered: healed.preservationGuardTriggered,
     };
   }
 

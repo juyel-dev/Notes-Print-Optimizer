@@ -45,16 +45,14 @@
  * unaffected by this layer; the detector has its own synthetic tests.
  */
 import { processPage, type KernelProcessResult } from './processPage';
+import { assessPreservation, softenProcessingParameters, type PreservationParameters } from './preservationGuard';
 import { DARK_BG_RATIO_THRESHOLD } from './constants';
 import type { PageProfile, ProcessingParameters } from '../optimizer/types';
 
 /** The parameter subset the heal pipeline actually reads. Accepts full
  *  ProcessingParameters structurally, so both the worker task payload and
  *  the engine's params object flow in unchanged. */
-export type WhiteBoxHealParams = Pick<
-  ProcessingParameters,
-  'invertMode' | 'bannerCropTopPct' | 'bannerCropBottomPct' | 'strokeEnhancement' | 'sharpenAmount' | 'dilationKernelSize' | 'autoWhiteBoxFix'
->;
+export type WhiteBoxHealParams = PreservationParameters;
 
 /** A restored rectangle.
  *  - Auto regions: CROPPED pixel coords (x/y relative to post-banner-crop render).
@@ -389,35 +387,73 @@ export function processPageWithWhiteBoxHeal(
   const rawRegions = shouldHealWhiteBoxes(params, profile)
     ? detectWhiteBoxRegions(srcData, width, height)
     : [];
-  const result = processPage(srcData, width, height, params, profile);
-  if (rawRegions.length === 0) return { ...result, whiteBoxRegions: [] };
 
-  // Convert FULL-page detections to CROPPED coords for storage + composite.
-  // The kernel cropped `cropTopPx` rows from the top (and bottom), so
-  // regions must be shifted up and clipped to `result.height`.
   const cropTopPx = Math.floor(height * ((params.bannerCropTopPct ?? 0) / 100));
-  const cropped: WhiteBoxRegion[] = [];
-  for (const r of rawRegions) {
-    let y = r.y - cropTopPx;
-    let h = r.height;
-    if (y < 0) { h += y; y = 0; }
-    if (y + h > result.height) h = result.height - y;
-    if (h <= 0 || r.width <= 0) continue;
-    const x = r.x;
-    let w = r.width;
-    if (x + w > width) w = width - x;
-    if (w <= 0) continue;
-    cropped.push({ ...r, x, y, width: w, height: h });
-  }
-  if (cropped.length > 0) {
-    compositeWhiteBoxRegions(
-      new Uint8ClampedArray(result.buffer),
+
+  const toCroppedRegions = (resultHeight: number): WhiteBoxRegion[] => {
+    const cropped: WhiteBoxRegion[] = [];
+    for (const r of rawRegions) {
+      let y = r.y - cropTopPx;
+      let h = r.height;
+      if (y < 0) { h += y; y = 0; }
+      if (y + h > resultHeight) h = resultHeight - y;
+      if (h <= 0 || r.width <= 0) continue;
+      const x = r.x;
+      let w = r.width;
+      if (x + w > width) w = width - x;
+      if (w <= 0) continue;
+      cropped.push({ ...r, x, y, width: w, height: h });
+    }
+    return cropped;
+  };
+
+  const restoreWhiteBoxes = (result: KernelProcessResult): WhiteBoxRegion[] => {
+    if (rawRegions.length === 0) return [];
+    const cropped = toCroppedRegions(result.height);
+    if (cropped.length > 0) {
+      compositeWhiteBoxRegions(
+        new Uint8ClampedArray(result.buffer),
+        srcData,
+        width,
+        result.height,
+        cropped,
+        cropTopPx,
+      );
+    }
+    return cropped;
+  };
+
+  let result = processPage(srcData, width, height, params, profile);
+  let croppedRegions = restoreWhiteBoxes(result);
+  let preservationGuardTriggered = false;
+
+  /*
+   * Preservation guard: assess the actual post-heal image so large restored
+   * white boxes are not mistaken for lost foreground content. Retry at most
+   * once with a softened recipe; page polarity is never changed.
+   */
+  if (result.width === width && result.height > 0) {
+    const assessment = assessPreservation(
       srcData,
       width,
+      height,
+      new Uint8ClampedArray(result.buffer),
+      result.width,
       result.height,
-      cropped,
+      profile,
       cropTopPx,
     );
+    if (assessment.likelyDamaged) {
+      const softened = softenProcessingParameters(params);
+      result = processPage(srcData, width, height, softened, profile);
+      croppedRegions = restoreWhiteBoxes(result);
+      preservationGuardTriggered = true;
+    }
   }
-  return { ...result, whiteBoxRegions: cropped };
+
+  return {
+    ...result,
+    whiteBoxRegions: croppedRegions,
+    preservationGuardTriggered,
+  };
 }
