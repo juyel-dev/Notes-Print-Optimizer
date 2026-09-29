@@ -33,6 +33,7 @@ const PRESET_LABELS: Record<string, string> = {
   AUTO_ADAPTIVE: 'Auto Adaptive',
   PW_DARK_SLIDE: 'Dark Slide',
   LIGHT_HANDWRITTEN: 'Light Handwritten',
+  SCREENSHOT_PRINT: 'Screenshot Print',
   INK_SAVER_EXTREME: 'Ink Saver Extreme',
   DIAGRAM_HIGH_CONTRAST: 'Diagram Hi-Contrast',
 };
