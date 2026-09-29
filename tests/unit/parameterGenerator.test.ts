@@ -29,4 +29,86 @@ describe('ParameterGenerator', () => {
     expect(screenshot.dilationKernelSize).toBe(0);
     expect(screenshot.contrastEnhancement).toBeLessThan(lightHandwritten.contrastEnhancement);
   });
+
+  it('tunes screenshot recipe from page density and noise only for Auto mode', () => {
+    const screenshot = ParameterGenerator.getPresetParameters('SCREENSHOT_PRINT');
+
+    const sparse = ParameterGenerator.adaptAutoPageParameters(
+      { ...screenshot },
+      {
+        pageIndex: 0,
+        width: 100,
+        height: 100,
+        averageBrightness: 235,
+        contrast: 30,
+        inkDensity: 0.08,
+        darkBackgroundRatio: 0,
+        lightBackgroundRatio: 0.92,
+        dominantHue: 0,
+        hasTopBanner: false,
+        topBannerHeightPct: 0,
+        hasBottomBanner: false,
+        bottomBannerHeightPct: 0,
+        estimatedNoise: 5,
+        strokeThickness: 1.5,
+        density: 'sparse',
+        classification: 'SCREENSHOT_HEAVY',
+      },
+    );
+
+    const noisyDense = ParameterGenerator.adaptAutoPageParameters(
+      { ...screenshot },
+      {
+        pageIndex: 1,
+        width: 100,
+        height: 100,
+        averageBrightness: 205,
+        contrast: 45,
+        inkDensity: 0.6,
+        darkBackgroundRatio: 0,
+        lightBackgroundRatio: 0.4,
+        dominantHue: 0,
+        hasTopBanner: false,
+        topBannerHeightPct: 0,
+        hasBottomBanner: false,
+        bottomBannerHeightPct: 0,
+        estimatedNoise: 55,
+        strokeThickness: 2.2,
+        density: 'dense',
+        classification: 'SCREENSHOT_HEAVY',
+      },
+    );
+
+    expect(sparse.sharpenAmount).toBe(30);
+    expect(sparse.denoiseAmount).toBe(5);
+    expect(noisyDense.sharpenAmount).toBe(20);
+    expect(noisyDense.denoiseAmount).toBe(10);
+
+    const explicit = ParameterGenerator.adaptAutoPageParameters(
+      ParameterGenerator.getPresetParameters('LIGHT_HANDWRITTEN'),
+      {
+        pageIndex: 2,
+        width: 100,
+        height: 100,
+        averageBrightness: 235,
+        contrast: 30,
+        inkDensity: 0.08,
+        darkBackgroundRatio: 0,
+        lightBackgroundRatio: 0.92,
+        dominantHue: 0,
+        hasTopBanner: false,
+        topBannerHeightPct: 0,
+        hasBottomBanner: false,
+        bottomBannerHeightPct: 0,
+        estimatedNoise: 55,
+        strokeThickness: 1.5,
+        density: 'sparse',
+        classification: 'LIGHT_SLIDE',
+      },
+    );
+
+    expect(explicit.preset).toBe('LIGHT_HANDWRITTEN');
+    expect(explicit.sharpenAmount).toBe(40);
+    expect(explicit.denoiseAmount).toBe(20);
+  });
 });
