@@ -46,7 +46,7 @@ interface ForegroundGeometry {
   sparseContent: boolean;
 }
 
-const MIXED_BACKGROUND_RATIO = 0.30;
+const MIXED_BACKGROUND_RATIO = 0.40;
 const LOCAL_TILE_MIN = 16;
 const LOCAL_TILE_TARGETS = 48;
 
@@ -78,7 +78,7 @@ function inferForegroundPolarity(
 }
 
 function classifyDensity(foregroundCoverage: number, edgeDensity: number): PageDensity {
-  if (foregroundCoverage >= 0.15 || edgeDensity >= 0.30) return 'dense';
+  if (foregroundCoverage >= 0.15 || edgeDensity >= 0.25) return 'dense';
   if (foregroundCoverage <= 0.03 && edgeDensity <= 0.10) return 'sparse';
   return 'medium';
 }
@@ -376,7 +376,15 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     (colorfulPixelRatio >= 0.02 || contrast >= 25) &&
     inkDensity < 0.85;
 
-  const balancedMixedPage = pagePolarity.polarity === 'mixed';
+  const balancedMixedPage =
+    pagePolarity.polarity === 'mixed' ||
+    (
+      darkBgRatio <= DARK_BG_RATIO_THRESHOLD &&
+      lightBgRatio >= 0.35 &&
+      lightBgRatio <= 0.65 &&
+      contrast >= 20 &&
+      inkDensity >= 0.25
+    );
 
   let classification: PageClassification;
   if (pagePolarity.polarity === 'mixed') {
@@ -420,7 +428,12 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
 
   const density = classifyDensity(foregroundCoverage, edgeDensity);
   const coloredAnnotationPresent = colorfulPixelRatio >= 0.005 && foregroundSamples > 0;
-  const thinStrokeRisk = foregroundSamples > 0 && strokeThickness <= 2.4;
+  const thinStrokeRisk =
+    foregroundSamples > 0 &&
+    (
+      strokeThickness <= 2.4 ||
+      (foregroundCoverage <= 0.03 && edgeDensity > 0.01)
+    );
 
   const { topBannerPct, bottomBannerPct } = detectBanners(data, width, height);
 
