@@ -69,10 +69,9 @@ describe('ImageProcessingKernels', () => {
         for (let x = 0; x < 100; x++) {
           const idx = (y * 100 + x) * 4;
           const band = Math.floor(x / 5) % 2;
-          const v = band === 0 ? 230 : 170;
-          data[idx] = v;
-          data[idx + 1] = band === 0 ? 220 : 175;
-          data[idx + 2] = band === 0 ? 210 : 180;
+          data[idx] = band === 0 ? 235 : 205;
+          data[idx + 1] = band === 0 ? 140 : 205;
+          data[idx + 2] = band === 0 ? 70 : 205;
           data[idx + 3] = 255;
         }
       }
