@@ -48,6 +48,24 @@ export class ParameterGenerator {
           dilationKernelSize: 3,
         };
 
+      case 'SCREENSHOT_PRINT':
+        return {
+          preset: 'SCREENSHOT_PRINT',
+          invertMode: 'none',
+          smartColorMapping: false,
+          backgroundWhiteningThreshold: 215,
+          contrastEnhancement: 20,
+          sharpenAmount: 25,
+          denoiseAmount: 5,
+          bannerCropTopPct: 0,
+          bannerCropBottomPct: 0,
+          autoTrimMargins: false,
+          binaizationThreshold: 0,
+          outputQuality: 0.90,
+          strokeEnhancement: 'none',
+          dilationKernelSize: 0,
+        };
+
       case 'INK_SAVER_EXTREME':
         return {
           preset: 'INK_SAVER_EXTREME',

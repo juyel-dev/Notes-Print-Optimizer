@@ -18,9 +18,7 @@ export function selectPresetForPage(profile: PageProfile): PresetMode {
     case 'HANDWRITTEN_NOTES':
       return 'LIGHT_HANDWRITTEN';
     case 'SCREENSHOT_HEAVY':
-      // Screenshot-heavy pages need restraint until dedicated screenshot
-      // features (UI chrome detection / local contrast) are enabled.
-      return 'LIGHT_HANDWRITTEN';
+      return 'SCREENSHOT_PRINT';
     case 'MIXED':
     default:
       return profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD

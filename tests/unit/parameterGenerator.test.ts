@@ -3,9 +3,9 @@ import { ParameterGenerator } from '../../lib/optimizer/parameterGenerator';
 import { PresetMode } from '../../lib/optimizer/types';
 
 describe('ParameterGenerator', () => {
-  const presets: PresetMode[] = ['PW_DARK_SLIDE', 'LIGHT_HANDWRITTEN', 'INK_SAVER_EXTREME', 'DIAGRAM_HIGH_CONTRAST', 'AUTO_ADAPTIVE'];
+  const presets: PresetMode[] = ['PW_DARK_SLIDE', 'LIGHT_HANDWRITTEN', 'SCREENSHOT_PRINT', 'INK_SAVER_EXTREME', 'DIAGRAM_HIGH_CONTRAST', 'AUTO_ADAPTIVE'];
 
-  it('should return valid parameters for all 5 presets', () => {
+  it('should return valid parameters for all presets', () => {
     for (const preset of presets) {
       const params = ParameterGenerator.getPresetParameters(preset);
       expect(params.preset).toBe(preset);
@@ -23,5 +23,10 @@ describe('ParameterGenerator', () => {
     const lightHandwritten = ParameterGenerator.getPresetParameters('LIGHT_HANDWRITTEN');
     expect(darkSlide.invertMode).toBe('smart');
     expect(lightHandwritten.invertMode).toBe('none');
+    const screenshot = ParameterGenerator.getPresetParameters('SCREENSHOT_PRINT');
+    expect(screenshot.invertMode).toBe('none');
+    expect(screenshot.smartColorMapping).toBe(false);
+    expect(screenshot.dilationKernelSize).toBe(0);
+    expect(screenshot.contrastEnhancement).toBeLessThan(lightHandwritten.contrastEnhancement);
   });
 });
