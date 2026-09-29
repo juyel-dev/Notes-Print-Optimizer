@@ -24,6 +24,12 @@ export interface PageProfile {
   bottomBannerHeightPct: number;
   estimatedNoise: number;
   strokeThickness: number;
+  /** Sampled structural edge density used by future recipe selection. */
+  edgeDensity?: number;
+  /** Sampled ratio of pixels with meaningful color saturation. */
+  colorfulPixelRatio?: number;
+  /** Dominant foreground/background polarity inferred from the sampled page. */
+  foregroundPolarity?: 'light-on-dark' | 'dark-on-light';
   classification: PageClassification;
 }
 
