@@ -168,8 +168,8 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
   const screenshotHeavy =
     !isDarkSource &&
     contrast <= 65 &&
-    edgeDensity >= 0.16 &&
-    (colorfulPixelRatio >= 0.025 || contrast >= 35) &&
+    edgeDensity >= 0.08 &&
+    (colorfulPixelRatio >= 0.02 || contrast >= 25) &&
     inkDensity < 0.85;
 
   const balancedMixedPage =
