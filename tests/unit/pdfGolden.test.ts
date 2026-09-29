@@ -109,7 +109,14 @@ describe(UPDATE_GOLDENS ? 'pdf golden suite (regeneration mode)' : 'pdf fixture 
           const expected = goldens.fixtures[name][String(pageIndex)];
           expect(expected, `missing golden for ${name}.pdf page ${pageIndex} — run with PDF_UPDATE_GOLDENS=1`).toBeDefined();
           expect(golden.sha256).toHaveLength(64);
-          expect(golden.inkAfterPct).toBeLessThanOrEqual(golden.inkBeforePct);
+          /* Light pages run the tonal path (whitening/contrast/sharpen) without
+             B/W binarization, so counted ink can rise slightly when text is
+             darkened for readability. Dark pages must still drop ink massively. */
+          if (golden.classification === 'DARK_SLIDE') {
+            expect(golden.inkAfterPct).toBeLessThan(golden.inkBeforePct);
+          } else {
+            expect(golden.inkAfterPct).toBeLessThanOrEqual(golden.inkBeforePct + 2.0);
+          }
 
           /* Collect every mismatching page instead of aborting at the first
              one, so a CI failure reports all hashes needing altSha256. */

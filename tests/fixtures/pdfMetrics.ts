@@ -8,6 +8,8 @@
  */
 import { analyzeImageData } from '../../lib/optimizer/analysis';
 import { ParameterGenerator } from '../../lib/optimizer/parameterGenerator';
+import { selectPresetForPage } from '../../lib/optimizer/recipeSelector';
+import { resolveEffectiveInvertMode } from '../../lib/optimizer/engine/v2/resolveInvertMode';
 import { processPage, type KernelProcessResult } from '../../lib/kernels/processPage';
 
 export interface RecipeOutput {
@@ -18,9 +20,15 @@ export interface RecipeOutput {
 
 export function applyEngineRecipe(imageData: ImageData, pageIndex: number): RecipeOutput {
   const profile = analyzeImageData(imageData, pageIndex);
-  const preset: 'PW_DARK_SLIDE' | 'LIGHT_HANDWRITTEN' =
-    profile.classification === 'DARK_SLIDE' ? 'PW_DARK_SLIDE' : 'LIGHT_HANDWRITTEN';
-  const params = ParameterGenerator.getPresetParameters(preset);
+  /* Mirror ProcessingEngineV2 Phase 3: page-aware preset + per-page smart
+     resolution. Keeps golden coverage from drifting off production. */
+  const preset = selectPresetForPage(profile);
+  const baseParams = ParameterGenerator.getPresetParameters(preset);
+  const params = {
+    ...baseParams,
+    preset,
+    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification),
+  };
   const result = processPage(imageData.data, imageData.width, imageData.height, params, {
     classification: profile.classification,
     darkBackgroundRatio: profile.darkBackgroundRatio,
