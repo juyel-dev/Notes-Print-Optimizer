@@ -411,7 +411,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                 {inkSavedPct !== null && (
                   <div className="mt-2 flex items-center gap-2 text-xs font-bold">
                     <span className="rounded-lg border border-primary/30 bg-primary/20 px-3 py-1 text-primary-soft">
-                      Ink Saved: ~{inkSavedPct}%
+                      Estimated ink reduction: ~{inkSavedPct}%
                     </span>
                   </div>
                 )}
