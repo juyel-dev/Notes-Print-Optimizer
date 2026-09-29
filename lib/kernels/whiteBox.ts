@@ -45,16 +45,14 @@
  * unaffected by this layer; the detector has its own synthetic tests.
  */
 import { processPage, type KernelProcessResult } from './processPage';
+import { assessPreservation, softenProcessingParameters, type PreservationParameters } from './preservationGuard';
 import { DARK_BG_RATIO_THRESHOLD } from './constants';
 import type { PageProfile, ProcessingParameters } from '../optimizer/types';
 
 /** The parameter subset the heal pipeline actually reads. Accepts full
  *  ProcessingParameters structurally, so both the worker task payload and
  *  the engine's params object flow in unchanged. */
-export type WhiteBoxHealParams = Pick<
-  ProcessingParameters,
-  'invertMode' | 'bannerCropTopPct' | 'bannerCropBottomPct' | 'strokeEnhancement' | 'sharpenAmount' | 'dilationKernelSize' | 'autoWhiteBoxFix'
->;
+export type WhiteBoxHealParams = PreservationParameters;
 
 /** A restored rectangle.
  *  - Auto regions: CROPPED pixel coords (x/y relative to post-banner-crop render).
@@ -389,13 +387,39 @@ export function processPageWithWhiteBoxHeal(
   const rawRegions = shouldHealWhiteBoxes(params, profile)
     ? detectWhiteBoxRegions(srcData, width, height)
     : [];
-  const result = processPage(srcData, width, height, params, profile);
-  if (rawRegions.length === 0) return { ...result, whiteBoxRegions: [] };
+  let result = processPage(srcData, width, height, params, profile);
+  const cropTopPx = Math.floor(height * ((params.bannerCropTopPct ?? 0) / 100));
+
+  /*
+   * Preservation guard: only retry when multiple independent content signals
+   * collapse. This keeps normal ink-saving transformations untouched while
+   * protecting sparse handwriting, thin equations, and diagram lines from an
+   * overly aggressive recipe.
+   */
+  const assessment = assessPreservation(
+    srcData,
+    width,
+    height,
+    new Uint8ClampedArray(result.buffer),
+    result.width,
+    result.height,
+    profile,
+    cropTopPx,
+  );
+  let preservationGuardTriggered = false;
+  if (assessment.likelyDamaged) {
+    const softened = softenProcessingParameters(params);
+    result = processPage(srcData, width, height, softened, profile);
+    preservationGuardTriggered = true;
+  }
+
+  if (rawRegions.length === 0) {
+    return { ...result, whiteBoxRegions: [], preservationGuardTriggered };
+  }
 
   // Convert FULL-page detections to CROPPED coords for storage + composite.
   // The kernel cropped `cropTopPx` rows from the top (and bottom), so
   // regions must be shifted up and clipped to `result.height`.
-  const cropTopPx = Math.floor(height * ((params.bannerCropTopPct ?? 0) / 100));
   const cropped: WhiteBoxRegion[] = [];
   for (const r of rawRegions) {
     let y = r.y - cropTopPx;
@@ -419,5 +443,5 @@ export function processPageWithWhiteBoxHeal(
       cropTopPx,
     );
   }
-  return { ...result, whiteBoxRegions: cropped };
+  return { ...result, whiteBoxRegions: cropped, preservationGuardTriggered };
 }
