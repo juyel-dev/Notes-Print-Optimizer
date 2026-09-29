@@ -169,6 +169,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       inkCoverageBeforePct: ib,
       inkCoverageAfterPct: ia,
       whiteBoxRegions: healed.whiteBoxRegions,
+      preservationGuardTriggered: healed.preservationGuardTriggered,
       processingTimeMs: Math.round(performance.now() - t0),
     };
   }
@@ -221,6 +222,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       profile: PageProfile;
       parameters: import('../../types').ProcessingParameters;
       whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
+      preservationGuardTriggered?: boolean;
     }> = [];
 
     let sumBrightness = 0;
@@ -267,7 +269,13 @@ export class ProcessingEngineV2 implements IProcessingEngine {
 
       if (localSignal.aborted) throw new DOMException('Aborted', 'AbortError');
 
-      const { optimizedImageData, inkCoverageBeforePct: inkBefore, inkCoverageAfterPct: inkAfter, whiteBoxRegions } = result;
+      const {
+      optimizedImageData,
+      inkCoverageBeforePct: inkBefore,
+      inkCoverageAfterPct: inkAfter,
+      whiteBoxRegions,
+      preservationGuardTriggered,
+    } = result;
 
       /* Phase 4: Thumbnail */
       const thumbStart = performance.now();
@@ -308,6 +316,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         profile: p.profile,
         parameters: p.parameters,
         whiteBoxRegions,
+        preservationGuardTriggered,
       });
 
       onProgress?.(p.pageIndex + 1, totalPages, `[V2] Completed page ${p.pageIndex + 1}/${totalPages}`);
@@ -427,6 +436,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       height: m.height,
       storageKey: pdfId,
       whiteBoxRegions: m.whiteBoxRegions,
+      preservationGuardTriggered: m.preservationGuardTriggered,
     }));
 
     const totalMs = Math.round(performance.now() - t0);
