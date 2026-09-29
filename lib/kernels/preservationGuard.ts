@@ -116,7 +116,6 @@ function buildStats(
         const down = y + 1 < height ? isForeground(readLuma(data, width, x, sampleY + 1)) : false;
         const neighbors = Number(left) + Number(right) + Number(up) + Number(down);
         if (neighbors <= 2) thin++;
-        fgSamples++;
       }
 
       const sampleY = y + yOffset;
