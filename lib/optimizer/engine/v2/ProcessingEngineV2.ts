@@ -380,12 +380,14 @@ export class ProcessingEngineV2 implements IProcessingEngine {
        * document-wide preset for every page. Explicit user presets still win. */
       const autoPreset = selectPresetForPage(profile);
       const requestedPreset = input.customParams?.preset;
-      const selectedPreset = requestedPreset && requestedPreset !== 'AUTO_ADAPTIVE'
-        ? requestedPreset
-        : autoPreset;
+      const autoModeRequested = !requestedPreset || requestedPreset === 'AUTO_ADAPTIVE';
+      const selectedPreset = autoModeRequested ? autoPreset : requestedPreset;
       const baseParams = ParameterGenerator.getPresetParameters(selectedPreset);
+      const autoTunedParams = autoModeRequested
+        ? ParameterGenerator.adaptAutoPageParameters(baseParams, profile)
+        : baseParams;
       const params = {
-        ...baseParams,
+        ...autoTunedParams,
         ...(input.customParams ?? {}),
         preset: selectedPreset,
         invertMode: resolveEffectiveInvertMode(
