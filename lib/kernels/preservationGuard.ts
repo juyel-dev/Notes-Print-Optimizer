@@ -95,7 +95,6 @@ function buildStats(
   let foreground = 0;
   let edges = 0;
   let thin = 0;
-  let fgSamples = 0;
 
   const isForeground = (lum: number): boolean => {
     if (before) return isDarkSource ? lum >= lightThreshold : lum <= darkThreshold;
