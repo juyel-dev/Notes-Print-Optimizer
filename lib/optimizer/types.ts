@@ -16,7 +16,8 @@ export interface PageProfile {
   height: number;
   averageBrightness: number; // 0 - 255
   contrast: number; // Standard deviation of luminance
-  inkDensity: number; // Percentage of non-white pixels (0 - 1)
+  /** Legacy non-light-pixel ratio; use foregroundCoverage for polarity-aware content density. */
+  inkDensity: number;
   darkBackgroundRatio: number; // Ratio of pixels < 60 brightness
   lightBackgroundRatio: number; // Ratio of pixels > 200 brightness
   dominantHue: number; // 0 - 360
@@ -24,6 +25,7 @@ export interface PageProfile {
   topBannerHeightPct: number;
   hasBottomBanner: boolean;
   bottomBannerHeightPct: number;
+  /** Legacy isolated-foreground ratio proxy; not a scan-noise measurement by itself. */
   estimatedNoise: number;
   strokeThickness: number;
   /** Sampled structural edge density used by future recipe selection. */
