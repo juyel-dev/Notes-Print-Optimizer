@@ -432,7 +432,7 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     foregroundSamples > 0 &&
     (
       strokeThickness <= 2.4 ||
-      (foregroundCoverage <= 0.03 && edgeDensity > 0.01)
+      (foregroundCoverage <= 0.03 && edgeDensity > 0.005)
     );
 
   const { topBannerPct, bottomBannerPct } = detectBanners(data, width, height);
