@@ -1,12 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
   "renderScale": 1.8,
   "numericTolerances": {
     "inkDensity": 0.01,
     "edgeDensity": 0.01,
     "colorfulPixelRatio": 0.01,
     "estimatedNoise": 5,
-    "strokeThickness": 0.25
+    "strokeThickness": 0.25,
+    "foregroundCoverage": 0.02,
+    "polarityConfidence": 0.05,
+    "bbox": 0.02
   },
   "fixtures": {
     "text": {
@@ -16,11 +19,28 @@
         "classification": "LIGHT_SLIDE",
         "density": "sparse",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.973,
+        "foregroundCoverage": 0.0253,
+        "contentBoundingBox": {
+          "xMin": 0.093,
+          "yMin": 0.088,
+          "xMax": 0.787,
+          "yMax": 0.484
+        },
+        "margins": {
+          "top": 0.088,
+          "right": 0.213,
+          "bottom": 0.516,
+          "left": 0.093
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.037,
         "colorfulPixelRatio": 0.0071,
         "estimatedNoise": 41,
-        "strokeThickness": 2.2,
+        "strokeThickness": 2.18,
         "inkDensity": 0.027
       },
       "1": {
@@ -29,19 +49,53 @@
         "classification": "LIGHT_SLIDE",
         "density": "sparse",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.986,
+        "foregroundCoverage": 0.0125,
+        "contentBoundingBox": {
+          "xMin": 0.093,
+          "yMin": 0.097,
+          "xMax": 0.755,
+          "yMax": 0.347
+        },
+        "margins": {
+          "top": 0.097,
+          "right": 0.245,
+          "bottom": 0.653,
+          "left": 0.093
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.0205,
         "colorfulPixelRatio": 0.0066,
-        "estimatedNoise": 47,
-        "strokeThickness": 2.01,
+        "estimatedNoise": 48,
+        "strokeThickness": 2,
         "inkDensity": 0.014
       },
       "2": {
         "width": 1102,
         "height": 1426,
         "classification": "DARK_SLIDE",
-        "density": "dense",
+        "density": "sparse",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.97,
+        "foregroundCoverage": 0.0171,
+        "contentBoundingBox": {
+          "xMin": 0.095,
+          "yMin": 0.091,
+          "xMax": 1,
+          "yMax": 1
+        },
+        "margins": {
+          "top": 0.091,
+          "right": 0,
+          "bottom": 0,
+          "left": 0.095
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.0352,
         "colorfulPixelRatio": 0.9752,
@@ -53,8 +107,25 @@
         "width": 1102,
         "height": 1426,
         "classification": "DARK_SLIDE",
-        "density": "dense",
+        "density": "sparse",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.975,
+        "foregroundCoverage": 0.0102,
+        "contentBoundingBox": {
+          "xMin": 0.093,
+          "yMin": 0.095,
+          "xMax": 1,
+          "yMax": 1
+        },
+        "margins": {
+          "top": 0.095,
+          "right": 0,
+          "bottom": 0,
+          "left": 0.093
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.0275,
         "colorfulPixelRatio": 0.9842,
@@ -68,19 +139,53 @@
         "classification": "SCREENSHOT_HEAVY",
         "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.887,
+        "foregroundCoverage": 0.1046,
+        "contentBoundingBox": {
+          "xMin": 0.093,
+          "yMin": 0.099,
+          "xMax": 1,
+          "yMax": 0.863
+        },
+        "margins": {
+          "top": 0.099,
+          "right": 0,
+          "bottom": 0.137,
+          "left": 0.093
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": false,
+        "thinStrokeRisk": true,
         "dominantHue": 250,
         "edgeDensity": 0.1523,
         "colorfulPixelRatio": 0.0016,
-        "estimatedNoise": 30,
-        "strokeThickness": 2.34,
+        "estimatedNoise": 31,
+        "strokeThickness": 2.32,
         "inkDensity": 0.113
       },
       "5": {
         "width": 1102,
         "height": 1426,
         "classification": "DARK_SLIDE",
-        "density": "dense",
+        "density": "medium",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.903,
+        "foregroundCoverage": 0.0585,
+        "contentBoundingBox": {
+          "xMin": 0,
+          "yMin": 0.107,
+          "xMax": 1,
+          "yMax": 1
+        },
+        "margins": {
+          "top": 0.107,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.1311,
         "colorfulPixelRatio": 0.915,
@@ -94,26 +199,60 @@
         "width": 1728,
         "height": 972,
         "classification": "DARK_SLIDE",
-        "density": "dense",
+        "density": "sparse",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.962,
+        "foregroundCoverage": 0.0215,
+        "contentBoundingBox": {
+          "xMin": 0.035,
+          "yMin": 0.074,
+          "xMax": 0.952,
+          "yMax": 0.956
+        },
+        "margins": {
+          "top": 0.074,
+          "right": 0.048,
+          "bottom": 0.044,
+          "left": 0.035
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.042,
         "colorfulPixelRatio": 0.9929,
-        "estimatedNoise": 18,
-        "strokeThickness": 3.06,
+        "estimatedNoise": 30,
+        "strokeThickness": 2.51,
         "inkDensity": 0.979
       },
       "1": {
         "width": 1728,
         "height": 972,
         "classification": "LIGHT_SLIDE",
-        "density": "sparse",
+        "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.905,
+        "foregroundCoverage": 0.0489,
+        "contentBoundingBox": {
+          "xMin": 0.06,
+          "yMin": 0.136,
+          "xMax": 0.6,
+          "yMax": 0.663
+        },
+        "margins": {
+          "top": 0.136,
+          "right": 0.4,
+          "bottom": 0.337,
+          "left": 0.06
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": false,
         "dominantHue": 210,
         "edgeDensity": 0.0102,
         "colorfulPixelRatio": 0.0953,
         "estimatedNoise": 0,
-        "strokeThickness": 3.46,
+        "strokeThickness": 3.25,
         "inkDensity": 0.095
       },
       "2": {
@@ -122,11 +261,28 @@
         "classification": "LIGHT_SLIDE",
         "density": "sparse",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.939,
+        "foregroundCoverage": 0.03,
+        "contentBoundingBox": {
+          "xMin": 0.127,
+          "yMin": 0.128,
+          "xMax": 0.892,
+          "yMax": 0.882
+        },
+        "margins": {
+          "top": 0.128,
+          "right": 0.108,
+          "bottom": 0.118,
+          "left": 0.127
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 30,
         "edgeDensity": 0.0348,
         "colorfulPixelRatio": 0.0541,
-        "estimatedNoise": 1,
-        "strokeThickness": 3.1,
+        "estimatedNoise": 5,
+        "strokeThickness": 2.56,
         "inkDensity": 0.061
       },
       "3": {
@@ -135,11 +291,28 @@
         "classification": "MIXED",
         "density": "dense",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.001,
+        "foregroundCoverage": 0.0526,
+        "contentBoundingBox": {
+          "xMin": 0,
+          "yMin": 0,
+          "xMax": 0.998,
+          "yMax": 0.997
+        },
+        "margins": {
+          "top": 0,
+          "right": 0.002,
+          "bottom": 0.003,
+          "left": 0
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 210,
         "edgeDensity": 0.2874,
         "colorfulPixelRatio": 0.7896,
-        "estimatedNoise": 100,
-        "strokeThickness": 1.09,
+        "estimatedNoise": 99,
+        "strokeThickness": 1.11,
         "inkDensity": 0.999
       }
     },
@@ -148,8 +321,25 @@
         "width": 1728,
         "height": 972,
         "classification": "LIGHT_SLIDE",
-        "density": "sparse",
+        "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.954,
+        "foregroundCoverage": 0.0457,
+        "contentBoundingBox": {
+          "xMin": 0.002,
+          "yMin": 0.008,
+          "xMax": 0.996,
+          "yMax": 0.985
+        },
+        "margins": {
+          "top": 0.008,
+          "right": 0.004,
+          "bottom": 0.015,
+          "left": 0.002
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": false,
+        "thinStrokeRisk": false,
         "dominantHue": 0,
         "edgeDensity": 0.0525,
         "colorfulPixelRatio": 0,
@@ -161,8 +351,25 @@
         "width": 1728,
         "height": 972,
         "classification": "LIGHT_SLIDE",
-        "density": "sparse",
+        "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.954,
+        "foregroundCoverage": 0.0451,
+        "contentBoundingBox": {
+          "xMin": 0.002,
+          "yMin": 0,
+          "xMax": 0.998,
+          "yMax": 0.989
+        },
+        "margins": {
+          "top": 0,
+          "right": 0.002,
+          "bottom": 0.011,
+          "left": 0.002
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": false,
+        "thinStrokeRisk": false,
         "dominantHue": 0,
         "edgeDensity": 0.0516,
         "colorfulPixelRatio": 0,
@@ -174,8 +381,25 @@
         "width": 1728,
         "height": 972,
         "classification": "LIGHT_SLIDE",
-        "density": "sparse",
+        "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.953,
+        "foregroundCoverage": 0.0465,
+        "contentBoundingBox": {
+          "xMin": 0.019,
+          "yMin": 0.066,
+          "xMax": 0.991,
+          "yMax": 0.985
+        },
+        "margins": {
+          "top": 0.066,
+          "right": 0.009,
+          "bottom": 0.015,
+          "left": 0.019
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": false,
+        "thinStrokeRisk": false,
         "dominantHue": 0,
         "edgeDensity": 0.0519,
         "colorfulPixelRatio": 0,
@@ -187,8 +411,25 @@
         "width": 1728,
         "height": 972,
         "classification": "LIGHT_SLIDE",
-        "density": "sparse",
+        "density": "medium",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.952,
+        "foregroundCoverage": 0.0467,
+        "contentBoundingBox": {
+          "xMin": 0.007,
+          "yMin": 0.012,
+          "xMax": 0.975,
+          "yMax": 0.993
+        },
+        "margins": {
+          "top": 0.012,
+          "right": 0.025,
+          "bottom": 0.007,
+          "left": 0.007
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": false,
+        "thinStrokeRisk": false,
         "dominantHue": 0,
         "edgeDensity": 0.0531,
         "colorfulPixelRatio": 0,
@@ -202,13 +443,30 @@
         "width": 1728,
         "height": 972,
         "classification": "DARK_SLIDE",
-        "density": "dense",
+        "density": "sparse",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.966,
+        "foregroundCoverage": 0.0191,
+        "contentBoundingBox": {
+          "xMin": 0.044,
+          "yMin": 0.119,
+          "xMax": 0.936,
+          "yMax": 0.709
+        },
+        "margins": {
+          "top": 0.119,
+          "right": 0.064,
+          "bottom": 0.291,
+          "left": 0.044
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 230,
         "edgeDensity": 0.0404,
         "colorfulPixelRatio": 0.9825,
-        "estimatedNoise": 40,
-        "strokeThickness": 2.31,
+        "estimatedNoise": 42,
+        "strokeThickness": 2.25,
         "inkDensity": 0.989
       },
       "1": {
@@ -217,11 +475,28 @@
         "classification": "LIGHT_SLIDE",
         "density": "sparse",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.959,
+        "foregroundCoverage": 0.0255,
+        "contentBoundingBox": {
+          "xMin": 0.044,
+          "yMin": 0.103,
+          "xMax": 0.391,
+          "yMax": 0.91
+        },
+        "margins": {
+          "top": 0.103,
+          "right": 0.609,
+          "bottom": 0.09,
+          "left": 0.044
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 210,
         "edgeDensity": 0.0139,
         "colorfulPixelRatio": 0.0358,
-        "estimatedNoise": 3,
-        "strokeThickness": 3.23,
+        "estimatedNoise": 6,
+        "strokeThickness": 3.05,
         "inkDensity": 0.041
       },
       "2": {
@@ -230,11 +505,28 @@
         "classification": "LIGHT_SLIDE",
         "density": "sparse",
         "foregroundPolarity": "dark-on-light",
+        "polarityConfidence": 0.933,
+        "foregroundCoverage": 0.0153,
+        "contentBoundingBox": {
+          "xMin": 0.044,
+          "yMin": 0.103,
+          "xMax": 0.936,
+          "yMax": 0.877
+        },
+        "margins": {
+          "top": 0.103,
+          "right": 0.064,
+          "bottom": 0.123,
+          "left": 0.044
+        },
+        "sparseContent": true,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": true,
         "dominantHue": 210,
         "edgeDensity": 0.0185,
         "colorfulPixelRatio": 0.0612,
-        "estimatedNoise": 4,
-        "strokeThickness": 3.31,
+        "estimatedNoise": 20,
+        "strokeThickness": 2.31,
         "inkDensity": 0.067
       },
       "3": {
@@ -243,11 +535,28 @@
         "classification": "DARK_SLIDE",
         "density": "dense",
         "foregroundPolarity": "light-on-dark",
+        "polarityConfidence": 0.614,
+        "foregroundCoverage": 0.3661,
+        "contentBoundingBox": {
+          "xMin": 0.044,
+          "yMin": 0.074,
+          "xMax": 0.873,
+          "yMax": 0.931
+        },
+        "margins": {
+          "top": 0.074,
+          "right": 0.127,
+          "bottom": 0.069,
+          "left": 0.044
+        },
+        "sparseContent": false,
+        "coloredAnnotationPresent": true,
+        "thinStrokeRisk": false,
         "dominantHue": 230,
         "edgeDensity": 0.0248,
         "colorfulPixelRatio": 0.6298,
         "estimatedNoise": 0,
-        "strokeThickness": 3.54,
+        "strokeThickness": 3.53,
         "inkDensity": 0.633
       }
     }
