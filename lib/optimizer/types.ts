@@ -16,7 +16,8 @@ export interface PageProfile {
   height: number;
   averageBrightness: number; // 0 - 255
   contrast: number; // Standard deviation of luminance
-  inkDensity: number; // Percentage of non-white pixels (0 - 1)
+  /** Legacy non-light-pixel ratio; use foregroundCoverage for polarity-aware content density. */
+  inkDensity: number;
   darkBackgroundRatio: number; // Ratio of pixels < 60 brightness
   lightBackgroundRatio: number; // Ratio of pixels > 200 brightness
   dominantHue: number; // 0 - 360
@@ -24,6 +25,7 @@ export interface PageProfile {
   topBannerHeightPct: number;
   hasBottomBanner: boolean;
   bottomBannerHeightPct: number;
+  /** Legacy isolated-foreground ratio proxy; not a scan-noise measurement by itself. */
   estimatedNoise: number;
   strokeThickness: number;
   /** Sampled structural edge density used by future recipe selection. */
@@ -31,8 +33,32 @@ export interface PageProfile {
   /** Sampled ratio of pixels with meaningful color saturation. */
   colorfulPixelRatio?: number;
   /** Dominant foreground/background polarity inferred from the sampled page. */
-  foregroundPolarity?: 'light-on-dark' | 'dark-on-light';
-  /** Coarse visual content density inferred from ink and structural edge coverage. */
+  foregroundPolarity?: 'light-on-dark' | 'dark-on-light' | 'mixed';
+  /** Confidence in the page-level polarity estimate (0-1). */
+  polarityConfidence?: number;
+  /** Polarity-aware fraction of the full page occupied by foreground/content samples. */
+  foregroundCoverage?: number;
+  /** Normalized bounding box of detected foreground content. */
+  contentBoundingBox?: {
+    xMin: number;
+    yMin: number;
+    xMax: number;
+    yMax: number;
+  };
+  /** Normalized empty margins around detected foreground content. */
+  margins?: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  /** True when foreground coverage is low enough to treat the page as sparse. */
+  sparseContent?: boolean;
+  /** True when meaningful saturated pixels are present in the page. */
+  coloredAnnotationPresent?: boolean;
+  /** Conservative preservation signal for thin foreground structure. */
+  thinStrokeRisk?: boolean;
+  /** Coarse visual content density inferred from foreground coverage and structural edge coverage. */
   density?: PageDensity;
   classification: PageClassification;
 }

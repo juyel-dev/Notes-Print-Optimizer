@@ -34,10 +34,14 @@ describe('PageProfile structural signals', () => {
     const profile = analyzeImageData(image, 0);
 
     expect(profile.foregroundPolarity).toBe('dark-on-light');
+    expect(profile.polarityConfidence).toBeGreaterThan(0.9);
+    expect(profile.foregroundCoverage).toBeGreaterThan(0.05);
+    expect(profile.foregroundCoverage).toBeLessThan(0.1);
+    expect(profile.contentBoundingBox).toBeDefined();
+    expect(profile.margins).toBeDefined();
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0);
     expect(profile.edgeDensity).toBeLessThanOrEqual(1);
     expect(profile.colorfulPixelRatio).toBe(0);
-    expect(profile.density).toBe('sparse');
   });
 
   it('reports light-on-dark polarity for a dark page', () => {
@@ -56,6 +60,9 @@ describe('PageProfile structural signals', () => {
     const profile = analyzeImageData(image, 0);
 
     expect(profile.foregroundPolarity).toBe('light-on-dark');
+    expect(profile.polarityConfidence).toBeGreaterThan(0.9);
+    expect(profile.foregroundCoverage).toBeGreaterThan(0.05);
+    expect(profile.foregroundCoverage).toBeLessThan(0.1);
     expect(profile.edgeDensity).toBeGreaterThan(0);
   });
 
@@ -78,7 +85,109 @@ describe('PageProfile structural signals', () => {
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0.08);
     expect(profile.colorfulPixelRatio).toBeGreaterThanOrEqual(0.02);
     expect(profile.foregroundPolarity).toBe('dark-on-light');
-    expect(profile.density).toBe('dense');
+    expect(profile.density).toBe('medium');
+  });
+
+  it('reports mixed polarity and uses local foreground detection', () => {
+    const image = solidImage(128, 100, [20, 20, 20]);
+    const data = image.data;
+
+    for (let y = 0; y < 100; y++) {
+      for (let x = 64; x < 128; x++) {
+        const idx = (y * 128 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    for (let y = 20; y < 80; y++) {
+      for (let x = 28; x < 34; x++) {
+        const idx = (y * 128 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    for (let y = 20; y < 80; y++) {
+      for (let x = 92; x < 98; x++) {
+        const idx = (y * 128 + x) * 4;
+        data[idx] = 20;
+        data[idx + 1] = 20;
+        data[idx + 2] = 20;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 128, 100), 0);
+
+    expect(profile.foregroundPolarity).toBe('mixed');
+    expect(profile.polarityConfidence).toBeLessThan(0.2);
+    expect(profile.foregroundCoverage).toBeGreaterThan(0.03);
+    expect(profile.foregroundCoverage).toBeLessThan(0.15);
+    expect(profile.classification).toBe('MIXED');
+    expect(profile.contentBoundingBox).toBeDefined();
+    expect(profile.margins).toBeDefined();
+  });
+
+  it('marks sparse dark pages as sparse instead of dense background coverage', () => {
+    const image = solidImage(100, 100, [25, 25, 25]);
+    const data = image.data;
+
+    for (let y = 45; y < 55; y++) {
+      for (let x = 45; x < 55; x++) {
+        const idx = (y * 100 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 100, 100), 0);
+
+    expect(profile.foregroundCoverage).toBeGreaterThan(0);
+    expect(profile.foregroundCoverage).toBeLessThan(0.03);
+    expect(profile.sparseContent).toBe(true);
+    expect(profile.density).toBe('sparse');
+    expect(profile.inkDensity).toBeGreaterThan(0.9);
+  });
+
+  it('flags color presence independently from dominant hue magnitude', () => {
+    const image = solidImage(100, 100, [20, 20, 20]);
+    const data = image.data;
+
+    for (let y = 40; y < 60; y++) {
+      for (let x = 45; x < 55; x++) {
+        const idx = (y * 100 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 220;
+        data[idx + 2] = 60;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 100, 100), 0);
+
+    expect(profile.coloredAnnotationPresent).toBe(true);
+    expect(profile.colorfulPixelRatio).toBeGreaterThan(0);
+  });
+
+  it('flags thin foreground structure for preservation', () => {
+    const image = solidImage(200, 100, [25, 25, 25]);
+    const data = image.data;
+
+    for (let y = 10; y < 90; y++) {
+      for (let x = 99; x < 101; x++) {
+        const idx = (y * 200 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 200, 100), 0);
+
+    expect(profile.thinStrokeRisk).toBe(true);
+    expect(profile.foregroundCoverage).toBeLessThan(0.05);
   });
 
   it('classifies a nearly blank page as sparse', () => {
