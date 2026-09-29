@@ -58,13 +58,74 @@ function fastMaxChannel(r: number, g: number, b: number): number {
   return r > g ? (r > b ? r : b) : (g > b ? g : b);
 }
 
+function clampByte(v: number): number {
+  return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
+function luminance(r: number, g: number, b: number): number {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/** Apply the safe, non-binary print cleanup knobs before mask extraction. */
+function applyTonalAdjustments(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  params: {
+    backgroundWhiteningThreshold?: number;
+    contrastEnhancement?: number;
+  },
+): void {
+  const whitening = params.backgroundWhiteningThreshold ?? 255;
+  const contrastAmount = Math.max(0, Math.min(100, params.contrastEnhancement ?? 0));
+  const contrastFactor = 1 + contrastAmount / 100;
+
+  for (let i = 0; i < width * height * 4; i += 4) {
+    let r = data[i];
+    let g = data[i + 1];
+    let b = data[i + 2];
+
+    if (whitening > 0 && whitening < 255 && luminance(r, g, b) >= whitening) {
+      r = 255; g = 255; b = 255;
+    }
+
+    if (contrastAmount > 0) {
+      r = clampByte(128 + (r - 128) * contrastFactor);
+      g = clampByte(128 + (g - 128) * contrastFactor);
+      b = clampByte(128 + (b - 128) * contrastFactor);
+    }
+
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+    data[i + 3] = 0xFF;
+  }
+}
+
+/** Whether the current page needs the full foreground-mask pipeline. */
+function shouldBuildForegroundMask(
+  params: {
+    invertMode: 'smart' | 'simple' | 'none';
+    smartColorMapping?: boolean;
+    binaizationThreshold?: number;
+  },
+  isDark: boolean,
+): boolean {
+  return (
+    params.invertMode !== 'none' ||
+    isDark ||
+    params.smartColorMapping === true ||
+    (params.binaizationThreshold ?? 0) > 0
+  );
+}
+
 /**
  * Combined connected-components pass: identifies all foreground components
  * and removes those matching decorative-fill OR noise criteria in a single
  * BFS traversal. Replaces the previous approach of 7+ separate CC passes
  * (one per color channel + noise removal) with exactly 1 pass.
  */
-function removeDecorativeAndNoise(fm: Uint8Array, w: number, h: number): void {
+function removeDecorativeAndNoise(fm: Uint8Array, w: number, h: number, denoiseAmount = 15): void {
   const totalPixels = w * h;
   ensureCC(totalPixels);
   const labels = getCCLabels();
@@ -109,7 +170,17 @@ function removeDecorativeAndNoise(fm: Uint8Array, w: number, h: number): void {
 
   if (cl <= 1) return; // No components found
 
-  const minArea = Math.max(6, (totalPixels / 600000) | 0);
+  /* Keep the historical default at >=6 px for existing presets/tests, but
+   * let denoise=0 disable component suppression and stronger settings raise
+   * the threshold conservatively. Small handwriting marks are therefore not
+   * erased merely because the page uses a light recipe. */
+  const minAreaBase = Math.max(6, (totalPixels / 600000) | 0);
+  const minArea = denoiseAmount <= 0
+    ? 1
+    : Math.max(
+        minAreaBase,
+        Math.min(32, minAreaBase + Math.max(0, Math.round((denoiseAmount - 25) / 4))),
+      );
   for (let lb = 1; lb < cl; lb++) {
     const area = sArea[lb];
     if (area < minArea) { drop[lb] = 1; continue; }
@@ -134,12 +205,17 @@ export function processPage(
   width: number,
   height: number,
   params: {
-    invertMode: string;
+    invertMode: 'smart' | 'simple' | 'none';
     bannerCropTopPct: number;
     bannerCropBottomPct: number;
     strokeEnhancement?: string;
     sharpenAmount: number;
     dilationKernelSize?: number;
+    smartColorMapping?: boolean;
+    backgroundWhiteningThreshold?: number;
+    contrastEnhancement?: number;
+    denoiseAmount?: number;
+    binaizationThreshold?: number;
   },
   profile: { classification: string; darkBackgroundRatio: number }
 ): KernelProcessResult {
@@ -149,22 +225,42 @@ export function processPage(
   const dw = sw, dh = Math.max(10, sh - ct - cb);
   const totalPixels = dw * dh;
 
-  const convertColors = params.invertMode === 'smart';
+  const convertColors = params.invertMode === 'smart' || params.smartColorMapping === true;
   /* Same threshold as the analyzer (analysis.ts) so a page classified MIXED
      is never silently binarized by the kernel's own darker opinion. */
   const isDark =
     profile.classification === 'DARK_SLIDE' ||
     profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD;
-  const shouldProcess = params.invertMode !== 'none' || isDark;
+  const shouldProcess = shouldBuildForegroundMask(params, isDark);
 
   const ks = params.dilationKernelSize != null
     ? params.dilationKernelSize
     : (params.strokeEnhancement === 'strong' ? 5 : params.strokeEnhancement === 'normal' ? 3 : 0);
 
-  /* Monolithic WASM path: single call, 2 copies (in+out) vs ~15 round-trips.
-   * Falls through to per-kernel path if WASM isn't loaded or processPage
-   * isn't available in the current module. */
-  if (shouldProcess && wasmKernels && typeof wasmKernels.processPage === 'function') {
+  const backgroundWhiteningThreshold = params.backgroundWhiteningThreshold ?? 255;
+  const contrastEnhancement = Math.max(0, Math.min(100, params.contrastEnhancement ?? 0));
+  const denoiseAmount = Math.max(0, Math.min(100, params.denoiseAmount ?? 15));
+  const binaizationThreshold = Math.max(0, Math.min(255, params.binaizationThreshold ?? 0));
+  const hasAdvancedPixelControls =
+    backgroundWhiteningThreshold !== 255 ||
+    contrastEnhancement > 0 ||
+    denoiseAmount !== 0 ||
+    binaizationThreshold > 0 ||
+    params.smartColorMapping === true ||
+    params.invertMode === 'none';
+
+  /*
+   * Keep the monolithic WASM fast path only when it can represent the full
+   * parameter set. Older binaries expose only the original 7-argument
+   * process_page API, so advanced UI parameters must use the JS orchestration
+   * path where every control is actually honored.
+   */
+  if (
+    shouldProcess &&
+    !hasAdvancedPixelControls &&
+    wasmKernels &&
+    typeof wasmKernels.processPage === 'function'
+  ) {
     try {
       const cropped = srcData.subarray(ct * sw * 4, (ct + dh) * sw * 4);
       const rgbaView = new Uint8Array(cropped.buffer, cropped.byteOffset, cropped.byteLength);
@@ -184,22 +280,32 @@ export function processPage(
     }
   }
 
-  /* Fast path: no processing, just crop copy */
+  /* Crop first so both the tonal light-page path and the B/W mask path share
+   * exactly the same dimensions and alpha normalization. */
   const dst = new Uint8ClampedArray(totalPixels * 4);
+  const srcRowBytes = sw * 4;
+  const dstRowBytes = dw * 4;
+  const srcOffset = ct * srcRowBytes;
+  for (let y = 0; y < dh; y++) {
+    const srcStart = srcOffset + y * srcRowBytes;
+    const dstStart = y * dstRowBytes;
+    dst.set(srcData.subarray(srcStart, srcStart + dstRowBytes), dstStart);
+  }
+
+  applyTonalAdjustments(dst, dw, dh, {
+    backgroundWhiteningThreshold,
+    contrastEnhancement,
+  });
+
+  /*
+   * Light handwritten pages should stay grayscale/RGB unless the user
+   * explicitly asks for binarization or another foreground-mask operation.
+   * This fixes the old "invertMode=none => skip every useful control" behavior.
+   */
   if (!shouldProcess) {
-    const srcRowBytes = sw * 4;
-    const dstRowBytes = dw * 4;
-    const srcOffset = ct * srcRowBytes;
-    for (let y = 0; y < dh; y++) {
-      const srcStart = srcOffset + y * srcRowBytes;
-      const dstStart = y * dstRowBytes;
-      dst.set(srcData.subarray(srcStart, srcStart + dstRowBytes), dstStart);
+    if (params.sharpenAmount > 0) {
+      applyUnsharpMask(dst, dw, dh, params.sharpenAmount / 100);
     }
-    /* Force opaque alpha. NOTE: this MUST be a byte-wise write on the alpha
-       channel (RGBA byte 3). A Uint32 `|= 0xFF` writes byte 0 on
-       little-endian — red pixels with zero alpha (latent bug, previously
-       unreachable because the fast path never ran). */
-    for (let i = 3; i < dst.length; i += 4) dst[i] = 0xFF;
     return { buffer: dst.buffer, width: dw, height: dh };
   }
 
@@ -207,10 +313,11 @@ export function processPage(
   const fm = new Uint8Array(totalPixels);
 
   if (convertColors && wasmKernels) {
-    /* WASM-accelerated path: single-pass fused classify when available
-       (no 17.3 MB HSV + 10.1 MB channel buffers), else classify all
-       channels and OR into fm, then single CC pass */
-    const cropped = srcData.subarray(ct * sw * 4, (ct + dh) * sw * 4);
+    /* WASM-accelerated path: single-pass fused classify when available.
+     * The mask is now built from the already-whitened/contrast-adjusted
+     * cropped bitmap so those UI parameters are no longer dead settings.
+     */
+    const cropped = dst;
     if (typeof wasmKernels.classifyFused === 'function') {
       fm.set(wasmKernels.classifyFused(cropped, totalPixels));
     } else {
@@ -232,12 +339,12 @@ export function processPage(
     const hsv: [number, number, number] = [0, 0, 0];
 
     for (let y = 0; y < dh; y++) {
-      const srcRowOffset = (y + ct) * sw * 4;
+      const srcRowOffset = y * dw * 4;
       const dstRowOffset = y * dw;
 
       for (let x = 0; x < dw; x++) {
         const si = srcRowOffset + x * 4;
-        const r = srcData[si], g = srcData[si + 1], b = srcData[si + 2];
+        const r = dst[si], g = dst[si + 1], b = dst[si + 2];
 
         /* Early exit: skip dark pixels without full HSV conversion */
         const maxC = fastMaxChannel(r, g, b);
@@ -272,20 +379,41 @@ export function processPage(
     }
 
     /* Single CC pass replaces 7+ separate stripDecorativeFills + removeNoise calls */
-    removeDecorativeAndNoise(fm, dw, dh);
+    removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
   } else {
     /* Simple luminance-based extraction */
     for (let y = 0; y < dh; y++) {
-      const srcRowOffset = (y + ct) * sw * 4;
+      const srcRowOffset = y * dw * 4;
       const dstRowOffset = y * dw;
       for (let x = 0; x < dw; x++) {
         const si = srcRowOffset + x * 4;
-        if (getLuminance(srcData[si], srcData[si + 1], srcData[si + 2]) >= 70) {
-          fm[dstRowOffset + x] = 1;
-        }
+        const lum = getLuminance(dst[si], dst[si + 1], dst[si + 2]);
+        const foregroundThreshold = binaizationThreshold > 0 ? binaizationThreshold : 70;
+        const keepForeground = isDark || params.invertMode === 'smart'
+          ? lum >= foregroundThreshold
+          : lum < foregroundThreshold;
+        if (keepForeground) fm[dstRowOffset + x] = 1;
       }
     }
-    removeDecorativeAndNoise(fm, dw, dh);
+    removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
+  }
+
+  /*
+   * Explicit binarization is honored as a luminance gate even when smart
+   * color classification is active. On dark pages the foreground is bright;
+   * on light pages it is dark.
+   */
+  if (binaizationThreshold > 0) {
+    for (let y = 0; y < dh; y++) {
+      const row = y * dw;
+      for (let x = 0; x < dw; x++) {
+        const i = row + x;
+        const si = i * 4;
+        const lum = getLuminance(dst[si], dst[si + 1], dst[si + 2]);
+        const keep = isDark ? lum >= binaizationThreshold : lum < binaizationThreshold;
+        if (!keep) fm[i] = 0;
+      }
+    }
   }
 
   /* Post-processing: dilation with numeric kernel size override */
