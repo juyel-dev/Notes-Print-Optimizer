@@ -9,6 +9,10 @@ import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
  * transformation that could destroy handwriting, equations, or diagrams.
  */
 export function selectPresetForPage(profile: PageProfile): PresetMode {
+  if (profile.foregroundPolarity === 'mixed') {
+    return 'LIGHT_HANDWRITTEN';
+  }
+
   switch (profile.classification) {
     case 'DARK_SLIDE':
       return 'PW_DARK_SLIDE';
