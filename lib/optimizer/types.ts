@@ -1,3 +1,5 @@
+export type PageDensity = 'sparse' | 'medium' | 'dense';
+
 export type PageClassification =
   | 'DARK_SLIDE'
   | 'LIGHT_SLIDE'
@@ -30,6 +32,8 @@ export interface PageProfile {
   colorfulPixelRatio?: number;
   /** Dominant foreground/background polarity inferred from the sampled page. */
   foregroundPolarity?: 'light-on-dark' | 'dark-on-light';
+  /** Coarse visual content density inferred from ink and structural edge coverage. */
+  density?: PageDensity;
   classification: PageClassification;
 }
 

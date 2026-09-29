@@ -8,7 +8,7 @@
  *  - Conservative classification ordering so recipe behavior stays stable while
  *    the profile becomes more informative.
  */
-import type { PageProfile, PageClassification } from './types';
+import type { PageDensity, PageProfile, PageClassification } from './types';
 import { getLuminance } from '../kernels';
 import { detectBanners } from '../kernels';
 import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
@@ -35,6 +35,12 @@ function rgbToHueSat(r: number, g: number, b: number): { hue: number; saturation
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function classifyDensity(inkDensity: number, edgeDensity: number): PageDensity {
+  if (inkDensity >= 0.45 || edgeDensity >= 0.30) return 'dense';
+  if (inkDensity <= 0.12 && edgeDensity <= 0.10) return 'sparse';
+  return 'medium';
 }
 
 export function analyzeImageData(imageData: ImageData, pageIndex: number): PageProfile {
@@ -219,6 +225,7 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
   const foregroundPolarity: 'light-on-dark' | 'dark-on-light' = isDarkSource
     ? 'light-on-dark'
     : 'dark-on-light';
+  const density = classifyDensity(inkDensity, edgeDensity);
 
   const { topBannerPct, bottomBannerPct } = detectBanners(data, width, height);
 
@@ -241,6 +248,7 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     edgeDensity: Number(edgeDensity.toFixed(4)),
     colorfulPixelRatio: Number(colorfulPixelRatio.toFixed(4)),
     foregroundPolarity,
+    density,
     classification,
   };
 }

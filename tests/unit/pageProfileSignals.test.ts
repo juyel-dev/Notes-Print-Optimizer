@@ -37,6 +37,7 @@ describe('PageProfile structural signals', () => {
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0);
     expect(profile.edgeDensity).toBeLessThanOrEqual(1);
     expect(profile.colorfulPixelRatio).toBe(0);
+    expect(profile.density).toBe('sparse');
   });
 
   it('reports light-on-dark polarity for a dark page', () => {
@@ -77,5 +78,11 @@ describe('PageProfile structural signals', () => {
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0.08);
     expect(profile.colorfulPixelRatio).toBeGreaterThanOrEqual(0.02);
     expect(profile.foregroundPolarity).toBe('dark-on-light');
+    expect(profile.density).toBe('dense');
+  });
+
+  it('classifies a nearly blank page as sparse', () => {
+    const profile = analyzeImageData(solidImage(100, 100, [250, 250, 250]), 0);
+    expect(profile.density).toBe('sparse');
   });
 });
