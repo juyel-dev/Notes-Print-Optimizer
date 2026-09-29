@@ -42,7 +42,7 @@ describe('selectPresetForPage', () => {
     expect(selectPresetForPage(profile('MIXED', 0.75))).toBe('PW_DARK_SLIDE');
   });
 
-  it('keeps screenshot-heavy pages conservative until screenshot-specific processing exists', () => {
-    expect(selectPresetForPage(profile('SCREENSHOT_HEAVY'))).toBe('LIGHT_HANDWRITTEN');
+  it('routes screenshot-heavy pages to the dedicated screenshot recipe', () => {
+    expect(selectPresetForPage(profile('SCREENSHOT_HEAVY'))).toBe('SCREENSHOT_PRINT');
   });
 });
