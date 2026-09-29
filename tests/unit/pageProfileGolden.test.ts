@@ -140,6 +140,7 @@ describe(
         const goldens = await collectGoldens();
         writeFileSync(GOLDENS_FILE, JSON.stringify(goldens, null, 2) + '\n');
         console.log('page profile goldens written to ' + GOLDENS_FILE);
+        console.log('PAGE_PROFILE_GOLDENS_JSON=' + JSON.stringify(goldens));
       }, 300_000);
       return;
     }
