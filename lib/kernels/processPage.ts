@@ -225,7 +225,8 @@ export function processPage(
   const dw = sw, dh = Math.max(10, sh - ct - cb);
   const totalPixels = dw * dh;
 
-  const convertColors = params.invertMode === 'smart' || params.smartColorMapping === true;
+  const useDarkColorClassifier = params.invertMode === 'smart' && isDark;
+  const useLightColorMapping = params.smartColorMapping === true && !isDark;
   /* Same threshold as the analyzer (analysis.ts) so a page classified MIXED
      is never silently binarized by the kernel's own darker opinion. */
   const isDark =
@@ -312,7 +313,7 @@ export function processPage(
   /* Foreground mask extraction: single pass, all channels OR'd into fm */
   const fm = new Uint8Array(totalPixels);
 
-  if (convertColors && wasmKernels) {
+  if (useDarkColorClassifier && wasmKernels) {
     /* WASM-accelerated path: single-pass fused classify when available.
      * The mask is now built from the already-whitened/contrast-adjusted
      * cropped bitmap so those UI parameters are no longer dead settings.
@@ -333,65 +334,27 @@ export function processPage(
       }
     }
     removeDecorativeAndNoise(fm, dw, dh);
-  } else if (convertColors) {
-    /* JS fallback: single-pass HSV classification into combined fm.
-     * Fast path: bright white pixels skip full HSV conversion (most common on dark slides). */
-    const hsv: [number, number, number] = [0, 0, 0];
-
+  } else {
+    /*
+     * Luminance path:
+     * - dark pages: bright foreground on a dark background
+     * - light pages: dark handwriting/print
+     * - optional smart color mapping: also retain vivid pen colors on light pages
+     */
     for (let y = 0; y < dh; y++) {
       const srcRowOffset = y * dw * 4;
       const dstRowOffset = y * dw;
-
       for (let x = 0; x < dw; x++) {
         const si = srcRowOffset + x * 4;
         const r = dst[si], g = dst[si + 1], b = dst[si + 2];
-
-        /* Early exit: skip dark pixels without full HSV conversion */
+        const lum = getLuminance(r, g, b);
         const maxC = fastMaxChannel(r, g, b);
-        if (maxC < 70) continue;
-
-        const pi = dstRowOffset + x;
-
-        /* Fast path: bright white/gray pixels (low saturation) — skip HSV.
-         * This is the most common foreground on dark slides. */
-        if (maxC > 155) {
-          const minC = fastMinChannel(r, g, b);
-          if (maxC - minC < 55) {
-            fm[pi] = 1;
-            continue;
-          }
-        }
-
-        rgbToHsv(r, g, b, hsv);
-        const h = hsv[0], s = hsv[1], v = hsv[2];
-
-        // Combined check: set fm directly (no per-channel masks needed)
-        if ((s < 55 && v > 155) ||
-            (h >= 15 && h <= 35 && s > 80 && v > 100) ||
-            (h >= 36 && h <= 85 && s > 55 && v > 75) ||
-            (h >= 86 && h <= 105 && s > 55 && v > 75) ||
-            (h >= 106 && h <= 135 && s > 55 && v > 65) ||
-            (h >= 136 && h <= 175 && s > 55 && v > 75) ||
-            (((h <= 15) || (h >= 175)) && s > 75 && v > 95)) {
-          fm[pi] = 1;
-        }
-      }
-    }
-
-    /* Single CC pass replaces 7+ separate stripDecorativeFills + removeNoise calls */
-    removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
-  } else {
-    /* Simple luminance-based extraction */
-    for (let y = 0; y < dh; y++) {
-      const srcRowOffset = y * dw * 4;
-      const dstRowOffset = y * dw;
-      for (let x = 0; x < dw; x++) {
-        const si = srcRowOffset + x * 4;
-        const lum = getLuminance(dst[si], dst[si + 1], dst[si + 2]);
+        const minC = fastMinChannel(r, g, b);
+        const saturated = maxC - minC > 55;
         const foregroundThreshold = binaizationThreshold > 0 ? binaizationThreshold : 70;
-        const keepForeground = isDark || params.invertMode === 'smart'
+        const keepForeground = isDark
           ? lum >= foregroundThreshold
-          : lum < foregroundThreshold;
+          : lum < foregroundThreshold || (useLightColorMapping && saturated && lum < 245);
         if (keepForeground) fm[dstRowOffset + x] = 1;
       }
     }
@@ -410,7 +373,11 @@ export function processPage(
         const i = row + x;
         const si = i * 4;
         const lum = getLuminance(dst[si], dst[si + 1], dst[si + 2]);
-        const keep = isDark ? lum >= binaizationThreshold : lum < binaizationThreshold;
+        const maxC = fastMaxChannel(dst[si], dst[si + 1], dst[si + 2]);
+        const minC = fastMinChannel(dst[si], dst[si + 1], dst[si + 2]);
+        const keep = isDark
+          ? lum >= binaizationThreshold
+          : lum < binaizationThreshold || (useLightColorMapping && maxC - minC > 55 && lum < 245);
         if (!keep) fm[i] = 0;
       }
     }
