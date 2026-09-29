@@ -37,7 +37,12 @@ describe('kernel honors unified dark threshold', () => {
     classification: 'MIXED' as const,
     darkBackgroundRatio: DARK_BG_RATIO_THRESHOLD - 0.03,
   };
-  const params = {
+  const params: {
+    invertMode: 'none' | 'smart' | 'simple';
+    bannerCropTopPct: number;
+    bannerCropBottomPct: number;
+    sharpenAmount: number;
+  } = {
     invertMode: 'none',
     bannerCropTopPct: 0,
     bannerCropBottomPct: 0,
