@@ -51,6 +51,8 @@ export interface KernelProcessResult {
   buffer: ArrayBuffer;
   width: number;
   height: number;
+  /** True when the preservation guard softened the first-pass recipe. */
+  preservationGuardTriggered?: boolean;
 }
 
 /** Fast max-channel check (avoids full HSV for dark pixel rejection) */
