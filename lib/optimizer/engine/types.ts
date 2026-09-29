@@ -43,6 +43,8 @@ export interface EnginePageProcessResult {
   processingTimeMs: number;
   /** White boxes restored from the original render (see kernels/whiteBox). */
   whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
+  /** True when a first-pass preservation failure caused a softened retry. */
+  preservationGuardTriggered?: boolean;
 }
 
 export interface EngineDocumentOutput {
