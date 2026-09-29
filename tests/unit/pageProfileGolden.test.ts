@@ -27,6 +27,13 @@ interface ProfileGolden {
   classification: PageProfile['classification'];
   density: PageProfile['density'];
   foregroundPolarity: PageProfile['foregroundPolarity'];
+  polarityConfidence: number;
+  foregroundCoverage: number;
+  contentBoundingBox?: PageProfile['contentBoundingBox'];
+  margins?: PageProfile['margins'];
+  sparseContent: boolean;
+  coloredAnnotationPresent: boolean;
+  thinStrokeRisk: boolean;
   dominantHue: number;
   edgeDensity: number;
   colorfulPixelRatio: number;
@@ -36,7 +43,7 @@ interface ProfileGolden {
 }
 
 interface GoldensFile {
-  version: 1;
+  version: 2;
   renderScale: number;
   numericTolerances: {
     inkDensity: number;
@@ -44,6 +51,9 @@ interface GoldensFile {
     colorfulPixelRatio: number;
     estimatedNoise: number;
     strokeThickness: number;
+    foregroundCoverage: number;
+    polarityConfidence: number;
+    bbox: number;
   };
   fixtures: Record<string, Record<string, ProfileGolden>>;
 }
@@ -63,6 +73,13 @@ function snapshot(profile: PageProfile): ProfileGolden {
     classification: profile.classification,
     density: profile.density,
     foregroundPolarity: profile.foregroundPolarity,
+    polarityConfidence: profile.polarityConfidence ?? 0,
+    foregroundCoverage: profile.foregroundCoverage ?? 0,
+    contentBoundingBox: profile.contentBoundingBox,
+    margins: profile.margins,
+    sparseContent: profile.sparseContent ?? false,
+    coloredAnnotationPresent: profile.coloredAnnotationPresent ?? false,
+    thinStrokeRisk: profile.thinStrokeRisk ?? false,
     dominantHue: profile.dominantHue,
     edgeDensity: profile.edgeDensity ?? 0,
     colorfulPixelRatio: profile.colorfulPixelRatio ?? 0,
@@ -97,7 +114,7 @@ async function collectGoldens(): Promise<GoldensFile> {
   }
 
   return {
-    version: 1,
+    version: 2,
     renderScale: RENDER_SCALE,
     numericTolerances: {
       inkDensity: 0.01,
@@ -105,6 +122,9 @@ async function collectGoldens(): Promise<GoldensFile> {
       colorfulPixelRatio: 0.01,
       estimatedNoise: 5,
       strokeThickness: 0.25,
+      foregroundCoverage: 0.02,
+      polarityConfidence: 0.05,
+      bbox: 0.02,
     },
     fixtures,
   };
@@ -125,7 +145,7 @@ describe(
     const goldens = loadGoldens();
 
     it('golden metadata matches analyzer render configuration', () => {
-      expect(goldens.version).toBe(1);
+      expect(goldens.version).toBe(2);
       expect(goldens.renderScale).toBe(RENDER_SCALE);
     });
 
@@ -151,6 +171,30 @@ describe(
             expect(actual.density).toBe(expected.density);
             expect(actual.foregroundPolarity).toBe(expected.foregroundPolarity);
             expect(actual.dominantHue).toBe(expected.dominantHue);
+
+            expectNear(
+              actual.foregroundCoverage,
+              expected.foregroundCoverage,
+              goldens.numericTolerances.foregroundCoverage,
+              name + '.pdf page ' + pageIndex + ' foregroundCoverage',
+            );
+            expectNear(
+              actual.polarityConfidence,
+              expected.polarityConfidence,
+              goldens.numericTolerances.polarityConfidence,
+              name + '.pdf page ' + pageIndex + ' polarityConfidence',
+            );
+            expect(actual.sparseContent).toBe(expected.sparseContent);
+            expect(actual.coloredAnnotationPresent).toBe(expected.coloredAnnotationPresent);
+            expect(actual.thinStrokeRisk).toBe(expected.thinStrokeRisk);
+            if (actual.contentBoundingBox || expected.contentBoundingBox) {
+              expect(actual.contentBoundingBox).toBeDefined();
+              expect(expected.contentBoundingBox).toBeDefined();
+              expectNear(actual.contentBoundingBox!.xMin, expected.contentBoundingBox!.xMin, goldens.numericTolerances.bbox, name + '.pdf page ' + pageIndex + ' bbox.xMin');
+              expectNear(actual.contentBoundingBox!.yMin, expected.contentBoundingBox!.yMin, goldens.numericTolerances.bbox, name + '.pdf page ' + pageIndex + ' bbox.yMin');
+              expectNear(actual.contentBoundingBox!.xMax, expected.contentBoundingBox!.xMax, goldens.numericTolerances.bbox, name + '.pdf page ' + pageIndex + ' bbox.xMax');
+              expectNear(actual.contentBoundingBox!.yMax, expected.contentBoundingBox!.yMax, goldens.numericTolerances.bbox, name + '.pdf page ' + pageIndex + ' bbox.yMax');
+            }
 
             expectNear(
               actual.inkDensity,
