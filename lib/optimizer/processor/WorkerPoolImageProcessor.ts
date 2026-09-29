@@ -60,6 +60,7 @@ export class WorkerPoolImageProcessor implements IImageProcessor {
           inkCoverageBeforePct: result.inkCoverageBeforePct,
           inkCoverageAfterPct: result.inkCoverageAfterPct,
           whiteBoxRegions: result.whiteBoxRegions,
+          preservationGuardTriggered: result.preservationGuardTriggered,
         };
       } catch {
         // Worker failed — fall through to main thread
