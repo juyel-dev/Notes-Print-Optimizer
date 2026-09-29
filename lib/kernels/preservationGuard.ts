@@ -35,6 +35,20 @@ interface MaskStats {
   thin: number;
 }
 
+export type PreservationParameters =
+  Pick<
+    ProcessingParameters,
+    'invertMode' | 'bannerCropTopPct' | 'bannerCropBottomPct' | 'strokeEnhancement' |
+    'sharpenAmount' | 'dilationKernelSize'
+  > &
+  Partial<
+    Pick<
+      ProcessingParameters,
+      'smartColorMapping' | 'backgroundWhiteningThreshold' | 'contrastEnhancement' |
+      'denoiseAmount' | 'binaizationThreshold' | 'autoWhiteBoxFix'
+    >
+  >;
+
 const DEFAULT_POLICY = {
   minForegroundSamples: 48,
   coverageFloor: 0.35,
@@ -57,6 +71,7 @@ function buildStats(
   height: number,
   isDarkSource: boolean,
   before: boolean,
+  yOffset = 0,
 ): MaskStats {
   const total = width * height;
   const stride = Math.max(1, Math.floor(Math.sqrt(total / 120000)));
@@ -67,7 +82,7 @@ function buildStats(
   let count = 0;
   for (let y = 0; y < height; y += stride) {
     for (let x = 0; x < width; x += stride) {
-      const lum = readLuma(data, width, x, y);
+      const lum = readLuma(data, width, x, y + yOffset);
       count++;
       mean += (lum - mean) / count;
     }
@@ -91,21 +106,23 @@ function buildStats(
 
   for (let y = 0; y < height; y += stride) {
     for (let x = 0; x < width; x += stride) {
-      const lum = readLuma(data, width, x, y);
+      const lum = readLuma(data, width, x, y + yOffset);
       const fg = isForeground(lum);
       if (fg) {
         foreground++;
-        const left = x > 0 ? isForeground(readLuma(data, width, x - 1, y)) : false;
-        const right = x + 1 < width ? isForeground(readLuma(data, width, x + 1, y)) : false;
-        const up = y > 0 ? isForeground(readLuma(data, width, x, y - 1)) : false;
-        const down = y + 1 < height ? isForeground(readLuma(data, width, x, y + 1)) : false;
+        const sampleY = y + yOffset;
+        const left = x > 0 ? isForeground(readLuma(data, width, x - 1, sampleY)) : false;
+        const right = x + 1 < width ? isForeground(readLuma(data, width, x + 1, sampleY)) : false;
+        const up = y > 0 ? isForeground(readLuma(data, width, x, sampleY - 1)) : false;
+        const down = y + 1 < height ? isForeground(readLuma(data, width, x, sampleY + 1)) : false;
         const neighbors = Number(left) + Number(right) + Number(up) + Number(down);
         if (neighbors <= 2) thin++;
         fgSamples++;
       }
 
-      const rightLum = x + stride < width ? readLuma(data, width, x + stride, y) : lum;
-      const downLum = y + stride < height ? readLuma(data, width, x, y + stride) : lum;
+      const sampleY = y + yOffset;
+      const rightLum = x + stride < width ? readLuma(data, width, x + stride, sampleY) : lum;
+      const downLum = y + stride < height ? readLuma(data, width, x, sampleY + stride) : lum;
       if (Math.abs(lum - rightLum) >= 22 || Math.abs(lum - downLum) >= 22) edges++;
     }
   }
@@ -127,20 +144,9 @@ export function assessPreservation(
     profile.classification === 'DARK_SLIDE' ||
     profile.darkBackgroundRatio > 0.55;
 
-  const croppedSource = new Uint8ClampedArray(processedWidth * processedHeight * 4);
-  const srcRowBytes = sourceWidth * 4;
-  const dstRowBytes = processedWidth * 4;
-  const maxRows = Math.min(processedHeight, sourceHeight - cropTopPx);
-  for (let y = 0; y < maxRows; y++) {
-    const srcStart = (y + cropTopPx) * srcRowBytes;
-    const dstStart = y * dstRowBytes;
-    croppedSource.set(
-      source.subarray(srcStart, srcStart + dstRowBytes),
-      dstStart,
-    );
-  }
-
-  const before = buildStats(croppedSource, processedWidth, processedHeight, isDarkSource, true);
+  const beforeHeight = Math.min(processedHeight, sourceHeight - cropTopPx);
+  const compareHeight = Math.max(0, beforeHeight);
+  const before = buildStats(source, processedWidth, compareHeight, isDarkSource, true, cropTopPx);
   const after = buildStats(processed, processedWidth, processedHeight, isDarkSource, false);
 
   if (before.foreground < DEFAULT_POLICY.minForegroundSamples) {
@@ -181,7 +187,7 @@ export function assessPreservation(
 }
 
 /** Create a single conservative fallback recipe. Never changes page polarity. */
-export function softenProcessingParameters(params: ProcessingParameters): ProcessingParameters {
+export function softenProcessingParameters(params: PreservationParameters): PreservationParameters {
   const nextDilation =
     params.dilationKernelSize == null
       ? params.dilationKernelSize
@@ -189,10 +195,10 @@ export function softenProcessingParameters(params: ProcessingParameters): Proces
 
   return {
     ...params,
-    backgroundWhiteningThreshold: Math.min(255, params.backgroundWhiteningThreshold + 15),
-    contrastEnhancement: Math.round(params.contrastEnhancement * 0.55),
+    backgroundWhiteningThreshold: Math.min(255, (params.backgroundWhiteningThreshold ?? 255) + 15),
+    contrastEnhancement: Math.round((params.contrastEnhancement ?? 0) * 0.55),
     sharpenAmount: Math.round(params.sharpenAmount * 0.55),
-    denoiseAmount: Math.round(params.denoiseAmount * 0.50),
+    denoiseAmount: Math.round((params.denoiseAmount ?? 0) * 0.50),
     binaizationThreshold: 0,
     dilationKernelSize: nextDilation,
     strokeEnhancement:
