@@ -15,6 +15,11 @@ export interface PixelTask {
     /** Exact kernel size (was previously re-derived in the worker,
      *  silently capping the slider at 'strong'). */
     dilationKernelSize?: number;
+    smartColorMapping?: boolean;
+    backgroundWhiteningThreshold?: number;
+    contrastEnhancement?: number;
+    denoiseAmount?: number;
+    binaizationThreshold?: number;
     /** Auto white-box heal flag (kernels/whiteBox). */
     autoWhiteBoxFix?: boolean;
   };

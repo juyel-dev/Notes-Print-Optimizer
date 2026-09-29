@@ -128,7 +128,7 @@ export function buildTelegramMarkdownMessage(
       msg += `• *Pages:* ${stats.totalInputPages} input → ${stats.totalOutputPages} output\n`;
       msg += `• *Size Reduction:* ${stats.originalSizeMB.toFixed(1)} MB → ${stats.optimizedSizeMB.toFixed(1)} MB\n`;
       if (stats.inkSavedPct !== undefined && stats.inkSavedPct > 0) {
-        msg += `• *Ink Saved:* ~${stats.inkSavedPct.toFixed(0)}%\n`;
+        msg += `• *Estimated ink reduction:* ~${stats.inkSavedPct.toFixed(0)}%\n`;
       }
       msg += `\n`;
     }

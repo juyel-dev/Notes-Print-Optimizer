@@ -57,7 +57,7 @@ function MetricsPanel({ defaultOpen = false }: MetricsPanelProps) {
 
       <div className="space-y-1.5 text-[11px] font-mono">
         <Row label="Pages processed" value={snapshot.pagesProcessed} />
-        <Row label="Avg ink saved" value={`${snapshot.avgInkSavedPct.toFixed(1)}%`} />
+        <Row label="Avg estimated ink reduction" value={`${snapshot.avgInkSavedPct.toFixed(1)}%`} />
         <Row label="Avg time/page" value={`${snapshot.avgProcessingTimeMs}ms`} />
         <Row label="Peak memory" value={`${snapshot.peakMemoryMB}MB`} />
         <Row label="Worker crashes" value={snapshot.workerCrashes} />

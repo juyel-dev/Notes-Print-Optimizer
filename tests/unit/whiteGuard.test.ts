@@ -37,7 +37,12 @@ describe('kernel honors unified dark threshold', () => {
     classification: 'MIXED' as const,
     darkBackgroundRatio: DARK_BG_RATIO_THRESHOLD - 0.03,
   };
-  const params = {
+  const params: {
+    invertMode: 'none' | 'smart' | 'simple';
+    bannerCropTopPct: number;
+    bannerCropBottomPct: number;
+    sharpenAmount: number;
+  } = {
     invertMode: 'none',
     bannerCropTopPct: 0,
     bannerCropBottomPct: 0,
@@ -57,10 +62,24 @@ describe('kernel honors unified dark threshold', () => {
     }
   });
 
-  it('invertMode=smart on a bright low-sat page binarizes it to foreground', () => {
-    /* Gray 200: maxC>155 + low saturation -> foreground -> black composite. */
+  it('invertMode=smart on a light (sub-threshold MIXED) page preserves background', () => {
+    /* Gray 200 on a light page is background — smart must NOT force it to
+       black. Only DARK_SLIDE pages get the dark foreground classifier
+       (see next test). This is the page-aware Auto behavior. */
     const bright = new Uint8ClampedArray(w * h * 4).fill(200);
     const { buffer } = processPage(bright, w, h, { ...params, invertMode: 'smart' }, profile);
+    const out = new Uint8ClampedArray(buffer);
+    expect(out[0]).toBe(255);
+    expect(out[3]).toBe(255);
+  });
+
+  it('invertMode=smart on a dark page still extracts bright foreground', () => {
+    const bright = new Uint8ClampedArray(w * h * 4).fill(200);
+    const darkProfile = {
+      classification: 'DARK_SLIDE' as const,
+      darkBackgroundRatio: DARK_BG_RATIO_THRESHOLD + 0.1,
+    };
+    const { buffer } = processPage(bright, w, h, { ...params, invertMode: 'smart' }, darkProfile);
     const out = new Uint8ClampedArray(buffer);
     expect(out[0]).toBe(0);
     expect(out[3]).toBe(255);

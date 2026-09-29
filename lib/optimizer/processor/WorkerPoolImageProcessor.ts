@@ -42,10 +42,14 @@ export class WorkerPoolImageProcessor implements IImageProcessor {
             bannerCropBottomPct: params.bannerCropBottomPct,
             strokeEnhancement: params.strokeEnhancement,
             sharpenAmount: params.sharpenAmount,
-            /* Previously dropped here: the worker re-derived the kernel
-               size from strokeEnhancement, silently capping the slider at
-               'strong' (5px). Forward the exact value. */
+            /* Forward every pixel-processing control so the worker path
+               remains behaviorally identical to the main-thread fallback. */
             dilationKernelSize: params.dilationKernelSize,
+            smartColorMapping: params.smartColorMapping,
+            backgroundWhiteningThreshold: params.backgroundWhiteningThreshold,
+            contrastEnhancement: params.contrastEnhancement,
+            denoiseAmount: params.denoiseAmount,
+            binaizationThreshold: params.binaizationThreshold,
             autoWhiteBoxFix: params.autoWhiteBoxFix,
           },
           profile: { classification: profile.classification, darkBackgroundRatio: profile.darkBackgroundRatio },
