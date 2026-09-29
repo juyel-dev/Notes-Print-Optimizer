@@ -324,20 +324,46 @@ export class PdfExporter {
     const finalPdfBlob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
     const elapsedMs = Math.round(performance.now() - startTime);
     const keepOriginal = opts?.keepOriginalPages;
+    const pageCount = activePages.length;
+
     /* Pinned-original pages save no ink — their "after" equals "before". */
-    const avgBefore = activePages.reduce((s, p) => s + p.inkCoverageBeforePct, 0) / activePages.length;
-    const avgAfter = activePages.reduce(
-      (s, p) => s + (keepOriginal?.has(p.pageIndex) ? p.inkCoverageBeforePct : p.inkCoverageAfterPct),
+    const avgBefore = pageCount > 0
+      ? activePages.reduce((s, p) => s + p.inkCoverageBeforePct, 0) / pageCount
+      : 0;
+    const avgAfter = pageCount > 0
+      ? activePages.reduce(
+          (s, p) => s + (keepOriginal?.has(p.pageIndex) ? p.inkCoverageBeforePct : p.inkCoverageAfterPct),
+          0,
+        ) / pageCount
+      : 0;
+
+    /*
+     * This is a foreground-coverage reduction estimate, not a physical printer
+     * ink-consumption measurement. Keep the fallback at 0 rather than inventing
+     * a percentage when the denominator is unavailable.
+     */
+    const inkSaved = avgBefore > 0
+      ? Math.max(0, Math.round(((avgBefore - avgAfter) / avgBefore) * 100))
+      : 0;
+
+    const originalBytes = opts?.mergedPdfBytes?.byteLength ?? 0;
+    const processedPixels = activePages.reduce(
+      (sum, p) => sum + Math.max(0, (p.width ?? 0) * (p.height ?? 0)),
       0,
-    ) / activePages.length;
-    const inkSaved = Math.max(0, Math.round(((avgBefore - avgAfter) / avgBefore) * 100));
+    );
+    const elapsedSeconds = elapsedMs / 1000;
+
     return { finalPdfBlob, sheetPreviews, metrics: {
-      totalOriginalSizeMB: Number((activePages.length * 0.8).toFixed(2)),
+      totalOriginalSizeMB: Number((originalBytes / (1024 * 1024)).toFixed(2)),
       totalOptimizedSizeMB: Number((finalPdfBlob.size / (1024 * 1024)).toFixed(2)),
-      originalInkCoveragePct: Number(avgBefore.toFixed(1)), optimizedInkCoveragePct: Number(avgAfter.toFixed(1)),
-      inkSavedPct: isNaN(inkSaved) ? 80 : inkSaved, processingTimeMs: elapsedMs,
-      pagesPerSecond: Number(((activePages.length / Math.max(1, elapsedMs)) * 1000).toFixed(1)),
-      throughputMPixelsPerSec: Number(((activePages.length * 2.986) / (elapsedMs / 1000)).toFixed(1)),
+      originalInkCoveragePct: Number(avgBefore.toFixed(1)),
+      optimizedInkCoveragePct: Number(avgAfter.toFixed(1)),
+      inkSavedPct: inkSaved,
+      processingTimeMs: elapsedMs,
+      pagesPerSecond: elapsedSeconds > 0 ? Number((pageCount / elapsedSeconds).toFixed(1)) : 0,
+      throughputMPixelsPerSec: elapsedSeconds > 0
+        ? Number(((processedPixels / 1_000_000) / elapsedSeconds).toFixed(1))
+        : 0,
     } };
   }
 
