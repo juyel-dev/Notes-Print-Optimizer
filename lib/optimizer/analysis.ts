@@ -216,6 +216,10 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     Math.min(100, isolatedForegroundRatio * 100),
   );
 
+  const foregroundPolarity: 'light-on-dark' | 'dark-on-light' = isDarkSource
+    ? 'light-on-dark'
+    : 'dark-on-light';
+
   const { topBannerPct, bottomBannerPct } = detectBanners(data, width, height);
 
   return {
@@ -234,6 +238,9 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     bottomBannerHeightPct: Number(bottomBannerPct.toFixed(3)),
     estimatedNoise,
     strokeThickness: Number(strokeThickness.toFixed(2)),
+    edgeDensity: Number(edgeDensity.toFixed(4)),
+    colorfulPixelRatio: Number(colorfulPixelRatio.toFixed(4)),
+    foregroundPolarity,
     classification,
   };
 }
