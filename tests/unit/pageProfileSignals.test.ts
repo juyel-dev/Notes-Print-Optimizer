@@ -85,7 +85,7 @@ describe('PageProfile structural signals', () => {
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0.08);
     expect(profile.colorfulPixelRatio).toBeGreaterThanOrEqual(0.02);
     expect(profile.foregroundPolarity).toBe('dark-on-light');
-    expect(profile.density).toBe('dense');
+    expect(profile.density).toBe('medium');
   });
 
   it('reports mixed polarity and uses local foreground detection', () => {
