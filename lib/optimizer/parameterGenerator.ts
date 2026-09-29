@@ -124,6 +124,33 @@ export class ParameterGenerator {
   }
 
   /**
+   * Applies conservative page-specific tuning only to Auto-selected recipes.
+   * Explicit user presets remain unchanged at the engine boundary.
+   */
+  public static adaptAutoPageParameters(
+    baseParams: ProcessingParameters,
+    pageProfile: PageProfile,
+  ): ProcessingParameters {
+    if (baseParams.preset !== 'SCREENSHOT_PRINT') return baseParams;
+
+    const density = pageProfile.density ?? (
+      pageProfile.inkDensity >= 0.45
+        ? 'dense'
+        : pageProfile.inkDensity <= 0.12
+          ? 'sparse'
+          : 'medium'
+    );
+    const sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
+    const denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
+
+    return {
+      ...baseParams,
+      sharpenAmount,
+      denoiseAmount,
+    };
+  }
+
+  /**
    * Generates tailored parameters based on individual page metrics
    */
   public static generateAdaptiveForPage(
