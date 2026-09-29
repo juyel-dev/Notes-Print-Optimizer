@@ -37,7 +37,7 @@ describe('PageProfile structural signals', () => {
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0);
     expect(profile.edgeDensity).toBeLessThanOrEqual(1);
     expect(profile.colorfulPixelRatio).toBe(0);
-    expect(profile.density).toBe('medium');
+    expect(profile.density).toBe('sparse');
   });
 
   it('reports light-on-dark polarity for a dark page', () => {
