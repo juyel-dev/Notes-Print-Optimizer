@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "renderScale": 1.8,
+  "numericTolerances": {
+    "inkDensity": 0.01,
+    "edgeDensity": 0.01,
+    "colorfulPixelRatio": 0.01,
+    "estimatedNoise": 5,
+    "strokeThickness": 0.25
+  },
+  "fixtures": {
+    "text": {
+      "0": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 230,
+        "edgeDensity": 0.037,
+        "colorfulPixelRatio": 0.0071,
+        "estimatedNoise": 41,
+        "strokeThickness": 2.2,
+        "inkDensity": 0.027
+      },
+      "1": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 230,
+        "edgeDensity": 0.0205,
+        "colorfulPixelRatio": 0.0066,
+        "estimatedNoise": 47,
+        "strokeThickness": 2.01,
+        "inkDensity": 0.014
+      },
+      "2": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.0352,
+        "colorfulPixelRatio": 0.9752,
+        "estimatedNoise": 51,
+        "strokeThickness": 1.96,
+        "inkDensity": 0.987
+      },
+      "3": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.0275,
+        "colorfulPixelRatio": 0.9842,
+        "estimatedNoise": 48,
+        "strokeThickness": 2,
+        "inkDensity": 0.997
+      },
+      "4": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "SCREENSHOT_HEAVY",
+        "density": "medium",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 250,
+        "edgeDensity": 0.1523,
+        "colorfulPixelRatio": 0.0016,
+        "estimatedNoise": 30,
+        "strokeThickness": 2.34,
+        "inkDensity": 0.113
+      },
+      "5": {
+        "width": 1102,
+        "height": 1426,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.1311,
+        "colorfulPixelRatio": 0.915,
+        "estimatedNoise": 65,
+        "strokeThickness": 1.75,
+        "inkDensity": 0.965
+      }
+    },
+    "image": {
+      "0": {
+        "width": 1728,
+        "height": 972,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.042,
+        "colorfulPixelRatio": 0.9929,
+        "estimatedNoise": 18,
+        "strokeThickness": 3.06,
+        "inkDensity": 0.979
+      },
+      "1": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 210,
+        "edgeDensity": 0.0102,
+        "colorfulPixelRatio": 0.0953,
+        "estimatedNoise": 0,
+        "strokeThickness": 3.46,
+        "inkDensity": 0.095
+      },
+      "2": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 30,
+        "edgeDensity": 0.0348,
+        "colorfulPixelRatio": 0.0541,
+        "estimatedNoise": 1,
+        "strokeThickness": 3.1,
+        "inkDensity": 0.061
+      },
+      "3": {
+        "width": 1728,
+        "height": 972,
+        "classification": "MIXED",
+        "density": "dense",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 210,
+        "edgeDensity": 0.2874,
+        "colorfulPixelRatio": 0.7896,
+        "estimatedNoise": 100,
+        "strokeThickness": 1.09,
+        "inkDensity": 0.999
+      }
+    },
+    "scanned": {
+      "0": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 0,
+        "edgeDensity": 0.0525,
+        "colorfulPixelRatio": 0,
+        "estimatedNoise": 9,
+        "strokeThickness": 2.73,
+        "inkDensity": 0.046
+      },
+      "1": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 0,
+        "edgeDensity": 0.0516,
+        "colorfulPixelRatio": 0,
+        "estimatedNoise": 8,
+        "strokeThickness": 2.73,
+        "inkDensity": 0.046
+      },
+      "2": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 0,
+        "edgeDensity": 0.0519,
+        "colorfulPixelRatio": 0,
+        "estimatedNoise": 8,
+        "strokeThickness": 2.76,
+        "inkDensity": 0.047
+      },
+      "3": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 0,
+        "edgeDensity": 0.0531,
+        "colorfulPixelRatio": 0,
+        "estimatedNoise": 8,
+        "strokeThickness": 2.75,
+        "inkDensity": 0.048
+      }
+    },
+    "mixed": {
+      "0": {
+        "width": 1728,
+        "height": 972,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.0404,
+        "colorfulPixelRatio": 0.9825,
+        "estimatedNoise": 40,
+        "strokeThickness": 2.31,
+        "inkDensity": 0.989
+      },
+      "1": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 210,
+        "edgeDensity": 0.0139,
+        "colorfulPixelRatio": 0.0358,
+        "estimatedNoise": 3,
+        "strokeThickness": 3.23,
+        "inkDensity": 0.041
+      },
+      "2": {
+        "width": 1728,
+        "height": 972,
+        "classification": "LIGHT_SLIDE",
+        "density": "sparse",
+        "foregroundPolarity": "dark-on-light",
+        "dominantHue": 210,
+        "edgeDensity": 0.0185,
+        "colorfulPixelRatio": 0.0612,
+        "estimatedNoise": 4,
+        "strokeThickness": 3.31,
+        "inkDensity": 0.067
+      },
+      "3": {
+        "width": 1728,
+        "height": 972,
+        "classification": "DARK_SLIDE",
+        "density": "dense",
+        "foregroundPolarity": "light-on-dark",
+        "dominantHue": 230,
+        "edgeDensity": 0.0248,
+        "colorfulPixelRatio": 0.6298,
+        "estimatedNoise": 0,
+        "strokeThickness": 3.54,
+        "inkDensity": 0.633
+      }
+    }
+  }
+}

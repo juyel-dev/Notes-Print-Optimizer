@@ -1,0 +1,199 @@
+/**
+ * Semantic analyzer goldens over the committed real PDF fixtures.
+ *
+ * Unlike pdfGolden.test.ts, this suite freezes the analyzer's page-level
+ * profile signals rather than processed output bytes. Exact categorical signals
+ * catch classification drift; numeric signals use small tolerances to avoid
+ * overfitting platform-specific rasterization noise.
+ *
+ * Regenerate deliberately with: PAGE_PROFILE_UPDATE_GOLDENS=1
+ */
+import { describe, expect, it } from 'vitest';
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { analyzeImageData } from '../../lib/optimizer/analysis';
+import type { PageProfile } from '../../lib/optimizer/types';
+import { openPdfDocument, renderPdfPageOpen } from '../fixtures/pdfRender';
+
+const FIXTURES_DIR = join(__dirname, '..', 'fixtures', 'pdf');
+const GOLDENS_FILE = join(FIXTURES_DIR, 'pageProfileGoldens.json');
+const RENDER_SCALE = 1.8;
+const UPDATE_GOLDENS = process.env.PAGE_PROFILE_UPDATE_GOLDENS === '1';
+const FIXTURE_NAMES = ['text', 'image', 'scanned', 'mixed'] as const;
+
+interface ProfileGolden {
+  width: number;
+  height: number;
+  classification: PageProfile['classification'];
+  density: PageProfile['density'];
+  foregroundPolarity: PageProfile['foregroundPolarity'];
+  dominantHue: number;
+  edgeDensity: number;
+  colorfulPixelRatio: number;
+  estimatedNoise: number;
+  strokeThickness: number;
+  inkDensity: number;
+}
+
+interface GoldensFile {
+  version: 1;
+  renderScale: number;
+  numericTolerances: {
+    inkDensity: number;
+    edgeDensity: number;
+    colorfulPixelRatio: number;
+    estimatedNoise: number;
+    strokeThickness: number;
+  };
+  fixtures: Record<string, Record<string, ProfileGolden>>;
+}
+
+function loadGoldens(): GoldensFile {
+  return JSON.parse(readFileSync(GOLDENS_FILE, 'utf8')) as GoldensFile;
+}
+
+function readFixture(name: string): Uint8Array {
+  return new Uint8Array(readFileSync(join(FIXTURES_DIR, name + '.pdf')));
+}
+
+function snapshot(profile: PageProfile): ProfileGolden {
+  return {
+    width: profile.width,
+    height: profile.height,
+    classification: profile.classification,
+    density: profile.density,
+    foregroundPolarity: profile.foregroundPolarity,
+    dominantHue: profile.dominantHue,
+    edgeDensity: profile.edgeDensity ?? 0,
+    colorfulPixelRatio: profile.colorfulPixelRatio ?? 0,
+    estimatedNoise: profile.estimatedNoise,
+    strokeThickness: profile.strokeThickness,
+    inkDensity: profile.inkDensity,
+  };
+}
+
+function expectNear(actual: number, expected: number, tolerance: number, label: string): void {
+  expect(
+    Math.abs(actual - expected),
+    label + ': expected ' + expected + ' +/- ' + tolerance + ', received ' + actual,
+  ).toBeLessThanOrEqual(tolerance);
+}
+
+async function collectGoldens(): Promise<GoldensFile> {
+  const fixtures: Record<string, Record<string, ProfileGolden>> = {};
+
+  for (const name of FIXTURE_NAMES) {
+    const doc = await openPdfDocument(readFixture(name));
+    fixtures[name] = {};
+
+    try {
+      for (let pageIndex = 0; pageIndex < doc.numPages; pageIndex++) {
+        const imageData = await renderPdfPageOpen(doc, pageIndex, RENDER_SCALE);
+        fixtures[name][String(pageIndex)] = snapshot(analyzeImageData(imageData, pageIndex));
+      }
+    } finally {
+      await doc.destroy();
+    }
+  }
+
+  return {
+    version: 1,
+    renderScale: RENDER_SCALE,
+    numericTolerances: {
+      inkDensity: 0.01,
+      edgeDensity: 0.01,
+      colorfulPixelRatio: 0.01,
+      estimatedNoise: 5,
+      strokeThickness: 0.25,
+    },
+    fixtures,
+  };
+}
+
+describe(
+  UPDATE_GOLDENS ? 'page profile golden suite (regeneration mode)' : 'page profile golden suite',
+  () => {
+    if (UPDATE_GOLDENS) {
+      it('regenerates pageProfileGoldens.json from committed fixtures', async () => {
+        const goldens = await collectGoldens();
+        writeFileSync(GOLDENS_FILE, JSON.stringify(goldens, null, 2) + '\n');
+        console.log('page profile goldens written to ' + GOLDENS_FILE);
+      }, 300_000);
+      return;
+    }
+
+    const goldens = loadGoldens();
+
+    it('golden metadata matches analyzer render configuration', () => {
+      expect(goldens.version).toBe(1);
+      expect(goldens.renderScale).toBe(RENDER_SCALE);
+    });
+
+    for (const name of FIXTURE_NAMES) {
+      it('matches real fixture analyzer profiles for ' + name + '.pdf', async () => {
+        const expectedPages = goldens.fixtures[name];
+        expect(expectedPages).toBeDefined();
+        expect(Object.keys(expectedPages)).not.toHaveLength(0);
+
+        const doc = await openPdfDocument(readFixture(name));
+        try {
+          expect(doc.numPages).toBe(Object.keys(expectedPages).length);
+
+          for (let pageIndex = 0; pageIndex < doc.numPages; pageIndex++) {
+            const imageData = await renderPdfPageOpen(doc, pageIndex, RENDER_SCALE);
+            const actual = snapshot(analyzeImageData(imageData, pageIndex));
+            const expected = expectedPages[String(pageIndex)];
+            expect(expected, 'missing golden for ' + name + '.pdf page ' + pageIndex).toBeDefined();
+
+            expect(actual.width).toBe(expected.width);
+            expect(actual.height).toBe(expected.height);
+            expect(actual.classification).toBe(expected.classification);
+            expect(actual.density).toBe(expected.density);
+            expect(actual.foregroundPolarity).toBe(expected.foregroundPolarity);
+            expect(actual.dominantHue).toBe(expected.dominantHue);
+
+            expectNear(
+              actual.inkDensity,
+              expected.inkDensity,
+              goldens.numericTolerances.inkDensity,
+              name + '.pdf page ' + pageIndex + ' inkDensity',
+            );
+            expectNear(
+              actual.edgeDensity,
+              expected.edgeDensity,
+              goldens.numericTolerances.edgeDensity,
+              name + '.pdf page ' + pageIndex + ' edgeDensity',
+            );
+            expectNear(
+              actual.colorfulPixelRatio,
+              expected.colorfulPixelRatio,
+              goldens.numericTolerances.colorfulPixelRatio,
+              name + '.pdf page ' + pageIndex + ' colorfulPixelRatio',
+            );
+            expectNear(
+              actual.estimatedNoise,
+              expected.estimatedNoise,
+              goldens.numericTolerances.estimatedNoise,
+              name + '.pdf page ' + pageIndex + ' estimatedNoise',
+            );
+            expectNear(
+              actual.strokeThickness,
+              expected.strokeThickness,
+              goldens.numericTolerances.strokeThickness,
+              name + '.pdf page ' + pageIndex + ' strokeThickness',
+            );
+          }
+        } finally {
+          await doc.destroy();
+        }
+      }, 300_000);
+    }
+
+    it('goldens cover every committed fixture', () => {
+      for (const name of FIXTURE_NAMES) {
+        expect(Object.keys(goldens.fixtures[name] ?? {}).length).toBeGreaterThan(0);
+        expect(readFixture(name).length).toBeGreaterThan(0);
+      }
+    });
+  },
+);
