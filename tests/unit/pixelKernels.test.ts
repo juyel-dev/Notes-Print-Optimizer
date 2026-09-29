@@ -45,6 +45,78 @@ describe('ImageProcessingKernels', () => {
       expect(coverage).toBeGreaterThan(0);
       expect(coverage).toBeLessThan(100);
     });
+
+    it('should estimate dominant hue from saturated page content', () => {
+      const data = new Uint8ClampedArray(100 * 100 * 4);
+      for (let i = 0; i < 100 * 100; i++) {
+        const idx = i * 4;
+        /* Mostly red, with a smaller blue region. */
+        if ((i % 10) < 7) {
+          data[idx] = 230; data[idx + 1] = 70; data[idx + 2] = 70;
+        } else {
+          data[idx] = 70; data[idx + 1] = 90; data[idx + 2] = 230;
+        }
+        data[idx + 3] = 255;
+      }
+      const profile = analyzeImageData(new ImageData(data, 100, 100), 0);
+      expect(profile.dominantHue).toBeGreaterThanOrEqual(0);
+      expect(profile.dominantHue).toBeLessThanOrEqual(20);
+    });
+
+    it('should classify edge-dense non-dark raster pages as screenshot-heavy', () => {
+      const data = new Uint8ClampedArray(100 * 100 * 4);
+      for (let y = 0; y < 100; y++) {
+        for (let x = 0; x < 100; x++) {
+          const idx = (y * 100 + x) * 4;
+          const band = Math.floor(x / 5) % 2;
+          const v = band === 0 ? 230 : 170;
+          data[idx] = v;
+          data[idx + 1] = band === 0 ? 220 : 175;
+          data[idx + 2] = band === 0 ? 210 : 180;
+          data[idx + 3] = 255;
+        }
+      }
+      const profile = analyzeImageData(new ImageData(data, 100, 100), 0);
+      expect(profile.classification).toBe('SCREENSHOT_HEAVY');
+    });
+
+    it('should distinguish balanced mixed content from clean handwritten pages', () => {
+      const data = new Uint8ClampedArray(100 * 100 * 4);
+      for (let y = 0; y < 100; y++) {
+        for (let x = 0; x < 100; x++) {
+          const idx = (y * 100 + x) * 4;
+          const top = y < 50;
+          const v = top ? 245 : 135;
+          data[idx] = v; data[idx + 1] = v; data[idx + 2] = v; data[idx + 3] = 255;
+        }
+      }
+      const profile = analyzeImageData(new ImageData(data, 100, 100), 0);
+      expect(profile.classification).toBe('MIXED');
+    });
+
+    it('should report more noise for isolated dots than for a continuous stroke', () => {
+      const dots = new Uint8ClampedArray(100 * 100 * 4).fill(255);
+      for (let i = 3; i < dots.length; i += 4) dots[i] = 255;
+      for (let y = 10; y < 90; y += 8) {
+        const x = (y * 3) % 90 + 5;
+        const idx = (y * 100 + x) * 4;
+        dots[idx] = 30; dots[idx + 1] = 30; dots[idx + 2] = 30;
+      }
+
+      const stroke = new Uint8ClampedArray(100 * 100 * 4).fill(255);
+      for (let i = 3; i < stroke.length; i += 4) stroke[i] = 255;
+      for (let y = 20; y < 80; y++) {
+        for (let x = 45; x < 55; x++) {
+          const idx = (y * 100 + x) * 4;
+          stroke[idx] = 30; stroke[idx + 1] = 30; stroke[idx + 2] = 30;
+        }
+      }
+
+      const dotProfile = analyzeImageData(new ImageData(dots, 100, 100), 0);
+      const strokeProfile = analyzeImageData(new ImageData(stroke, 100, 100), 0);
+      expect(dotProfile.estimatedNoise).toBeGreaterThan(strokeProfile.estimatedNoise);
+      expect(strokeProfile.strokeThickness).toBeGreaterThan(dotProfile.strokeThickness);
+    });
   });
 
   describe('processPage', () => {
