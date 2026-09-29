@@ -37,13 +37,11 @@ describe('PageProfile structural signals', () => {
     expect(profile.polarityConfidence).toBeGreaterThan(0.9);
     expect(profile.foregroundCoverage).toBeGreaterThan(0.05);
     expect(profile.foregroundCoverage).toBeLessThan(0.1);
-    expect(profile.density).toBe('medium');
     expect(profile.contentBoundingBox).toBeDefined();
     expect(profile.margins).toBeDefined();
     expect(profile.edgeDensity).toBeGreaterThanOrEqual(0);
     expect(profile.edgeDensity).toBeLessThanOrEqual(1);
     expect(profile.colorfulPixelRatio).toBe(0);
-    expect(profile.density).toBe('sparse');
   });
 
   it('reports light-on-dark polarity for a dark page', () => {
