@@ -106,6 +106,102 @@ describe('ImageProcessingKernels', () => {
     });
   });
 
+  describe('print parameter wiring', () => {
+    const baseLightParams: ProcessingParameters = {
+      preset: 'LIGHT_HANDWRITTEN',
+      invertMode: 'none',
+      smartColorMapping: false,
+      backgroundWhiteningThreshold: 255,
+      contrastEnhancement: 0,
+      sharpenAmount: 0,
+      denoiseAmount: 0,
+      bannerCropTopPct: 0,
+      bannerCropBottomPct: 0,
+      autoTrimMargins: false,
+      binaizationThreshold: 0,
+      outputQuality: 0.88,
+      strokeEnhancement: 'none',
+      dilationKernelSize: 0,
+    };
+
+    it('applies background whitening on light pages instead of bypassing the controls', () => {
+      const src = new Uint8ClampedArray(16 * 4).fill(230);
+      for (let i = 0; i < src.length; i += 4) {
+        src[i] = 230; src[i + 1] = 230; src[i + 2] = 230; src[i + 3] = 255;
+      }
+      src[0] = 20; src[1] = 20; src[2] = 20;
+
+      const result = processPage(
+        src, 4, 4,
+        { ...baseLightParams, backgroundWhiteningThreshold: 220 },
+        { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0 },
+      );
+      const out = new Uint8ClampedArray(result.buffer);
+
+      expect(Array.from(out.slice(0, 4))).toEqual([20, 20, 20, 255]);
+      expect(Array.from(out.slice(4, 8))).toEqual([255, 255, 255, 255]);
+    });
+
+    it('applies contrast enhancement on light pages', () => {
+      const src = new Uint8ClampedArray(4 * 4 * 4);
+      for (let i = 0; i < src.length; i += 4) {
+        src[i] = 80; src[i + 1] = 80; src[i + 2] = 80; src[i + 3] = 255;
+      }
+
+      const result = processPage(
+        src, 4, 4,
+        { ...baseLightParams, contrastEnhancement: 50 },
+        { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0 },
+      );
+      const out = new Uint8ClampedArray(result.buffer);
+
+      expect(out[0]).toBe(56);
+      expect(out[1]).toBe(56);
+      expect(out[2]).toBe(56);
+      expect(out[3]).toBe(255);
+    });
+
+    it('honors explicit binarization threshold on a light page', () => {
+      const src = new Uint8ClampedArray(4 * 4 * 4);
+      for (let i = 0; i < src.length; i += 4) {
+        const v = (i / 4) % 2 === 0 ? 80 : 180;
+        src[i] = v; src[i + 1] = v; src[i + 2] = v; src[i + 3] = 255;
+      }
+
+      const result = processPage(
+        src, 4, 4,
+        { ...baseLightParams, binaizationThreshold: 150 },
+        { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0 },
+      );
+      const out = new Uint8ClampedArray(result.buffer);
+
+      expect(out[0]).toBe(0);
+      expect(out[4]).toBe(255);
+    });
+
+    it('lets denoise=0 preserve tiny foreground components while stronger denoise removes them', () => {
+      const src = new Uint8ClampedArray(16 * 16 * 4).fill(255);
+      src[0] = 0; src[1] = 0; src[2] = 0; src[3] = 255;
+
+      const keepResult = processPage(
+        src, 16, 16,
+        { ...baseLightParams, binaizationThreshold: 200, denoiseAmount: 0 },
+        { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0 },
+      );
+      const keep = new Uint8ClampedArray(keepResult.buffer);
+
+      const dropResult = processPage(
+        src, 16, 16,
+        { ...baseLightParams, binaizationThreshold: 200, denoiseAmount: 50 },
+        { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0 },
+      );
+      const drop = new Uint8ClampedArray(dropResult.buffer);
+
+      expect(keep[0]).toBe(0);
+      expect(drop[0]).toBe(255);
+    });
+  });
+
   describe('applyUnsharpMask', () => {
     it('matches a full-copy mathematical reference (rolling-buffer correctness)', () => {
       const w = 37;
