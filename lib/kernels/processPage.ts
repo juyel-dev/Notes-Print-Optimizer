@@ -333,7 +333,7 @@ export function processPage(
         }
       }
     }
-    removeDecorativeAndNoise(fm, dw, dh);
+    removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
   } else {
     /*
      * Luminance path:
