@@ -62,6 +62,7 @@ workerSelf.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         inkBefore,
         inkAfter,
         whiteBoxRegions: healed.whiteBoxRegions,
+        preservationGuardTriggered: healed.preservationGuardTriggered,
       };
       /* Transfer buffer ownership to main thread (zero-copy) */
       workerSelf.postMessage(response, [result.buffer]);
