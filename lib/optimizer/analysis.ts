@@ -37,10 +37,212 @@ function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
-function classifyDensity(inkDensity: number, edgeDensity: number): PageDensity {
-  if (inkDensity >= 0.45 || edgeDensity >= 0.30) return 'dense';
-  if (inkDensity <= 0.12 && edgeDensity <= 0.10) return 'sparse';
+type ForegroundPolarity = 'light-on-dark' | 'dark-on-light' | 'mixed';
+
+interface ForegroundGeometry {
+  coverage: number;
+  bbox?: { xMin: number; yMin: number; xMax: number; yMax: number };
+  margins?: { top: number; right: number; bottom: number; left: number };
+  sparseContent: boolean;
+}
+
+const MIXED_BACKGROUND_RATIO = 0.30;
+const LOCAL_TILE_MIN = 16;
+const LOCAL_TILE_TARGETS = 48;
+
+function inferForegroundPolarity(
+  darkBgRatio: number,
+  lightBgRatio: number,
+  avgBrightness: number,
+): { polarity: ForegroundPolarity; confidence: number } {
+  if (darkBgRatio >= MIXED_BACKGROUND_RATIO && lightBgRatio >= MIXED_BACKGROUND_RATIO) {
+    return {
+      polarity: 'mixed',
+      confidence: Number(Math.abs(darkBgRatio - lightBgRatio).toFixed(3)),
+    };
+  }
+
+  const darkSource =
+    darkBgRatio > DARK_BG_RATIO_THRESHOLD ||
+    avgBrightness < 120;
+
+  return darkSource
+    ? {
+        polarity: 'light-on-dark',
+        confidence: Number(clamp01(darkBgRatio).toFixed(3)),
+      }
+    : {
+        polarity: 'dark-on-light',
+        confidence: Number(clamp01(lightBgRatio).toFixed(3)),
+      };
+}
+
+function classifyDensity(foregroundCoverage: number, edgeDensity: number): PageDensity {
+  if (foregroundCoverage >= 0.15 || edgeDensity >= 0.30) return 'dense';
+  if (foregroundCoverage <= 0.03 && edgeDensity <= 0.10) return 'sparse';
   return 'medium';
+}
+
+function buildLocalPolarityMap(
+  width: number,
+  height: number,
+  step: number,
+  data: Uint8ClampedArray,
+  pagePolarity: ForegroundPolarity,
+): {
+  tileSize: number;
+  cols: number;
+  polarity: Int8Array;
+  thresholds: Float64Array;
+} {
+  const tileSize = Math.max(
+    LOCAL_TILE_MIN,
+    Math.floor(Math.min(width, height) / LOCAL_TILE_TARGETS),
+  );
+  const cols = Math.ceil(width / tileSize);
+  const rows = Math.ceil(height / tileSize);
+  const tileCount = cols * rows;
+  const sampleCounts = new Float64Array(tileCount);
+  const darkCounts = new Float64Array(tileCount);
+  const lightCounts = new Float64Array(tileCount);
+  const luminanceSums = new Float64Array(tileCount);
+
+  for (let y = 0; y < height; y += step) {
+    const tileY = Math.floor(y / tileSize);
+    for (let x = 0; x < width; x += step) {
+      const idx = (y * width + x) * 4;
+      const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
+      const tileIndex = tileY * cols + Math.floor(x / tileSize);
+      sampleCounts[tileIndex]++;
+      luminanceSums[tileIndex] += lum;
+      if (lum < 60) darkCounts[tileIndex]++;
+      if (lum > 200) lightCounts[tileIndex]++;
+    }
+  }
+
+  const polarity = new Int8Array(tileCount);
+  const thresholds = new Float64Array(tileCount);
+
+  for (let tileIndex = 0; tileIndex < tileCount; tileIndex++) {
+    const count = sampleCounts[tileIndex];
+    if (count === 0) continue;
+
+    const darkRatio = darkCounts[tileIndex] / count;
+    const lightRatio = lightCounts[tileIndex] / count;
+    let tilePolarity: ForegroundPolarity | null = null;
+
+    if (pagePolarity !== 'mixed') {
+      tilePolarity = pagePolarity;
+    } else if (darkRatio >= 0.60 && lightRatio <= 0.30) {
+      tilePolarity = 'light-on-dark';
+    } else if (lightRatio >= 0.60 && darkRatio <= 0.30) {
+      tilePolarity = 'dark-on-light';
+    } else if (darkRatio - lightRatio >= 0.25) {
+      tilePolarity = 'light-on-dark';
+    } else if (lightRatio - darkRatio >= 0.25) {
+      tilePolarity = 'dark-on-light';
+    }
+
+    if (!tilePolarity) continue;
+
+    const mean = luminanceSums[tileIndex] / count;
+    polarity[tileIndex] = tilePolarity === 'light-on-dark' ? 1 : -1;
+    thresholds[tileIndex] = tilePolarity === 'light-on-dark'
+      ? Math.min(245, Math.max(145, mean + 24))
+      : Math.max(60, Math.min(185, mean - 24));
+  }
+
+  return { tileSize, cols, polarity, thresholds };
+}
+
+function measureForegroundGeometry(
+  width: number,
+  height: number,
+  step: number,
+  data: Uint8ClampedArray,
+  localMap: ReturnType<typeof buildLocalPolarityMap>,
+): ForegroundGeometry & {
+  foregroundSamples: number;
+  isolatedForegroundRatio: number;
+  averageForegroundNeighbors: number;
+} {
+  let foregroundSamples = 0;
+  let isolatedForeground = 0;
+  let neighborSum = 0;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  const sampleForeground = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return false;
+
+    const tileIndex =
+      Math.floor(y / localMap.tileSize) * localMap.cols +
+      Math.floor(x / localMap.tileSize);
+    const tilePolarity = localMap.polarity[tileIndex];
+    if (tilePolarity === 0) return false;
+
+    const idx = (y * width + x) * 4;
+    const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
+    return tilePolarity === 1
+      ? lum >= localMap.thresholds[tileIndex]
+      : lum <= localMap.thresholds[tileIndex];
+  };
+
+  const sampleCount = Math.ceil(height / step) * Math.ceil(width / step);
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      if (!sampleForeground(x, y)) continue;
+
+      foregroundSamples++;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+
+      const left = sampleForeground(x - step, y);
+      const right = sampleForeground(x + step, y);
+      const up = sampleForeground(x, y - step);
+      const down = sampleForeground(x, y + step);
+      const neighbors = Number(left) + Number(right) + Number(up) + Number(down);
+      neighborSum += neighbors;
+      if (neighbors <= 1) isolatedForeground++;
+    }
+  }
+
+  const coverage = foregroundSamples / Math.max(sampleCount, 1);
+  const bbox = foregroundSamples > 0
+    ? {
+        xMin: Number((minX / Math.max(width - 1, 1)).toFixed(3)),
+        yMin: Number((minY / Math.max(height - 1, 1)).toFixed(3)),
+        xMax: Number((maxX / Math.max(width - 1, 1)).toFixed(3)),
+        yMax: Number((maxY / Math.max(height - 1, 1)).toFixed(3)),
+      }
+    : undefined;
+
+  const margins = bbox
+    ? {
+        top: bbox.yMin,
+        right: Number((1 - bbox.xMax).toFixed(3)),
+        bottom: Number((1 - bbox.yMax).toFixed(3)),
+        left: bbox.xMin,
+      }
+    : undefined;
+
+  return {
+    coverage: Number(clamp01(coverage).toFixed(4)),
+    bbox,
+    margins,
+    sparseContent: coverage <= 0.03,
+    foregroundSamples,
+    isolatedForegroundRatio: foregroundSamples > 0
+      ? isolatedForeground / foregroundSamples
+      : 0,
+    averageForegroundNeighbors: foregroundSamples > 0
+      ? neighborSum / foregroundSamples
+      : 0,
+  };
 }
 
 export function analyzeImageData(imageData: ImageData, pageIndex: number): PageProfile {
@@ -102,29 +304,26 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
   /*
    * Second pass on the same sampled grid:
    * - edgeDensity: how much local structure is present
-   * - isolatedForegroundRatio: sparse one-off foreground samples, a cheap
-   *   proxy for scan noise / dust / isolated dots
-   * - meanForegroundNeighbors: local thickness proxy for strokes/lines
+   * - foreground geometry: polarity-aware content coverage + bbox
+   * - isolated foreground: retained as a legacy metric only; it is NOT treated
+   *   as scan noise by the density classifier.
    */
-  const isDarkSource =
-    darkBgRatio > DARK_BG_RATIO_THRESHOLD ||
-    avgBrightness < 120;
-  const foregroundThreshold = isDarkSource
-    ? Math.min(245, Math.max(145, avgBrightness + 24))
-    : Math.max(60, Math.min(185, avgBrightness - 24));
+  const pagePolarity = inferForegroundPolarity(
+    darkBgRatio,
+    lightBgRatio,
+    avgBrightness,
+  );
+  const isDarkSource = pagePolarity.polarity === 'light-on-dark';
+  const localPolarityMap = buildLocalPolarityMap(
+    width,
+    height,
+    step,
+    data,
+    pagePolarity.polarity,
+  );
 
   let edgeComparisons = 0;
   let edgeCount = 0;
-  let foregroundSamples = 0;
-  let isolatedForeground = 0;
-  let neighborSum = 0;
-
-  const sampleForeground = (x: number, y: number): boolean => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return false;
-    const idx = (y * width + x) * 4;
-    const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
-    return isDarkSource ? lum >= foregroundThreshold : lum <= foregroundThreshold;
-  };
 
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
@@ -143,27 +342,26 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
         edgeComparisons++;
         if (Math.abs(lum - downLum) >= 22) edgeCount++;
       }
-
-      if (sampleForeground(x, y)) {
-        foregroundSamples++;
-        const left = sampleForeground(x - step, y);
-        const right = sampleForeground(x + step, y);
-        const up = sampleForeground(x, y - step);
-        const down = sampleForeground(x, y + step);
-        const neighbors = Number(left) + Number(right) + Number(up) + Number(down);
-        neighborSum += neighbors;
-        if (neighbors <= 1) isolatedForeground++;
-      }
     }
   }
 
   const edgeDensity = edgeComparisons > 0 ? edgeCount / edgeComparisons : 0;
-  const isolatedForegroundRatio = foregroundSamples > 0
-    ? isolatedForeground / foregroundSamples
-    : 0;
-  const averageForegroundNeighbors = foregroundSamples > 0
-    ? neighborSum / foregroundSamples
-    : 0;
+  const foregroundGeometry = measureForegroundGeometry(
+    width,
+    height,
+    step,
+    data,
+    localPolarityMap,
+  );
+  const {
+    coverage: foregroundCoverage,
+    bbox: contentBoundingBox,
+    margins,
+    sparseContent,
+    foregroundSamples,
+    isolatedForegroundRatio,
+    averageForegroundNeighbors,
+  } = foregroundGeometry;
 
   /*
    * Keep the existing dark/diagram/light behavior ahead of the new
@@ -178,14 +376,12 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     (colorfulPixelRatio >= 0.02 || contrast >= 25) &&
     inkDensity < 0.85;
 
-  const balancedMixedPage =
-    lightBgRatio >= 0.35 &&
-    lightBgRatio <= 0.65 &&
-    contrast >= 20 &&
-    inkDensity >= 0.25;
+  const balancedMixedPage = pagePolarity.polarity === 'mixed';
 
   let classification: PageClassification;
-  if (darkBgRatio > DARK_BG_RATIO_THRESHOLD) {
+  if (pagePolarity.polarity === 'mixed') {
+    classification = 'MIXED';
+  } else if (darkBgRatio > DARK_BG_RATIO_THRESHOLD) {
     classification = 'DARK_SLIDE';
   } else if (contrast > 65) {
     classification = 'DIAGRAM_EQUATION';
@@ -222,10 +418,9 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     Math.min(100, isolatedForegroundRatio * 100),
   );
 
-  const foregroundPolarity: 'light-on-dark' | 'dark-on-light' = isDarkSource
-    ? 'light-on-dark'
-    : 'dark-on-light';
-  const density = classifyDensity(inkDensity, edgeDensity);
+  const density = classifyDensity(foregroundCoverage, edgeDensity);
+  const coloredAnnotationPresent = colorfulPixelRatio >= 0.005 && foregroundSamples > 0;
+  const thinStrokeRisk = foregroundSamples > 0 && strokeThickness <= 2.4;
 
   const { topBannerPct, bottomBannerPct } = detectBanners(data, width, height);
 
@@ -247,7 +442,14 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     strokeThickness: Number(strokeThickness.toFixed(2)),
     edgeDensity: Number(edgeDensity.toFixed(4)),
     colorfulPixelRatio: Number(colorfulPixelRatio.toFixed(4)),
-    foregroundPolarity,
+    foregroundPolarity: pagePolarity.polarity,
+    polarityConfidence: pagePolarity.confidence,
+    foregroundCoverage,
+    contentBoundingBox,
+    margins,
+    sparseContent,
+    coloredAnnotationPresent,
+    thinStrokeRisk,
     density,
     classification,
   };
