@@ -57,7 +57,7 @@ export type WorkerRequest =
   | { type: 'TERMINATE' };
 
 export type WorkerResponse =
-  | { type: 'PIXEL_PROCESSED'; taskId: string; pageIndex: number; buffer: ArrayBuffer; width: number; height: number; inkBefore: number; inkAfter: number; whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }> }
+  | { type: 'PIXEL_PROCESSED'; taskId: string; pageIndex: number; buffer: ArrayBuffer; width: number; height: number; inkBefore: number; inkAfter: number; whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>; preservationGuardTriggered?: boolean }
   | { type: 'SHEET_COMPOSED'; taskId: string; sheetIndex: number; buffer: ArrayBuffer; width: number; height: number }
   | { type: 'PONG' }
   | { type: 'BUFFER_STATS'; bufferedCount: number; maxBuffered: number }
@@ -90,6 +90,8 @@ export interface WorkerProcessResult {
   inkCoverageAfterPct: number;
   /** White boxes restored from the original (dark pages, autoWhiteBoxFix). */
   whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
+  /** True when a first-pass preservation failure caused a softened retry. */
+  preservationGuardTriggered?: boolean;
 }
 
 export function generateTaskId(): string {
