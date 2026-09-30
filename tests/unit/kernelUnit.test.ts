@@ -301,6 +301,50 @@ describe('normalizeTemplateElements', () => {
     expect(mask[20 * w + 70]).toBe(1);
   });
 
+  it('bridges text-created gaps and keeps the tube border pixels', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 260, h = 150;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 16; data[j + 1] = 18; data[j + 2] = 26; data[j + 3] = 255;
+    }
+
+    // Tube body with a one-pixel colored outline and interior fill.
+    for (let y = 16; y <= 50; y++) {
+      for (let x = 24; x <= 176; x++) {
+        const isBorder = y === 16 || y === 50 || x === 24 || x === 176;
+        const j = (y * w + x) * 4;
+        data[j] = isBorder ? 35 : 42;
+        data[j + 1] = isBorder ? 155 : 175;
+        data[j + 2] = isBorder ? 76 : 88;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    // Simulate a thick white title crossing the colored rows. This creates
+    // short row gaps in the fill signal that the detector must bridge.
+    for (let y = 28; y <= 38; y++) {
+      for (let x = 60; x <= 136; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 245; data[j + 1] = 245; data[j + 2] = 245;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+
+    // Interior fill is removed.
+    expect(mask[24 * w + 40]).toBe(0);
+    expect(mask[24 * w + 120]).toBe(0);
+
+    // Border remains, as does the title.
+    expect(mask[16 * w + 100]).toBe(1);
+    expect(mask[32 * w + 80]).toBe(1);
+  });
+
   it('whitens a shifted colored topic header while preserving light title pixels', async () => {
     const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
     const w = 200, h = 120;
