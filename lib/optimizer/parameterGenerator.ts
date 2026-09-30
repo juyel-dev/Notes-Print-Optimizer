@@ -141,14 +141,49 @@ export class ParameterGenerator {
           : 'medium'
     );
 
-    const sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
-    const denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
+    let next = { ...baseParams };
 
-    return {
-      ...baseParams,
-      sharpenAmount,
-      denoiseAmount,
-    };
+    if (pageProfile.classification === 'SCREENSHOT_HEAVY') {
+      next = {
+        ...next,
+        sharpenAmount: density === 'sparse' ? 30 : density === 'dense' ? 20 : 25,
+        denoiseAmount: pageProfile.estimatedNoise >= 30 ? 10 : 5,
+      };
+    } else if (pageProfile.classification === 'DARK_SLIDE') {
+      /*
+       * Dark lecture slides contain the highest share of thin colored
+       * handwriting in our target corpus. Keep the default strong stroke
+       * recipe for normal pages, but avoid over-thickening sparse/thin pages.
+       */
+      const thin = pageProfile.thinStrokeRisk === true;
+      next = {
+        ...next,
+        sharpenAmount: thin || density === 'sparse'
+          ? 40
+          : density === 'dense'
+            ? 30
+            : 35,
+        denoiseAmount: thin ? 10 : pageProfile.estimatedNoise >= 30 ? 12 : 15,
+        dilationKernelSize: thin || density === 'sparse' ? 3 : 5,
+        strokeEnhancement: thin || density === 'sparse' ? 'normal' : 'strong',
+      };
+    } else if (pageProfile.classification === 'DIAGRAM_EQUATION') {
+      /*
+       * Structural pages need contrast, but thin lines should not be forced
+       * through the medium dilation used by generic dark slides.
+       */
+      const thin = pageProfile.thinStrokeRisk === true;
+      next = {
+        ...next,
+        contrastEnhancement: thin ? 35 : 45,
+        sharpenAmount: thin ? 50 : 60,
+        denoiseAmount: pageProfile.estimatedNoise >= 30 ? 8 : 10,
+        dilationKernelSize: 0,
+        strokeEnhancement: 'none',
+      };
+    }
+
+    return next;
   }
 
   /**
