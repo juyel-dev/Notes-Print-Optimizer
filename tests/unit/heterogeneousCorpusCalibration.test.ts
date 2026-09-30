@@ -224,27 +224,7 @@ describe('heterogeneous corpus calibration', () => {
     it('keeps ' + testCase.name + ' in the intended analyzer branch', () => {
       const profile = analyzeImageData(testCase.build(), 0);
 
-      if (profile.classification !== testCase.expected) {
-        throw new Error(
-          'calibration mismatch: ' +
-          testCase.name +
-          ' ' +
-          JSON.stringify({
-            expected: testCase.expected,
-            received: profile.classification,
-            averageBrightness: profile.averageBrightness,
-            contrast: profile.contrast,
-            darkBackgroundRatio: profile.darkBackgroundRatio,
-            lightBackgroundRatio: profile.lightBackgroundRatio,
-            inkDensity: profile.inkDensity,
-            edgeDensity: profile.edgeDensity,
-            colorfulPixelRatio: profile.colorfulPixelRatio,
-            foregroundCoverage: profile.foregroundCoverage,
-            longLineDensity: profile.longLineDensity,
-            diagramEquationScore: profile.diagramEquationScore,
-          }),
-        );
-      }
+      expect(profile.classification).toBe(testCase.expected);
       expect(profile.density).toBeDefined();
       expect(profile.foregroundCoverage).toBeGreaterThanOrEqual(0);
       expect(profile.foregroundCoverage).toBeLessThanOrEqual(1);
