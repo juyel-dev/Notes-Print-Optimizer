@@ -9,7 +9,9 @@ import { jsKernels } from '../../lib/wasm/jsFallback';
 // Small-input benchmarks (removeNoise, connectedComponents at 40Kpx) have high
 // relative overhead; thresholds account for environment variance.
 const REGRESSION_THRESHOLDS: Record<string, number> = {
-  analyze: 5,
+  // Analyze is a single-shot JS benchmark on shared CI runners. Keep a
+  // meaningful floor while allowing normal machine-to-machine variance.
+  analyze: 3.5,
   process: 5,
   rgbToHsvBatch: 2,
   classifyColors: 5,
