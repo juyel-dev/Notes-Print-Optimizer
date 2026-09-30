@@ -246,6 +246,29 @@ describe('processPage edge cases', () => {
 
 
 describe('normalizeTemplateElements', () => {
+
+  it('does not treat a solid decorative color bar without title content as a header', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 240, h = 140;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 18; data[j + 1] = 20; data[j + 2] = 28; data[j + 3] = 255;
+    }
+    for (let y = 10; y <= 34; y++) {
+      for (let x = 14; x <= 155; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 245; data[j + 1] = 185; data[j + 2] = 40;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(false);
+    expect(mask[20 * w + 50]).toBe(1);
+  });
+
   it('whitens a shifted colored topic header while preserving light title pixels', async () => {
     const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
     const w = 200, h = 120;
