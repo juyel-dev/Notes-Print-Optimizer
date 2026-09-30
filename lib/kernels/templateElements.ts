@@ -156,6 +156,57 @@ function detectHeader(
     const titleCoverage = titleSamples > 0 ? titleContrast / titleSamples : 0;
     if (titleCoverage < 0.008 || titleCoverage > 0.40) return null;
 
+    // Structural signature of the recurring tube: its rounded right cap
+    // retreats at the top/bottom, while the middle reaches farther right.
+    // This normalized shape test is what separates the real header component
+    // from ordinary rectangular colored bars/text in generic dark slides.
+    const rowExtents: Array<{ min: number; max: number }> = [];
+    const geometryStep = Math.max(1, Math.floor(runHeight / 18));
+    for (let y = y0; y <= y1; y += geometryStep) {
+      let rowMin = width;
+      let rowMax = -1;
+      for (let x = x0; x <= x1; x += xStep) {
+        const i = (y * width + x) * 4;
+        if (isHeaderFillColor(data[i], data[i + 1], data[i + 2])) {
+          if (x < rowMin) rowMin = x;
+          if (x > rowMax) rowMax = x;
+        }
+      }
+      if (rowMax >= rowMin) rowExtents.push({ min: rowMin, max: rowMax });
+    }
+
+    const median = (values: number[]): number => {
+      const sorted = [...values].sort((a, b) => a - b);
+      if (sorted.length === 0) return 0;
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+    };
+
+    const third = Math.max(1, Math.floor(rowExtents.length / 3));
+    const topRows = rowExtents.slice(0, third);
+    const middleRows = rowExtents.slice(third, Math.max(third + 1, rowExtents.length - third));
+    const bottomRows = rowExtents.slice(Math.max(third + 1, rowExtents.length - third));
+
+    const middleRight = median(middleRows.map(row => row.max));
+    const topRight = median(topRows.map(row => row.max));
+    const bottomRight = median(bottomRows.map(row => row.max));
+    const middleLeft = median(middleRows.map(row => row.min));
+    const topLeft = median(topRows.map(row => row.min));
+    const bottomLeft = median(bottomRows.map(row => row.min));
+
+    const rightCapRetreat = Math.min(
+      middleRight - topRight,
+      middleRight - bottomRight,
+    ) / width;
+    const leftBadgeBulge = Math.min(
+      topLeft - middleLeft,
+      bottomLeft - middleLeft,
+    ) / width;
+
+    if (rightCapRetreat < 0.025 && leftBadgeBulge < 0.015) return null;
+
     return {
       y0,
       y1,
