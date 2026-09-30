@@ -286,7 +286,7 @@ describe('normalizeTemplateElements', () => {
       const j = i * 4;
       data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
     }
-    const cx = 13, cy = 50, radius = 7;
+    const cx = 13, cy = 50, radius = 5;
     for (let y = cy - radius; y <= cy + radius; y++) {
       for (let x = cx - radius; x <= cx + radius; x++) {
         if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
@@ -316,7 +316,7 @@ describe('normalizeTemplateElements', () => {
       const j = i * 4;
       data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
     }
-    const cx = 180, cy = 10, radius = 8;
+    const cx = 186, cy = 10, radius = 5;
     for (let y = cy - radius; y <= cy + radius; y++) {
       for (let x = cx - radius; x <= cx + radius; x++) {
         if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
