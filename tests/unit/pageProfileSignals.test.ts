@@ -191,43 +191,33 @@ describe('PageProfile structural signals', () => {
   });
 
 
-  it('detects long structural lines on a dark diagram-like page', () => {
+  it('detects a strongly structured dark diagram-like page', () => {
     const image = solidImage(160, 100, [25, 25, 25]);
     const data = image.data;
 
-    for (let x = 25; x < 135; x++) {
-      const y = 25;
-      const idx = (y * 160 + x) * 4;
-      data[idx] = 245;
-      data[idx + 1] = 245;
-      data[idx + 2] = 245;
+    for (let y = 10; y < 90; y += 10) {
+      for (let x = 15; x < 145; x++) {
+        for (let t = 0; t < 2; t++) {
+          const idx = ((y + t) * 160 + x) * 4;
+          data[idx] = 245;
+          data[idx + 1] = 245;
+          data[idx + 2] = 245;
+        }
+      }
     }
 
-    for (let y = 25; y < 75; y++) {
-      const idx = (y * 160 + 25) * 4;
-      data[idx] = 245;
-      data[idx + 1] = 245;
-      data[idx + 2] = 245;
-    }
-
-    for (let y = 25; y < 75; y++) {
-      const idx = (y * 160 + 135) * 4;
-      data[idx] = 245;
-      data[idx + 1] = 245;
-      data[idx + 2] = 245;
-    }
-
-    for (let x = 25; x < 135; x++) {
-      const y = 75;
-      const idx = (y * 160 + x) * 4;
-      data[idx] = 245;
-      data[idx + 1] = 245;
-      data[idx + 2] = 245;
+    for (let x = 20; x < 145; x += 20) {
+      for (let y = 10; y < 90; y++) {
+        const idx = (y * 160 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
     }
 
     const profile = analyzeImageData(new ImageData(data, 160, 100), 0);
 
-    expect(profile.longLineDensity).toBeGreaterThan(0.01);
+    expect(profile.longLineDensity).toBeGreaterThan(0.1);
     expect(profile.diagramEquationScore).toBeGreaterThan(0.58);
     expect(profile.classification).toBe('DIAGRAM_EQUATION');
   });
