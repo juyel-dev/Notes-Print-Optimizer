@@ -406,7 +406,7 @@ export function processPage(
    * fills, and remove the separate PW branding mark. This is tolerant to
    * small positional shifts and deliberately runs before dilation/noise so
    * the cleaned areas cannot be recreated as large fills. */
-  if (isDark) {
+  if (profile.classification === 'DARK_SLIDE') {
     normalizeTemplateElements(dst, fm, dw, dh);
   }
 
