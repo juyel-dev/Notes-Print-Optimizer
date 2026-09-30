@@ -406,7 +406,9 @@ export function processPage(
    * fills, and remove the separate PW branding mark. This is tolerant to
    * small positional shifts and deliberately runs before dilation/noise so
    * the cleaned areas cannot be recreated as large fills. */
-  normalizeTemplateElements(dst, fm, dw, dh);
+  if (isDark) {
+    normalizeTemplateElements(dst, fm, dw, dh);
+  }
 
   /* Post-processing: dilation with numeric kernel size override */
   if (ks > 0) {
