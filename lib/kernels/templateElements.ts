@@ -147,9 +147,11 @@ function detectHeader(
   let best: Candidate | null = null;
   let runStart = -1;
 
-  const considerRun = (y0: number, y1: number): void => {
+  const consider = (y0: number, y1: number): void => {
     const candidate = evaluateRun(y0, y1);
-    if (candidate && (!best || candidate.score > best.score)) best = candidate;
+    if (candidate && (best === null || candidate.score > best.score)) {
+      best = candidate;
+    }
   };
 
   for (let y = startY; y <= endY; y++) {
@@ -165,27 +167,32 @@ function detectHeader(
     if (coverage >= 0.34) {
       if (runStart < 0) runStart = y;
     } else if (runStart >= 0) {
-      considerRun(runStart, y - 1);
+      const candidate = evaluateRun(runStart, y - 1);
+      if (candidate && (best === null || candidate.score > best.score)) best = candidate;
       runStart = -1;
     }
   }
-  if (runStart >= 0) considerRun(runStart, endY);
+  if (runStart >= 0) {
+    const candidate = evaluateRun(runStart, endY);
+    if (candidate && (best === null || candidate.score > best.score)) best = candidate;
+  }
 
-  if (!best || best.count < 20) return null;
+  const header = best;
+  if (header === null || header.count < 20) return null;
 
-  const yPad = Math.max(2, Math.floor((best.y1 - best.y0 + 1) * 0.18));
-  const xPad = Math.max(2, Math.floor((best.x1 - best.x0 + 1) * 0.02));
+  const yPad = Math.max(2, Math.floor((header.y1 - header.y0 + 1) * 0.18));
+  const xPad = Math.max(2, Math.floor((header.x1 - header.x0 + 1) * 0.02));
   const box = clampBox({
-    x0: best.x0 - xPad,
-    y0: best.y0 - yPad,
-    x1: best.x1 + xPad,
-    y1: best.y1 + yPad,
+    x0: header.x0 - xPad,
+    y0: header.y0 - yPad,
+    x1: header.x1 + xPad,
+    y1: header.y1 + yPad,
   }, width, height);
 
   const fill: [number, number, number] = [
-    best.sumR / best.count,
-    best.sumG / best.count,
-    best.sumB / best.count,
+    header.sumR / header.count,
+    header.sumG / header.count,
+    header.sumB / header.count,
   ];
   return { box, fill };
 }
