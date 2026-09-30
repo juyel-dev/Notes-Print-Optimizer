@@ -60,6 +60,10 @@ export interface PageProfile {
   thinStrokeRisk?: boolean;
   /** Coarse visual content density inferred from foreground coverage and structural edge coverage. */
   density?: PageDensity;
+  /** Ratio of foreground samples participating in long horizontal/vertical runs. */
+  longLineDensity?: number;
+  /** Conservative 0-1 structural signal for diagram/equation-like content. */
+  diagramEquationScore?: number;
   classification: PageClassification;
 }
 
