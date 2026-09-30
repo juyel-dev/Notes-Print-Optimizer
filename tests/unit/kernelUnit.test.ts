@@ -303,7 +303,7 @@ describe('normalizeTemplateElements', () => {
 
   it('bridges text-created gaps and keeps the tube border pixels', async () => {
     const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
-    const w = 260, h = 150;
+    const w = 260, h = 180;
     const data = new Uint8ClampedArray(w * h * 4);
     const mask = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) {
@@ -312,9 +312,11 @@ describe('normalizeTemplateElements', () => {
     }
 
     // Tube body with a one-pixel colored outline and interior fill.
-    for (let y = 16; y <= 50; y++) {
-      for (let x = 24; x <= 176; x++) {
-        const isBorder = y === 16 || y === 50 || x === 24 || x === 176;
+    for (let y = 22; y <= 46; y++) {
+      const roundedTopBottom = y < 27 || y > 41;
+      const rowX1 = roundedTopBottom ? 164 : 176;
+      for (let x = 24; x <= rowX1; x++) {
+        const isBorder = y === 22 || y === 46 || x === 24 || x === rowX1;
         const j = (y * w + x) * 4;
         data[j] = isBorder ? 245 : 42;
         data[j + 1] = isBorder ? 245 : 175;
@@ -325,7 +327,7 @@ describe('normalizeTemplateElements', () => {
 
     // Simulate a thick white title crossing the colored rows. This creates
     // short row gaps in the fill signal that the detector must bridge.
-    for (let y = 28; y <= 38; y++) {
+    for (let y = 30; y <= 38; y++) {
       for (let x = 60; x <= 136; x++) {
         const j = (y * w + x) * 4;
         data[j] = 245; data[j + 1] = 245; data[j + 2] = 245;
@@ -337,12 +339,12 @@ describe('normalizeTemplateElements', () => {
     expect(stats.headerDetected).toBe(true);
 
     // Interior fill is removed.
-    expect(mask[24 * w + 40]).toBe(0);
-    expect(mask[24 * w + 120]).toBe(0);
+    expect(mask[34 * w + 40]).toBe(0);
+    expect(mask[34 * w + 120]).toBe(0);
 
     // Border remains, as does the title.
-    expect(mask[16 * w + 100]).toBe(1);
-    expect(mask[32 * w + 80]).toBe(1);
+    expect(mask[22 * w + 100]).toBe(1);
+    expect(mask[34 * w + 80]).toBe(1);
   });
 
   it('whitens a shifted colored topic header while preserving light title pixels', async () => {
