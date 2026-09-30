@@ -243,3 +243,92 @@ describe('processPage edge cases', () => {
     expect(img.data.length).toBe(16 * 16 * 4);
   });
 });
+
+
+describe('normalizeTemplateElements', () => {
+  it('whitens a shifted colored topic header while preserving light title pixels', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 200, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+      mask[i] = 0;
+    }
+    for (let y = 8; y <= 25; y++) {
+      for (let x = 12; x <= 122; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 40; data[j + 1] = 180; data[j + 2] = 70; data[j + 3] = 255;
+        mask[y * w + x] = 1;
+      }
+    }
+    // White title pixels inside the colored header.
+    for (let x = 38; x <= 70; x++) {
+      const y = 16;
+      const j = (y * w + x) * 4;
+      data[j] = 245; data[j + 1] = 245; data[j + 2] = 245;
+      mask[y * w + x] = 1;
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+    expect(mask[12 * w + 20]).toBe(0);
+    expect(mask[16 * w + 50]).toBe(1);
+  });
+
+  it('whitens recurring colored number-marker fills but preserves the number glyph', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 160, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+    }
+    const cx = 13, cy = 50, radius = 7;
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
+          const j = (y * w + x) * 4;
+          data[j] = 40; data[j + 1] = 180; data[j + 2] = 70;
+          mask[y * w + x] = 1;
+        }
+      }
+    }
+    const glyphX = cx, glyphY = cy;
+    const glyphI = (glyphY * w + glyphX) * 4;
+    data[glyphI] = 245; data[glyphI + 1] = 245; data[glyphI + 2] = 245;
+    mask[glyphY * w + glyphX] = 1;
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.markerCount).toBeGreaterThan(0);
+    expect(mask[cy * w + (cx - radius)]).toBe(0);
+    expect(mask[glyphY * w + glyphX]).toBe(1);
+  });
+
+  it('removes a small top-right PW-like light logo with position tolerance', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 200, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+    }
+    const cx = 180, cy = 10, radius = 8;
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
+          const j = (y * w + x) * 4;
+          data[j] = 240; data[j + 1] = 240; data[j + 2] = 240;
+          mask[y * w + x] = 1;
+        }
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.logoDetected).toBe(true);
+    expect(mask[cy * w + cx]).toBe(0);
+  });
+});
