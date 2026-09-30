@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   assessPreservation,
+  resolvePreservationPolicy,
   softenProcessingParameters,
 } from '../../lib/kernels/preservationGuard';
 import { processPageWithWhiteBoxHeal } from '../../lib/kernels/whiteBox';
@@ -36,6 +37,51 @@ function drawRect(
 }
 
 describe('preservation guard', () => {
+  it('raises structural floors for sparse thin-stroke pages', () => {
+    const policy = resolvePreservationPolicy({
+      classification: 'HANDWRITTEN_NOTES',
+      darkBackgroundRatio: 0.02,
+      density: 'sparse',
+      foregroundCoverage: 0.018,
+      foregroundPolarity: 'dark-on-light',
+      thinStrokeRisk: true,
+    });
+
+    expect(policy.coverageFloor).toBe(0.25);
+    expect(policy.edgeFloor).toBe(0.5);
+    expect(policy.thinStrokeFloor).toBe(0.48);
+  });
+
+  it('relaxes structural floors for screenshot-heavy dense pages', () => {
+    const policy = resolvePreservationPolicy({
+      classification: 'SCREENSHOT_HEAVY',
+      darkBackgroundRatio: 0.01,
+      density: 'dense',
+      foregroundCoverage: 0.24,
+      foregroundPolarity: 'dark-on-light',
+      thinStrokeRisk: false,
+    });
+
+    expect(policy.coverageFloor).toBe(0.25);
+    expect(policy.edgeFloor).toBe(0.4);
+    expect(policy.thinStrokeFloor).toBe(0.3);
+  });
+
+  it('keeps dark diagram pages structurally conservative', () => {
+    const policy = resolvePreservationPolicy({
+      classification: 'DIAGRAM_EQUATION',
+      darkBackgroundRatio: 0.82,
+      density: 'medium',
+      foregroundCoverage: 0.06,
+      foregroundPolarity: 'light-on-dark',
+      thinStrokeRisk: true,
+    });
+
+    expect(policy.coverageFloor).toBe(0.3);
+    expect(policy.edgeFloor).toBe(0.52);
+    expect(policy.thinStrokeFloor).toBe(0.48);
+  });
+
   it('accepts a polarity-preserving light page', () => {
     const w = 160, h = 120;
     const source = rgbaPage(w, h, 255);

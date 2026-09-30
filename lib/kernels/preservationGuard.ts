@@ -49,12 +49,93 @@ export type PreservationParameters =
     >
   >;
 
-const DEFAULT_POLICY = {
+export interface PreservationPolicy {
+  minForegroundSamples: number;
+  coverageFloor: number;
+  edgeFloor: number;
+  thinStrokeFloor: number;
+}
+
+const DEFAULT_POLICY: PreservationPolicy = {
   minForegroundSamples: 48,
   coverageFloor: 0.35,
   edgeFloor: 0.48,
   thinStrokeFloor: 0.40,
-} as const;
+};
+
+export type PreservationProfile = Pick<
+  PageProfile,
+  | 'classification'
+  | 'darkBackgroundRatio'
+  | 'density'
+  | 'foregroundCoverage'
+  | 'foregroundPolarity'
+  | 'thinStrokeRisk'
+>;
+
+/**
+ * Resolve conservative guard floors from the analyzer profile.
+ *
+ * Sparse/thin pages keep stronger structural floors because losing a small
+ * amount of geometry can erase an entire handwritten stroke. Dense and
+ * screenshot-heavy pages get slightly lower floors because legitimate
+ * tonal/area changes are more common there. Dark-slide and diagram pages
+ * retain stronger edge/detail requirements.
+ */
+export function resolvePreservationPolicy(profile: PreservationProfile): PreservationPolicy {
+  const policy = { ...DEFAULT_POLICY };
+
+  if (profile.density === 'sparse') {
+    policy.coverageFloor = 0.30;
+    policy.edgeFloor = 0.50;
+    policy.thinStrokeFloor = 0.45;
+  } else if (profile.density === 'dense') {
+    policy.coverageFloor = 0.28;
+    policy.edgeFloor = 0.44;
+    policy.thinStrokeFloor = 0.34;
+  }
+
+  switch (profile.classification) {
+    case 'DARK_SLIDE':
+      policy.coverageFloor = Math.min(policy.coverageFloor, 0.33);
+      policy.edgeFloor = Math.max(policy.edgeFloor, 0.50);
+      policy.thinStrokeFloor = Math.max(policy.thinStrokeFloor, 0.45);
+      break;
+    case 'DIAGRAM_EQUATION':
+      policy.coverageFloor = Math.min(policy.coverageFloor, 0.30);
+      policy.edgeFloor = Math.max(policy.edgeFloor, 0.52);
+      policy.thinStrokeFloor = Math.max(policy.thinStrokeFloor, 0.48);
+      break;
+    case 'SCREENSHOT_HEAVY':
+      policy.coverageFloor = Math.min(policy.coverageFloor, 0.25);
+      policy.edgeFloor = Math.min(policy.edgeFloor, 0.40);
+      policy.thinStrokeFloor = Math.min(policy.thinStrokeFloor, 0.30);
+      break;
+    case 'MIXED':
+      policy.coverageFloor = Math.min(policy.coverageFloor, 0.28);
+      policy.edgeFloor = Math.min(policy.edgeFloor, 0.42);
+      policy.thinStrokeFloor = Math.min(policy.thinStrokeFloor, 0.34);
+      break;
+    default:
+      break;
+  }
+
+  if (profile.thinStrokeRisk) {
+    policy.edgeFloor = Math.max(policy.edgeFloor, 0.45);
+    policy.thinStrokeFloor = Math.max(policy.thinStrokeFloor, 0.48);
+  }
+
+  if (profile.foregroundCoverage != null && profile.foregroundCoverage <= 0.02) {
+    policy.coverageFloor = Math.min(policy.coverageFloor, 0.25);
+  }
+
+  if (profile.foregroundPolarity === 'mixed') {
+    policy.coverageFloor = Math.min(policy.coverageFloor, 0.28);
+    policy.edgeFloor = Math.min(policy.edgeFloor, 0.43);
+  }
+
+  return policy;
+}
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
@@ -156,9 +237,10 @@ export function assessPreservation(
   processed: Uint8ClampedArray,
   processedWidth: number,
   processedHeight: number,
-  profile: Pick<PageProfile, 'classification' | 'darkBackgroundRatio'>,
+  profile: PreservationProfile,
   cropTopPx = 0,
 ): PreservationAssessment {
+  const policy = resolvePreservationPolicy(profile);
   const isDarkSource =
     profile.classification === 'DARK_SLIDE' ||
     profile.darkBackgroundRatio > 0.55;
@@ -168,7 +250,7 @@ export function assessPreservation(
   const before = buildStats(source, processedWidth, compareHeight, isDarkSource, true, cropTopPx);
   const after = buildStats(processed, processedWidth, processedHeight, isDarkSource, false);
 
-  if (before.foreground < DEFAULT_POLICY.minForegroundSamples) {
+  if (before.foreground < policy.minForegroundSamples) {
     return {
       score: 1,
       coverageRatio: 1,
@@ -182,10 +264,12 @@ export function assessPreservation(
   const edgeRatio = after.edges / Math.max(before.edges, 1);
   const thinStrokeRatio = after.thin / Math.max(before.thin, 1);
 
-  const catastrophicCoverage = coverageRatio < DEFAULT_POLICY.coverageFloor && edgeRatio < DEFAULT_POLICY.edgeFloor;
+  const catastrophicCoverage =
+    coverageRatio < policy.coverageFloor &&
+    edgeRatio < policy.edgeFloor;
   const fineDetailLoss =
-    edgeRatio < DEFAULT_POLICY.edgeFloor &&
-    thinStrokeRatio < DEFAULT_POLICY.thinStrokeFloor;
+    edgeRatio < policy.edgeFloor &&
+    thinStrokeRatio < policy.thinStrokeFloor;
   const likelyDamaged = catastrophicCoverage || fineDetailLoss;
 
   // Score is intentionally dominated by the two structural signals so a
