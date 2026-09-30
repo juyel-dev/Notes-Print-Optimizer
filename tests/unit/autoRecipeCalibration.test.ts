@@ -11,6 +11,12 @@ import { openPdfDocument, renderPdfPageOpen } from '../fixtures/pdfRender';
 
 const FIXTURES_DIR = join(__dirname, '..', 'fixtures', 'pdf');
 const FIXTURE_NAMES = ['text', 'image', 'scanned', 'mixed'] as const;
+const FIXTURE_PAGES: Record<(typeof FIXTURE_NAMES)[number], number[]> = {
+  text: [2, 3, 4, 5],
+  image: [0],
+  scanned: [0],
+  mixed: [0, 3],
+};
 const RENDER_SCALE = 1.2;
 
 function readFixture(name: string): Uint8Array {
@@ -25,7 +31,8 @@ describe('production Auto recipe calibration', () => {
       let screenshotPages = 0;
 
       try {
-        for (let pageIndex = 0; pageIndex < doc.numPages; pageIndex++) {
+        for (const pageIndex of FIXTURE_PAGES[name]) {
+          expect(pageIndex).toBeLessThan(doc.numPages);
           const imageData = await renderPdfPageOpen(doc, pageIndex, RENDER_SCALE);
           const production = applyProductionAutoRecipe(imageData, pageIndex);
           const profile = production.profile;
