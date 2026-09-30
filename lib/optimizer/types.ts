@@ -1,7 +1,5 @@
 export type PageDensity = 'sparse' | 'medium' | 'dense';
 
-export type RasterSource = 'screenshot' | 'photo-scan';
-
 export type PageClassification =
   | 'DARK_SLIDE'
   | 'LIGHT_SLIDE'
@@ -66,8 +64,6 @@ export interface PageProfile {
   longLineDensity?: number;
   /** Conservative 0-1 structural signal for diagram/equation-like content. */
   diagramEquationScore?: number;
-  /** Conservative raster provenance hint for raster-heavy non-dark pages. */
-  rasterSource?: RasterSource;
   classification: PageClassification;
 }
 

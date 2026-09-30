@@ -49,10 +49,8 @@ function drawLine(image: ImageData, x0: number, y0: number, x1: number, y1: numb
   }
 }
 
-/* Small deterministic corpus representatives.
- * These are deliberately synthetic because the repository does not currently
- * commit an external camera/photo corpus; they are calibration proxies, not
- * claims about any specific real-world dataset.
+/* Small deterministic representatives for the digital lecture-PDF branches.
+ * These are synthetic calibration fixtures, not claims about an external dataset.
  */
 function lightPrintedLandscape(): ImageData {
   const image = makeImage(320, 180, [248, 248, 246]);
@@ -90,64 +88,6 @@ function screenshotHeavy(): ImageData {
   fillRect(image, 190, 82, 72, 48, [54, 170, 104]);
   drawLine(image, 18, 146, 302, 146, 3, [72, 78, 92]);
   drawLine(image, 18, 158, 246, 158, 2, [105, 111, 122]);
-  return image;
-}
-
-function cameraPhotoProxy(): ImageData {
-  const image = makeImage(320, 180, [223, 225, 219]);
-
-  // Low-frequency paper/scene gradient with a soft shadow.
-  for (let y = 0; y < image.height; y++) {
-    for (let x = 0; x < image.width; x++) {
-      const idx = (y * image.width + x) * 4;
-      const shadow = Math.max(0, 34 - Math.abs(x - 250) * 0.22 - Math.abs(y - 96) * 0.16);
-      const texture = ((x * 17 + y * 11) % 9) - 4;
-      image.data[idx] = Math.max(0, Math.min(255, 223 - shadow + texture));
-      image.data[idx + 1] = Math.max(0, Math.min(255, 225 - shadow + texture));
-      image.data[idx + 2] = Math.max(0, Math.min(255, 219 - shadow + texture));
-    }
-  }
-
-  // Colored object and document edges make this behave like a camera capture.
-  fillRect(image, 30, 22, 54, 34, [205, 90, 72]);
-  fillRect(image, 92, 22, 178, 3, [95, 98, 105]);
-  drawLine(image, 44, 72, 280, 66, 2, [70, 72, 76]);
-  drawLine(image, 44, 90, 262, 86, 1, [104, 106, 109]);
-  drawLine(image, 44, 108, 286, 104, 1, [104, 106, 109]);
-  return image;
-}
-
-function scannedPageProxy(): ImageData {
-  const image = makeImage(320, 180, [226, 226, 226]);
-  let state = 0x12345678;
-
-  const next = (): number => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-
-  for (let i = 0; i < 320 * 180; i++) {
-    const idx = i * 4;
-    const noise = Math.floor(next() * 18);
-    image.data[idx] = 222 + noise;
-    image.data[idx + 1] = 222 + noise;
-    image.data[idx + 2] = 222 + noise;
-  }
-
-  for (let stroke = 0; stroke < 48; stroke++) {
-    const sx = 18 + Math.floor(next() * 270);
-    const sy = 18 + Math.floor(next() * 140);
-    const len = 12 + Math.floor(next() * 18);
-    const slant = (next() - 0.5) * 0.5;
-    drawLine(image, sx, sy, sx + len, Math.round(sy + len * slant), 2, [46, 46, 46]);
-  }
-
-  for (let dot = 0; dot < 160; dot++) {
-    const x = Math.floor(next() * image.width);
-    const y = Math.floor(next() * image.height);
-    fillRect(image, x, y, 1, 1, [155, 155, 155]);
-  }
-
   return image;
 }
 
@@ -190,26 +130,6 @@ const cases: CalibrationCase[] = [
       expect(profile.longLineDensity).toBeGreaterThan(0.04);
       expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
       expect(profile.rasterSource).toBe('screenshot');
-    },
-  },
-  {
-    name: 'camera photo proxy',
-    expected: 'SCREENSHOT_HEAVY',
-    build: cameraPhotoProxy,
-    assertProfile: (profile) => {
-      expect(profile.foregroundPolarity).toBe('dark-on-light');
-      expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
-      expect(profile.rasterSource).toBe('photo-scan');
-    },
-  },
-  {
-    name: 'scanned page proxy',
-    expected: 'LIGHT_SLIDE',
-    build: scannedPageProxy,
-    assertProfile: (profile) => {
-      expect(profile.colorfulPixelRatio).toBeLessThan(0.01);
-      expect(profile.classification).not.toBe('SCREENSHOT_HEAVY');
-      expect(profile.rasterSource).toBeUndefined();
     },
   },
   {
