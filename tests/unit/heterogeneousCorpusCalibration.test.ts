@@ -189,6 +189,7 @@ const cases: CalibrationCase[] = [
       expect(profile.edgeDensity).toBeGreaterThan(0.015);
       expect(profile.longLineDensity).toBeGreaterThan(0.04);
       expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
+      expect(profile.rasterSource).toBe('screenshot');
     },
   },
   {
@@ -198,6 +199,7 @@ const cases: CalibrationCase[] = [
     assertProfile: (profile) => {
       expect(profile.foregroundPolarity).toBe('dark-on-light');
       expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
+      expect(profile.rasterSource).toBe('photo-scan');
     },
   },
   {
@@ -207,6 +209,7 @@ const cases: CalibrationCase[] = [
     assertProfile: (profile) => {
       expect(profile.colorfulPixelRatio).toBeLessThan(0.01);
       expect(profile.classification).not.toBe('SCREENSHOT_HEAVY');
+      expect(profile.rasterSource).toBeUndefined();
     },
   },
   {

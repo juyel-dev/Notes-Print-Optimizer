@@ -1,5 +1,7 @@
 export type PageDensity = 'sparse' | 'medium' | 'dense';
 
+export type RasterSource = 'screenshot' | 'photo-scan';
+
 export type PageClassification =
   | 'DARK_SLIDE'
   | 'LIGHT_SLIDE'
