@@ -147,13 +147,6 @@ function detectHeader(
   let best: Candidate | null = null;
   let runStart = -1;
 
-  const consider = (y0: number, y1: number): void => {
-    const candidate = evaluateRun(y0, y1);
-    if (candidate && (best === null || candidate.score > best.score)) {
-      best = candidate;
-    }
-  };
-
   for (let y = startY; y <= endY; y++) {
     let colored = 0;
     let samples = 0;
