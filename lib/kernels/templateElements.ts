@@ -238,42 +238,18 @@ function clearHeaderFill(
   header: { box: Box; fill: [number, number, number] },
 ): void {
   const { box, fill } = header;
-  const fillRadius = 2;
-
-  const isFillPixel = (x: number, y: number): boolean => {
-    const i = (y * width + x) * 4;
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    return (
-      saturation(r, g, b) >= 24 &&
-      luminance(r, g, b) < 245 &&
-      colorDistance(r, g, b, fill[0], fill[1], fill[2]) <= 82
-    );
-  };
-
   for (let y = box.y0; y <= box.y1; y++) {
     for (let x = box.x0; x <= box.x1; x++) {
-      if (!isFillPixel(x, y)) continue;
-
-      // Preserve the component's colored outline/edge. The print cleanup
-      // removes the large interior fill, but keeps boundary pixels so the
-      // tube/circle border remains visible in the monochrome result.
-      let nearBoundary = false;
-      for (let dy = -fillRadius; dy <= fillRadius && !nearBoundary; dy++) {
-        for (let dx = -fillRadius; dx <= fillRadius; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx, ny = y + dy;
-          if (
-            nx < box.x0 || nx > box.x1 ||
-            ny < box.y0 || ny > box.y1 ||
-            !isFillPixel(nx, ny)
-          ) {
-            nearBoundary = true;
-            break;
-          }
-        }
-      }
-
-      if (!nearBoundary) {
+      const i = (y * width + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      if (
+        saturation(r, g, b) >= 24 &&
+        luminance(r, g, b) < 245 &&
+        colorDistance(r, g, b, fill[0], fill[1], fill[2]) <= 82
+      ) {
+        // Remove the colored fill only. The actual white/near-white tube
+        // border and the title text are not fill-colored, so they remain in
+        // the foreground mask and therefore survive the B/W composite.
         mask[y * width + x] = 0;
       }
     }
