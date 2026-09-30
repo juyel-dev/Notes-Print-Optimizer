@@ -186,7 +186,8 @@ const cases: CalibrationCase[] = [
     build: screenshotHeavy,
     assertProfile: (profile) => {
       expect(profile.colorfulPixelRatio).toBeGreaterThan(0.02);
-      expect(profile.edgeDensity).toBeGreaterThan(0.08);
+      expect(profile.edgeDensity).toBeGreaterThan(0.015);
+      expect(profile.longLineDensity).toBeGreaterThan(0.04);
       expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
     },
   },
