@@ -9,7 +9,7 @@
  * Regenerate deliberately with: PAGE_PROFILE_UPDATE_GOLDENS=1
  */
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { analyzeImageData } from '../../lib/optimizer/analysis';
 import type { PageProfile } from '../../lib/optimizer/types';
@@ -18,9 +18,7 @@ import { openPdfDocument, renderPdfPageOpen } from '../fixtures/pdfRender';
 const FIXTURES_DIR = join(__dirname, '..', 'fixtures', 'pdf');
 const GOLDENS_FILE = join(FIXTURES_DIR, 'pageProfileGoldens.json');
 const RENDER_SCALE = 1.8;
-const UPDATE_GOLDENS =
-  process.env.PAGE_PROFILE_UPDATE_GOLDENS === '1' ||
-  existsSync(join(FIXTURES_DIR, '.pageProfileGoldens.update'));
+const UPDATE_GOLDENS = process.env.PAGE_PROFILE_UPDATE_GOLDENS === '1';
 const FIXTURE_NAMES = ['text', 'image', 'scanned', 'mixed'] as const;
 
 interface ProfileGolden {
@@ -148,7 +146,6 @@ describe(
         const goldens = await collectGoldens();
         writeFileSync(GOLDENS_FILE, JSON.stringify(goldens, null, 2) + '\n');
         console.log('page profile goldens written to ' + GOLDENS_FILE);
-        console.log('PAGE_PROFILE_GOLDENS_JSON=' + JSON.stringify(goldens));
       }, 300_000);
       return;
     }
