@@ -141,19 +141,8 @@ export class ParameterGenerator {
           : 'medium'
     );
 
-    let sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
-    let denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
-
-    /*
-     * Camera/photo-scan-like raster pages already passed the analyzer's
-     * SCREENSHOT_HEAVY gate, but their local texture/shadow structure does
-     * not benefit from the same sharpening used for clean screenshots.
-     * Keep the existing recipe family and only make this branch gentler.
-     */
-    if (pageProfile.rasterSource === 'photo-scan') {
-      sharpenAmount = Math.min(sharpenAmount, 15);
-      denoiseAmount = Math.max(denoiseAmount, 12);
-    }
+    const sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
+    const denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
 
     return {
       ...baseParams,
