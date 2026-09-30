@@ -229,15 +229,16 @@ function measureForegroundStructure(
   }
 
   const longLineSamples = Math.min(
-    foregroundSamples,
+    Math.ceil(width / step) * Math.ceil(height / step),
     Math.max(horizontalLongSamples, verticalLongSamples),
   );
-  const longLineDensity = foregroundSamples > 0
-    ? Number((longLineSamples / foregroundSamples).toFixed(4))
+  const totalSamples = Math.ceil(width / step) * Math.ceil(height / step);
+  const longLineDensity = totalSamples > 0
+    ? Number((longLineSamples / totalSamples).toFixed(4))
     : 0;
 
   const edgeSignal = clamp01(edgeDensity / 0.08);
-  const lineSignal = clamp01(longLineDensity / 0.20);
+  const lineSignal = clamp01(longLineDensity / 0.06);
   const thinStrokeSignal = clamp01((2.8 - strokeThickness) / 1.4);
   const contrastSignal = clamp01((contrast - 25) / 45);
 
@@ -479,13 +480,17 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     inkDensity < 0.85;
 
   const diagramEquationSignal =
+    isDarkSource &&
     pagePolarity.polarity !== 'mixed' &&
+    foregroundCoverage >= 0.02 &&
     (
-      foregroundStructure.diagramEquationScore >= 0.58 ||
       (
-        isDarkSource &&
-        foregroundStructure.longLineDensity >= 0.10 &&
-        edgeDensity >= 0.03
+        foregroundStructure.diagramEquationScore >= 0.72 &&
+        foregroundStructure.longLineDensity >= 0.025
+      ) ||
+      (
+        foregroundStructure.longLineDensity >= 0.035 &&
+        edgeDensity >= 0.04
       )
     );
 
