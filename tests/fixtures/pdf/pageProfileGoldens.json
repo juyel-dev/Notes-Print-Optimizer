@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "renderScale": 1.8,
   "numericTolerances": {
     "inkDensity": 0.01,
@@ -9,7 +9,9 @@
     "strokeThickness": 0.25,
     "foregroundCoverage": 0.02,
     "polarityConfidence": 0.05,
-    "bbox": 0.02
+    "bbox": 0.02,
+    "longLineDensity": 0.03,
+    "diagramEquationScore": 0.08
   },
   "fixtures": {
     "text": {
@@ -41,7 +43,9 @@
         "colorfulPixelRatio": 0.0071,
         "estimatedNoise": 41,
         "strokeThickness": 2.18,
-        "inkDensity": 0.027
+        "inkDensity": 0.027,
+        "longLineDensity": 0.0123,
+        "diagramEquationScore": 0.297
       },
       "1": {
         "width": 1102,
@@ -71,7 +75,9 @@
         "colorfulPixelRatio": 0.0066,
         "estimatedNoise": 48,
         "strokeThickness": 2,
-        "inkDensity": 0.014
+        "inkDensity": 0.014,
+        "longLineDensity": 0.0052,
+        "diagramEquationScore": 0.201
       },
       "2": {
         "width": 1102,
@@ -101,7 +107,9 @@
         "colorfulPixelRatio": 0.9752,
         "estimatedNoise": 51,
         "strokeThickness": 1.96,
-        "inkDensity": 0.987
+        "inkDensity": 0.987,
+        "longLineDensity": 0.0076,
+        "diagramEquationScore": 0.126
       },
       "3": {
         "width": 1102,
@@ -131,7 +139,9 @@
         "colorfulPixelRatio": 0.9842,
         "estimatedNoise": 48,
         "strokeThickness": 2,
-        "inkDensity": 0.997
+        "inkDensity": 0.997,
+        "longLineDensity": 0.0035,
+        "diagramEquationScore": 0.097
       },
       "4": {
         "width": 1102,
@@ -161,7 +171,9 @@
         "colorfulPixelRatio": 0.0016,
         "estimatedNoise": 31,
         "strokeThickness": 2.32,
-        "inkDensity": 0.113
+        "inkDensity": 0.113,
+        "longLineDensity": 0.037,
+        "diagramEquationScore": 0.68
       },
       "5": {
         "width": 1102,
@@ -191,7 +203,9 @@
         "colorfulPixelRatio": 0.915,
         "estimatedNoise": 65,
         "strokeThickness": 1.75,
-        "inkDensity": 0.965
+        "inkDensity": 0.965,
+        "longLineDensity": 0.0115,
+        "diagramEquationScore": 0.24
       }
     },
     "image": {
@@ -223,7 +237,9 @@
         "colorfulPixelRatio": 0.9929,
         "estimatedNoise": 30,
         "strokeThickness": 2.51,
-        "inkDensity": 0.979
+        "inkDensity": 0.979,
+        "longLineDensity": 0.0145,
+        "diagramEquationScore": 0.14
       },
       "1": {
         "width": 1728,
@@ -253,7 +269,9 @@
         "colorfulPixelRatio": 0.0953,
         "estimatedNoise": 0,
         "strokeThickness": 3.25,
-        "inkDensity": 0.095
+        "inkDensity": 0.095,
+        "longLineDensity": 0.0467,
+        "diagramEquationScore": 0.45
       },
       "2": {
         "width": 1728,
@@ -283,7 +301,9 @@
         "colorfulPixelRatio": 0.0541,
         "estimatedNoise": 5,
         "strokeThickness": 2.56,
-        "inkDensity": 0.061
+        "inkDensity": 0.061,
+        "longLineDensity": 0.0141,
+        "diagramEquationScore": 0.289
       },
       "3": {
         "width": 1728,
@@ -313,7 +333,9 @@
         "colorfulPixelRatio": 0.7896,
         "estimatedNoise": 99,
         "strokeThickness": 1.11,
-        "inkDensity": 0.999
+        "inkDensity": 0.999,
+        "longLineDensity": 0.0001,
+        "diagramEquationScore": 0.203
       }
     },
     "scanned": {
@@ -345,7 +367,9 @@
         "colorfulPixelRatio": 0,
         "estimatedNoise": 9,
         "strokeThickness": 2.73,
-        "inkDensity": 0.046
+        "inkDensity": 0.046,
+        "longLineDensity": 0.0322,
+        "diagramEquationScore": 0.482
       },
       "1": {
         "width": 1728,
@@ -375,7 +399,9 @@
         "colorfulPixelRatio": 0,
         "estimatedNoise": 8,
         "strokeThickness": 2.73,
-        "inkDensity": 0.046
+        "inkDensity": 0.046,
+        "longLineDensity": 0.0325,
+        "diagramEquationScore": 0.48
       },
       "2": {
         "width": 1728,
@@ -405,7 +431,9 @@
         "colorfulPixelRatio": 0,
         "estimatedNoise": 8,
         "strokeThickness": 2.76,
-        "inkDensity": 0.047
+        "inkDensity": 0.047,
+        "longLineDensity": 0.0336,
+        "diagramEquationScore": 0.488
       },
       "3": {
         "width": 1728,
@@ -435,7 +463,9 @@
         "colorfulPixelRatio": 0,
         "estimatedNoise": 8,
         "strokeThickness": 2.75,
-        "inkDensity": 0.048
+        "inkDensity": 0.048,
+        "longLineDensity": 0.033,
+        "diagramEquationScore": 0.489
       }
     },
     "mixed": {
@@ -467,7 +497,9 @@
         "colorfulPixelRatio": 0.9825,
         "estimatedNoise": 42,
         "strokeThickness": 2.25,
-        "inkDensity": 0.989
+        "inkDensity": 0.989,
+        "longLineDensity": 0.0089,
+        "diagramEquationScore": 0.125
       },
       "1": {
         "width": 1728,
@@ -497,7 +529,9 @@
         "colorfulPixelRatio": 0.0358,
         "estimatedNoise": 6,
         "strokeThickness": 3.05,
-        "inkDensity": 0.041
+        "inkDensity": 0.041,
+        "longLineDensity": 0.0223,
+        "diagramEquationScore": 0.242
       },
       "2": {
         "width": 1728,
@@ -527,7 +561,9 @@
         "colorfulPixelRatio": 0.0612,
         "estimatedNoise": 20,
         "strokeThickness": 2.31,
-        "inkDensity": 0.067
+        "inkDensity": 0.067,
+        "longLineDensity": 0.0062,
+        "diagramEquationScore": 0.185
       },
       "3": {
         "width": 1728,
@@ -557,7 +593,9 @@
         "colorfulPixelRatio": 0.6298,
         "estimatedNoise": 0,
         "strokeThickness": 3.53,
-        "inkDensity": 0.633
+        "inkDensity": 0.633,
+        "longLineDensity": 0.3637,
+        "diagramEquationScore": 0.643
       }
     }
   }

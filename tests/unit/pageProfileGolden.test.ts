@@ -34,6 +34,8 @@ interface ProfileGolden {
   sparseContent: boolean;
   coloredAnnotationPresent: boolean;
   thinStrokeRisk: boolean;
+  longLineDensity: number;
+  diagramEquationScore: number;
   dominantHue: number;
   edgeDensity: number;
   colorfulPixelRatio: number;
@@ -43,7 +45,7 @@ interface ProfileGolden {
 }
 
 interface GoldensFile {
-  version: 2;
+  version: 3;
   renderScale: number;
   numericTolerances: {
     inkDensity: number;
@@ -54,6 +56,8 @@ interface GoldensFile {
     foregroundCoverage: number;
     polarityConfidence: number;
     bbox: number;
+    longLineDensity: number;
+    diagramEquationScore: number;
   };
   fixtures: Record<string, Record<string, ProfileGolden>>;
 }
@@ -80,6 +84,8 @@ function snapshot(profile: PageProfile): ProfileGolden {
     sparseContent: profile.sparseContent ?? false,
     coloredAnnotationPresent: profile.coloredAnnotationPresent ?? false,
     thinStrokeRisk: profile.thinStrokeRisk ?? false,
+    longLineDensity: profile.longLineDensity ?? 0,
+    diagramEquationScore: profile.diagramEquationScore ?? 0,
     dominantHue: profile.dominantHue,
     edgeDensity: profile.edgeDensity ?? 0,
     colorfulPixelRatio: profile.colorfulPixelRatio ?? 0,
@@ -114,7 +120,7 @@ async function collectGoldens(): Promise<GoldensFile> {
   }
 
   return {
-    version: 2,
+    version: 3,
     renderScale: RENDER_SCALE,
     numericTolerances: {
       inkDensity: 0.01,
@@ -125,6 +131,8 @@ async function collectGoldens(): Promise<GoldensFile> {
       foregroundCoverage: 0.02,
       polarityConfidence: 0.05,
       bbox: 0.02,
+      longLineDensity: 0.03,
+      diagramEquationScore: 0.08,
     },
     fixtures,
   };
@@ -145,7 +153,7 @@ describe(
     const goldens = loadGoldens();
 
     it('golden metadata matches analyzer render configuration', () => {
-      expect(goldens.version).toBe(2);
+      expect(goldens.version).toBe(3);
       expect(goldens.renderScale).toBe(RENDER_SCALE);
     });
 
@@ -187,6 +195,18 @@ describe(
             expect(actual.sparseContent).toBe(expected.sparseContent);
             expect(actual.coloredAnnotationPresent).toBe(expected.coloredAnnotationPresent);
             expect(actual.thinStrokeRisk).toBe(expected.thinStrokeRisk);
+            expectNear(
+              actual.longLineDensity,
+              expected.longLineDensity,
+              goldens.numericTolerances.longLineDensity,
+              name + '.pdf page ' + pageIndex + ' longLineDensity',
+            );
+            expectNear(
+              actual.diagramEquationScore,
+              expected.diagramEquationScore,
+              goldens.numericTolerances.diagramEquationScore,
+              name + '.pdf page ' + pageIndex + ' diagramEquationScore',
+            );
             if (actual.contentBoundingBox || expected.contentBoundingBox) {
               expect(actual.contentBoundingBox).toBeDefined();
               expect(expected.contentBoundingBox).toBeDefined();

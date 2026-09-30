@@ -155,6 +155,111 @@ function buildLocalPolarityMap(
   return { tileSize, cols, polarity, thresholds };
 }
 
+function createForegroundSampler(
+  width: number,
+  height: number,
+  data: Uint8ClampedArray,
+  localMap: ReturnType<typeof buildLocalPolarityMap>,
+): (x: number, y: number) => boolean {
+  return (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return false;
+
+    const tileIndex =
+      Math.floor(y / localMap.tileSize) * localMap.cols +
+      Math.floor(x / localMap.tileSize);
+    const tilePolarity = localMap.polarity[tileIndex];
+    if (tilePolarity === 0) return false;
+
+    const idx = (y * width + x) * 4;
+    const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
+    return tilePolarity === 1
+      ? lum >= localMap.thresholds[tileIndex]
+      : lum <= localMap.thresholds[tileIndex];
+  };
+}
+
+interface ForegroundStructure {
+  longLineDensity: number;
+  diagramEquationScore: number;
+}
+
+function measureForegroundStructure(
+  width: number,
+  height: number,
+  step: number,
+  sampleForeground: (x: number, y: number) => boolean,
+  foregroundSamples: number,
+  edgeDensity: number,
+  contrast: number,
+  colorfulPixelRatio: number,
+  strokeThickness: number,
+): ForegroundStructure {
+  const minRun = 4;
+  let horizontalLongSamples = 0;
+  let verticalLongSamples = 0;
+
+  for (let y = 0; y < height; y += step) {
+    let run = 0;
+    for (let x = 0; x <= width; x += step) {
+      const foreground = x < width && sampleForeground(x, y);
+      if (foreground) {
+        run++;
+      } else if (run >= minRun) {
+        horizontalLongSamples += run;
+        run = 0;
+      } else {
+        run = 0;
+      }
+    }
+  }
+
+  for (let x = 0; x < width; x += step) {
+    let run = 0;
+    for (let y = 0; y <= height; y += step) {
+      const foreground = y < height && sampleForeground(x, y);
+      if (foreground) {
+        run++;
+      } else if (run >= minRun) {
+        verticalLongSamples += run;
+        run = 0;
+      } else {
+        run = 0;
+      }
+    }
+  }
+
+  const longLineSamples = Math.min(
+    Math.ceil(width / step) * Math.ceil(height / step),
+    Math.max(horizontalLongSamples, verticalLongSamples),
+  );
+  const totalSamples = Math.ceil(width / step) * Math.ceil(height / step);
+  const longLineDensity = totalSamples > 0
+    ? Number((longLineSamples / totalSamples).toFixed(4))
+    : 0;
+
+  const edgeSignal = clamp01(edgeDensity / 0.08);
+  const lineSignal = clamp01(longLineDensity / 0.06);
+  const thinStrokeSignal = clamp01((2.8 - strokeThickness) / 1.4);
+  const contrastSignal = clamp01((contrast - 25) / 45);
+
+  let score =
+    lineSignal * 0.45 +
+    edgeSignal * 0.30 +
+    thinStrokeSignal * 0.15 +
+    contrastSignal * 0.10;
+
+  /* Photographic/decorative color without straight-line structure is weak
+     evidence for diagrams/equations; avoid letting covers dominate the score. */
+  if (colorfulPixelRatio >= 0.50 && longLineDensity < 0.08) {
+    score *= 0.45;
+  }
+
+  return {
+    longLineDensity,
+    diagramEquationScore: Number(clamp01(score).toFixed(3)),
+  };
+}
+
 function measureForegroundGeometry(
   width: number,
   height: number,
@@ -174,21 +279,7 @@ function measureForegroundGeometry(
   let maxX = -1;
   let maxY = -1;
 
-  const sampleForeground = (x: number, y: number): boolean => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return false;
-
-    const tileIndex =
-      Math.floor(y / localMap.tileSize) * localMap.cols +
-      Math.floor(x / localMap.tileSize);
-    const tilePolarity = localMap.polarity[tileIndex];
-    if (tilePolarity === 0) return false;
-
-    const idx = (y * width + x) * 4;
-    const lum = getLuminance(data[idx], data[idx + 1], data[idx + 2]);
-    return tilePolarity === 1
-      ? lum >= localMap.thresholds[tileIndex]
-      : lum <= localMap.thresholds[tileIndex];
-  };
+  const sampleForeground = createForegroundSampler(width, height, data, localMap);
 
   const sampleCount = Math.ceil(height / step) * Math.ceil(width / step);
   for (let y = 0; y < height; y += step) {
@@ -363,6 +454,18 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     averageForegroundNeighbors,
   } = foregroundGeometry;
 
+  const foregroundStructure = measureForegroundStructure(
+    width,
+    height,
+    step,
+    createForegroundSampler(width, height, data, localPolarityMap),
+    foregroundGeometry.foregroundSamples,
+    edgeDensity,
+    contrast,
+    colorfulPixelRatio,
+    Math.min(4, Math.max(1, 1 + foregroundGeometry.averageForegroundNeighbors * 0.65)),
+  );
+
   /*
    * Keep the existing dark/diagram/light behavior ahead of the new
    * screenshot/mixed heuristics. Screenshot classification is mainly intended
@@ -375,6 +478,21 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     edgeDensity >= 0.08 &&
     (colorfulPixelRatio >= 0.02 || contrast >= 25) &&
     inkDensity < 0.85;
+
+  const diagramEquationSignal =
+    isDarkSource &&
+    pagePolarity.polarity !== 'mixed' &&
+    foregroundCoverage >= 0.02 &&
+    (
+      (
+        foregroundStructure.diagramEquationScore >= 0.72 &&
+        foregroundStructure.longLineDensity >= 0.025
+      ) ||
+      (
+        foregroundStructure.longLineDensity >= 0.035 &&
+        edgeDensity >= 0.04
+      )
+    );
 
   const balancedMixedPage =
     pagePolarity.polarity === 'mixed' ||
@@ -389,10 +507,12 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
   let classification: PageClassification;
   if (pagePolarity.polarity === 'mixed') {
     classification = 'MIXED';
+  } else if (!isDarkSource && screenshotHeavy) {
+    classification = 'SCREENSHOT_HEAVY';
+  } else if ((!isDarkSource && contrast > 65) || diagramEquationSignal) {
+    classification = 'DIAGRAM_EQUATION';
   } else if (darkBgRatio > DARK_BG_RATIO_THRESHOLD) {
     classification = 'DARK_SLIDE';
-  } else if (contrast > 65) {
-    classification = 'DIAGRAM_EQUATION';
   } else if (screenshotHeavy) {
     classification = 'SCREENSHOT_HEAVY';
   } else if (darkBgRatio < 0.15 && lightBgRatio > 0.65) {
@@ -464,6 +584,8 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     coloredAnnotationPresent,
     thinStrokeRisk,
     density,
+    longLineDensity: foregroundStructure.longLineDensity,
+    diagramEquationScore: foregroundStructure.diagramEquationScore,
     classification,
   };
 }

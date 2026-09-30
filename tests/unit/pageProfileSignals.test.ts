@@ -190,6 +190,58 @@ describe('PageProfile structural signals', () => {
     expect(profile.foregroundCoverage).toBeLessThan(0.05);
   });
 
+
+  it('detects a strongly structured dark diagram-like page', () => {
+    const image = solidImage(160, 100, [25, 25, 25]);
+    const data = image.data;
+
+    for (let y = 10; y < 90; y += 10) {
+      for (let x = 15; x < 145; x++) {
+        for (let t = 0; t < 2; t++) {
+          const idx = ((y + t) * 160 + x) * 4;
+          data[idx] = 245;
+          data[idx + 1] = 245;
+          data[idx + 2] = 245;
+        }
+      }
+    }
+
+    for (let x = 20; x < 145; x += 20) {
+      for (let y = 10; y < 90; y++) {
+        const idx = (y * 160 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 160, 100), 0);
+
+    expect(profile.longLineDensity).toBeGreaterThan(0.1);
+    expect(profile.diagramEquationScore).toBeGreaterThan(0.58);
+    expect(profile.classification).toBe('DIAGRAM_EQUATION');
+  });
+
+  it('does not treat a dark page with only sparse isolated content as diagram-like', () => {
+    const image = solidImage(160, 100, [25, 25, 25]);
+    const data = image.data;
+
+    for (let y = 15; y < 85; y += 10) {
+      for (let x = 20; x < 140; x += 20) {
+        const idx = (y * 160 + x) * 4;
+        data[idx] = 245;
+        data[idx + 1] = 245;
+        data[idx + 2] = 245;
+      }
+    }
+
+    const profile = analyzeImageData(new ImageData(data, 160, 100), 0);
+
+    expect(profile.longLineDensity).toBeLessThan(0.2);
+    expect(profile.diagramEquationScore).toBeLessThan(0.58);
+    expect(profile.classification).toBe('DARK_SLIDE');
+  });
+
   it('classifies a nearly blank page as sparse', () => {
     const profile = analyzeImageData(solidImage(100, 100, [250, 250, 250]), 0);
     expect(profile.density).toBe('sparse');
