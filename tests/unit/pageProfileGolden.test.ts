@@ -122,7 +122,7 @@ async function collectGoldens(): Promise<GoldensFile> {
   }
 
   return {
-    version: 2,
+    version: 3,
     renderScale: RENDER_SCALE,
     numericTolerances: {
       inkDensity: 0.01,
