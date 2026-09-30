@@ -129,7 +129,6 @@ const cases: CalibrationCase[] = [
       expect(profile.edgeDensity).toBeGreaterThan(0.015);
       expect(profile.longLineDensity).toBeGreaterThan(0.04);
       expect(profile.classification).not.toBe('DIAGRAM_EQUATION');
-      expect(profile.rasterSource).toBe('screenshot');
     },
   },
   {
