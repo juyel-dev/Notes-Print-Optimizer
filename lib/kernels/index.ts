@@ -6,5 +6,6 @@ export { applyMaskDilation } from './maskOps';
 export { applyUnsharpMask } from './sharpen';
 export { calculateInkCoverage } from './inkCoverage';
 export { detectBanners } from './bannerDetection';
+export { normalizeTemplateElements } from './templateElements';
 export { setWasmHooks, setWasmKernelsHooks, clearWasmKernelsHooks, processPage, createImageDataFromBuffer } from './processPage';
 export type { KernelProcessResult } from './processPage';
