@@ -128,6 +128,29 @@ function detectHeader(
     // direction, but it should remain a substantial, wide top element.
     if (coverage < 0.42 || widthRatio < 0.24 || x0 / width > 0.28) return null;
 
+    // A real topic header should contain readable title pixels inside the
+    // colored fill. Solid decorative bars/boxes must not qualify merely from
+    // their geometry. Use tolerant local contrast evidence rather than OCR.
+    const innerX0 = Math.max(0, x0 + Math.floor((x1 - x0 + 1) * 0.04));
+    const innerX1 = Math.min(width - 1, x1 - Math.floor((x1 - x0 + 1) * 0.04));
+    const innerY0 = Math.max(0, y0 + Math.floor((y1 - y0 + 1) * 0.12));
+    const innerY1 = Math.min(height - 1, y1 - Math.floor((y1 - y0 + 1) * 0.12));
+    let titleLight = 0;
+    let titleSamples = 0;
+    for (let y = innerY0; y <= innerY1; y += Math.max(1, Math.floor(runHeight / 10))) {
+      for (let x = innerX0; x <= innerX1; x += xStep) {
+        const i = (y * width + x) * 4;
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const l = luminance(r, g, b);
+        if (l >= 150 && (saturation(r, g, b) <= 125 || colorDistance(r, g, b, sumR / count, sumG / count, sumB / count) >= 90)) {
+          titleLight++;
+        }
+        titleSamples++;
+      }
+    }
+    const titleCoverage = titleSamples > 0 ? titleLight / titleSamples : 0;
+    if (titleCoverage < 0.006 || titleCoverage > 0.35) return null;
+
     return {
       y0,
       y1,
@@ -136,6 +159,7 @@ function detectHeader(
       score:
         coverage * 2.0 +
         Math.min(1, widthRatio) * 0.9 +
+        Math.min(1, titleCoverage * 4) * 0.45 +
         (x0 / width < 0.12 ? 0.35 : 0),
       sumR,
       sumG,
@@ -276,6 +300,24 @@ function detectColoredMarkers(
       const relArea = area / total;
       const aspect = cw / Math.max(ch, 1);
       const fillRatio = area / Math.max(1, bboxArea);
+      const meanR = sumR / area, meanG = sumG / area, meanB = sumB / area;
+
+      // Marker badges should contain an internal glyph/high-contrast mark.
+      // This prevents solid colored squares/boxes from being mistaken for
+      // numbered circles just because their geometry is compact.
+      let glyphLight = 0;
+      const glyphStep = Math.max(1, Math.floor(ch / 8));
+      for (let gy = y0; gy <= y1; gy += glyphStep) {
+        for (let gx = x0; gx <= x1; gx += glyphStep) {
+          const gi = (gy * width + gx) * 4;
+          const gl = luminance(data[gi], data[gi + 1], data[gi + 2]);
+          if (gl >= 150 && colorDistance(data[gi], data[gi + 1], data[gi + 2], meanR, meanG, meanB) >= 70) {
+            glyphLight++;
+          }
+        }
+      }
+      const glyphSamples = Math.max(1, Math.ceil((y1 - y0 + 1) / glyphStep) * Math.ceil((x1 - x0 + 1) / glyphStep));
+      const glyphCoverage = glyphLight / glyphSamples;
 
       if (
         area >= Math.max(20, Math.floor(total * 0.00008)) &&
@@ -286,11 +328,13 @@ function detectColoredMarkers(
         ch / height <= 0.11 &&
         aspect >= 0.68 &&
         aspect <= 1.45 &&
-        fillRatio >= 0.42
+        fillRatio >= 0.42 &&
+        glyphCoverage >= 0.005 &&
+        glyphCoverage <= 0.45
       ) {
         out.push({
           box: { x0, y0, x1, y1 },
-          fill: [sumR / area, sumG / area, sumB / area],
+          fill: [meanR, meanG, meanB],
         });
       }
     }
