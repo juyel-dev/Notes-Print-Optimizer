@@ -21,6 +21,10 @@ import type { IWasmKernels } from '../wasm/types';
 
 let wasmKernels: IWasmKernels | null = null;
 
+// Temporary A/B switch: keep the decorative-fill detector in the codebase,
+// but disable it in the live processing path so we can compare output safely.
+const ENABLE_DECORATIVE_FILL_REMOVAL = false;
+
 export function setWasmKernelsHooks(kernels: IWasmKernels): void {
   wasmKernels = kernels;
   setDilationHook((mask, w, h, ks) => kernels.dilateMask(mask, w, h, ks));
@@ -123,8 +127,10 @@ function shouldBuildForegroundMask(
 
 /**
  * Combined connected-components pass: identifies all foreground components
- * and removes those matching decorative-fill OR noise criteria in a single
- * BFS traversal. Replaces the previous approach of 7+ separate CC passes
+ * and removes those matching the active noise criteria in a single BFS
+ * traversal. Decorative-fill removal is temporarily disabled by the feature
+ * switch above for A/B testing.
+ * Replaces the previous approach of 7+ separate CC passes
  * (one per color channel + noise removal) with exactly 1 pass.
  */
 function removeDecorativeAndNoise(fm: Uint8Array, w: number, h: number, denoiseAmount = 15): void {
@@ -188,7 +194,14 @@ function removeDecorativeAndNoise(fm: Uint8Array, w: number, h: number, denoiseA
     if (area < minArea) { drop[lb] = 1; continue; }
     const cw = sMaxX[lb] - sMinX[lb] + 1;
     const ch = sMaxY[lb] - sMinY[lb] + 1;
-    if (area >= 200 && cw / Math.max(ch, 1) > 2.2 && cw / w > 0.20 && sMinY[lb] / h < 0.15 && area > cw * ch * 0.3) {
+    if (
+      ENABLE_DECORATIVE_FILL_REMOVAL &&
+      area >= 200 &&
+      cw / Math.max(ch, 1) > 2.2 &&
+      cw / w > 0.20 &&
+      sMinY[lb] / h < 0.15 &&
+      area > cw * ch * 0.3
+    ) {
       drop[lb] = 1;
     } else {
       drop[lb] = 0;
@@ -262,6 +275,7 @@ export function processPage(
   if (
     shouldProcess &&
     !hasAdvancedPixelControls &&
+    ENABLE_DECORATIVE_FILL_REMOVAL &&
     wasmKernels &&
     typeof wasmKernels.processPage === 'function'
   ) {
