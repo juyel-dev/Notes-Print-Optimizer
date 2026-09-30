@@ -11,7 +11,7 @@ import { openPdfDocument, renderPdfPageOpen } from '../fixtures/pdfRender';
 
 const FIXTURES_DIR = join(__dirname, '..', 'fixtures', 'pdf');
 const FIXTURE_NAMES = ['text', 'image', 'scanned', 'mixed'] as const;
-const RENDER_SCALE = 1.8;
+const RENDER_SCALE = 1.2;
 
 function readFixture(name: string): Uint8Array {
   return new Uint8Array(readFileSync(join(FIXTURES_DIR, name + '.pdf')));
@@ -23,7 +23,6 @@ describe('production Auto recipe calibration', () => {
       const doc = await openPdfDocument(readFixture(name));
       let darkPages = 0;
       let screenshotPages = 0;
-      let guardedPages = 0;
 
       try {
         for (let pageIndex = 0; pageIndex < doc.numPages; pageIndex++) {
@@ -67,14 +66,12 @@ describe('production Auto recipe calibration', () => {
             expect(production.params.strokeEnhancement).toBe('none');
           }
 
-          if (production.preservationGuardTriggered) guardedPages++;
         }
       } finally {
         await doc.destroy();
       }
 
       expect(darkPages + screenshotPages).toBeGreaterThan(0);
-      expect(guardedPages).toBeGreaterThanOrEqual(0);
     }, 300_000);
   }
 });
