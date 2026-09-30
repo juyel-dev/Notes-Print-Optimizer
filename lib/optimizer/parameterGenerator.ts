@@ -141,8 +141,8 @@ export class ParameterGenerator {
           : 'medium'
     );
 
-    let sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
-    let denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
+    const sharpenAmount = density === 'sparse' ? 30 : density === 'dense' ? 20 : 25;
+    const denoiseAmount = pageProfile.estimatedNoise >= 30 ? 10 : 5;
 
     return {
       ...baseParams,
