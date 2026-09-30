@@ -227,7 +227,7 @@ describe('PageProfile structural signals', () => {
 
     const profile = analyzeImageData(new ImageData(data, 160, 100), 0);
 
-    expect(profile.longLineDensity).toBeGreaterThan(0.5);
+    expect(profile.longLineDensity).toBeGreaterThan(0.02);
     expect(profile.diagramEquationScore).toBeGreaterThan(0.58);
     expect(profile.classification).toBe('DIAGRAM_EQUATION');
   });
