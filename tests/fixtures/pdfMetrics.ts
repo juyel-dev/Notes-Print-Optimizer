@@ -7,13 +7,15 @@
  * recipe can never drift between coverage and timing.
  */
 import { analyzeImageData } from '../../lib/optimizer/analysis';
+import type { PageProfile } from '../../lib/optimizer/types';
 import { ParameterGenerator } from '../../lib/optimizer/parameterGenerator';
 import { selectPresetForPage } from '../../lib/optimizer/recipeSelector';
 import { resolveEffectiveInvertMode } from '../../lib/optimizer/engine/v2/resolveInvertMode';
 import { processPage, type KernelProcessResult } from '../../lib/kernels/processPage';
+import { processPageWithWhiteBoxHeal } from '../../lib/kernels/whiteBox';
 
 export interface RecipeOutput {
-  profile: { classification: string; darkBackgroundRatio: number };
+  profile: PageProfile;
   params: ReturnType<typeof ParameterGenerator.getPresetParameters>;
   result: KernelProcessResult;
 }
@@ -43,4 +45,39 @@ export function countInk(rgba: Uint8Array | Uint8ClampedArray): number {
     if (rgba[i] < 128) dark++;
   }
   return Math.round((dark / (rgba.length / 4)) * 10000) / 100;
+}
+
+export interface ProductionRecipeOutput extends RecipeOutput {
+  preservationGuardTriggered: boolean;
+  whiteBoxRegions: number;
+}
+
+export function applyProductionAutoRecipe(
+  imageData: ImageData,
+  pageIndex: number,
+): ProductionRecipeOutput {
+  const profile = analyzeImageData(imageData, pageIndex);
+  const preset = selectPresetForPage(profile);
+  const baseParams = ParameterGenerator.getPresetParameters(preset);
+  const autoTunedParams = ParameterGenerator.adaptAutoPageParameters(baseParams, profile);
+  const params = {
+    ...autoTunedParams,
+    preset,
+    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification),
+  };
+  const result = processPageWithWhiteBoxHeal(
+    imageData.data,
+    imageData.width,
+    imageData.height,
+    params,
+    profile,
+  );
+
+  return {
+    profile,
+    params,
+    result,
+    preservationGuardTriggered: result.preservationGuardTriggered ?? false,
+    whiteBoxRegions: result.whiteBoxRegions.length,
+  };
 }

@@ -1,10 +1,8 @@
 import {
-  DocumentProfile,
   PageProfile,
   PresetMode,
   ProcessingParameters,
 } from './types';
-import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
 
 export class ParameterGenerator {
   /**
@@ -191,46 +189,4 @@ export class ParameterGenerator {
     return next;
   }
 
-  /**
-   * Generates tailored parameters based on individual page metrics
-   */
-  public static generateAdaptiveForPage(
-    pageProfile: PageProfile,
-    docProfile: DocumentProfile,
-    basePreset: PresetMode = 'AUTO_ADAPTIVE'
-  ): ProcessingParameters {
-    const baseParams = this.getPresetParameters(basePreset);
-
-    if (basePreset !== 'AUTO_ADAPTIVE') {
-      return baseParams;
-    }
-
-    const isDark = pageProfile.classification === 'DARK_SLIDE' || pageProfile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD;
-
-    // Default to 0 crop so slide content is never cut off
-    const topCrop = 0;
-    const bottomCrop = 0;
-
-    // Background Whitening
-    const whiteningThreshold = isDark ? 225 : Math.max(195, 235 - Math.round(pageProfile.averageBrightness * 0.2));
-
-    // Sharpening based on stroke thickness
-    const sharpenAmount = pageProfile.strokeThickness < 2 ? 45 : 25;
-
-    return {
-      preset: 'AUTO_ADAPTIVE',
-      invertMode: isDark ? 'smart' : 'none',
-      smartColorMapping: true,
-      backgroundWhiteningThreshold: whiteningThreshold,
-      contrastEnhancement: Math.min(50, Math.max(15, Math.round(80 - pageProfile.contrast))),
-      sharpenAmount,
-      denoiseAmount: pageProfile.estimatedNoise > 30 ? 25 : 10,
-      bannerCropTopPct: topCrop,
-      bannerCropBottomPct: bottomCrop,
-      autoTrimMargins: true,
-      binaizationThreshold: 0,
-      outputQuality: 0.88,
-      strokeEnhancement: pageProfile.strokeThickness < 2 ? 'strong' : 'normal',
-    };
-  }
 }
