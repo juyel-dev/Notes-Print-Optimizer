@@ -205,7 +205,9 @@ function detectHeader(
       bottomLeft - middleLeft,
     ) / width;
 
-    if (rightCapRetreat < 0.025 && leftBadgeBulge < 0.015) return null;
+    // The real template's cap curvature is subtle after rasterization, so
+    // use a small normalized tolerance rather than demanding a large arc.
+    if (rightCapRetreat < 0.008 && leftBadgeBulge < 0.005) return null;
 
     return {
       y0,
