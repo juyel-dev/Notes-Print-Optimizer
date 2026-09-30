@@ -78,11 +78,7 @@ function detectHeader(
   width: number,
   height: number,
 ): { box: Box; fill: [number, number, number] } | null {
-  const startY = Math.max(1, Math.floor(height * 0.01));
-  const endY = Math.floor(height * 0.24);
-  const xStep = Math.max(2, Math.floor(width / 140));
-
-  let best: {
+  type Candidate = {
     y0: number;
     y1: number;
     x0: number;
@@ -92,20 +88,26 @@ function detectHeader(
     sumG: number;
     sumB: number;
     count: number;
-  } | null = null;
+  };
 
-  let run: { y0: number; y1: number } | null = null;
+  const startY = Math.max(1, Math.floor(height * 0.01));
+  const endY = Math.floor(height * 0.24);
+  const xStep = Math.max(2, Math.floor(width / 140));
 
-  const commitRun = (y0: number, y1: number): void => {
-    const h = y1 - y0 + 1;
-    if (h < Math.max(8, Math.floor(height * 0.025)) || h > Math.floor(height * 0.18)) return;
+  const evaluateRun = (y0: number, y1: number): Candidate | null => {
+    const runHeight = y1 - y0 + 1;
+    if (
+      runHeight < Math.max(8, Math.floor(height * 0.025)) ||
+      runHeight > Math.floor(height * 0.18)
+    ) return null;
 
     let x0 = width, x1 = -1;
     let colored = 0;
     let samples = 0;
     let sumR = 0, sumG = 0, sumB = 0, count = 0;
 
-    for (let y = y0; y <= y1; y += Math.max(1, Math.floor(h / 12))) {
+    const yStep = Math.max(1, Math.floor(runHeight / 12));
+    for (let y = y0; y <= y1; y += yStep) {
       for (let x = 0; x < width; x += xStep) {
         const i = (y * width + x) * 4;
         const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -118,23 +120,36 @@ function detectHeader(
       }
     }
 
-    if (x1 < x0 || samples === 0) return;
+    if (x1 < x0 || samples === 0) return null;
     const coverage = colored / samples;
-    const boxWidth = x1 - x0 + 1;
-    const widthRatio = boxWidth / width;
+    const widthRatio = (x1 - x0 + 1) / width;
 
     // Tolerant geometry: the header may shift several percent in either
     // direction, but it should remain a substantial, wide top element.
-    if (coverage < 0.42 || widthRatio < 0.24 || x0 / width > 0.28) return;
+    if (coverage < 0.42 || widthRatio < 0.24 || x0 / width > 0.28) return null;
 
-    const score =
-      coverage * 2.0 +
-      Math.min(1, widthRatio) * 0.9 +
-      (x0 / width < 0.12 ? 0.35 : 0);
+    return {
+      y0,
+      y1,
+      x0,
+      x1,
+      score:
+        coverage * 2.0 +
+        Math.min(1, widthRatio) * 0.9 +
+        (x0 / width < 0.12 ? 0.35 : 0),
+      sumR,
+      sumG,
+      sumB,
+      count,
+    };
+  };
 
-    if (!best || score > best.score) {
-      best = { y0, y1, x0, x1, score, sumR, sumG, sumB, count };
-    }
+  let best: Candidate | null = null;
+  let runStart = -1;
+
+  const considerRun = (y0: number, y1: number): void => {
+    const candidate = evaluateRun(y0, y1);
+    if (candidate && (!best || candidate.score > best.score)) best = candidate;
   };
 
   for (let y = startY; y <= endY; y++) {
@@ -145,18 +160,18 @@ function detectHeader(
       if (isHeaderFillColor(data[i], data[i + 1], data[i + 2])) colored++;
       samples++;
     }
+
     const coverage = samples > 0 ? colored / samples : 0;
     if (coverage >= 0.34) {
-      if (!run) run = { y0: y, y1: y };
-      else run.y1 = y;
-    } else if (run) {
-      commitRun(run.y0, run.y1);
-      run = null;
+      if (runStart < 0) runStart = y;
+    } else if (runStart >= 0) {
+      considerRun(runStart, y - 1);
+      runStart = -1;
     }
   }
-  if (run) commitRun(run.y0, run.y1);
+  if (runStart >= 0) considerRun(runStart, endY);
 
-  if (!best || best.count < 20) return;
+  if (!best || best.count < 20) return null;
 
   const yPad = Math.max(2, Math.floor((best.y1 - best.y0 + 1) * 0.18));
   const xPad = Math.max(2, Math.floor((best.x1 - best.x0 + 1) * 0.02));
