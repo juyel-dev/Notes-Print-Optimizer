@@ -35,7 +35,7 @@ Search at the top, or tap a category chip:
 
 ### Why students love it
 
-- **Save ink & paper** — typically 70–85% ink and up to 75% paper with 4-Up (up to 90% with 9-Up).
+- **Save ink & paper** — savings depend on the source pages and selected N-up layout; the app reports estimated savings for each job.
 - **Smart Arrange** — related files like *Calculus 1..13 Class Notes* are detected and ordered naturally (numbers, ordinals, Roman numerals, zero-padding).
 - **Before/After slider** — flip any page to see exactly what changed, then download the print-ready PDF.
 

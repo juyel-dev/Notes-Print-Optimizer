@@ -25,7 +25,7 @@ Use **Dark Notes → Print** — it removes dark backgrounds (auto-whitening + b
 Dark-removal saves ink by design. In **Dark Notes → Print → Optimize**, increase **Contrast / Sharpen**, or add Manual Whitebox, then Re-process.
 
 **How much ink & paper can I save?**
-Typically **70–85% ink** and **up to 75% paper with 4-Up**, up to ~90% with 9-Up — depends on slides. The app reports estimated savings per job.
+Savings vary with the source pages and selected N-up layout. The app reports an estimated saving percentage for each job rather than promising a fixed percentage.
 
 **Can I reorder or remove pages?**
 Yes. In **Upload**: drag to reorder files / remove a file. In **Optimize**: exclude pages. In **Merge**: drag files, use **Smart Arrange** for series. In **Split**: pick page range or burst every N.
