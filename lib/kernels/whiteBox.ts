@@ -45,7 +45,12 @@
  * unaffected by this layer; the detector has its own synthetic tests.
  */
 import { processPage, type KernelProcessResult } from './processPage';
-import { assessPreservation, softenProcessingParameters, type PreservationParameters } from './preservationGuard';
+import {
+  assessPreservation,
+  softenProcessingParameters,
+  type PreservationParameters,
+  type PreservationProfile,
+} from './preservationGuard';
 import { DARK_BG_RATIO_THRESHOLD } from './constants';
 import type { PageProfile, ProcessingParameters } from '../optimizer/types';
 
@@ -165,7 +170,7 @@ function ensureGridCapacity(cells: number): void {
 /** Is this page a candidate for healing at all? */
 export function shouldHealWhiteBoxes(
   params: WhiteBoxHealParams,
-  profile: Pick<PageProfile, 'classification' | 'darkBackgroundRatio'>,
+  profile: PreservationProfile,
 ): boolean {
   if (params.autoWhiteBoxFix === false) return false;
   return (
@@ -382,7 +387,7 @@ export function processPageWithWhiteBoxHeal(
   width: number,
   height: number,
   params: WhiteBoxHealParams,
-  profile: Pick<PageProfile, 'classification' | 'darkBackgroundRatio'>,
+  profile: PreservationProfile,
 ): KernelProcessResult & { whiteBoxRegions: WhiteBoxRegion[] } {
   const rawRegions = shouldHealWhiteBoxes(params, profile)
     ? detectWhiteBoxRegions(srcData, width, height)
