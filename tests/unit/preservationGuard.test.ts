@@ -78,6 +78,46 @@ describe('preservation guard', () => {
     expect(assessment.edgeRatio).toBe(0);
   });
 
+  it('does not mistake persistent scan texture for preserved foreground structure', () => {
+    const w = 160, h = 120;
+    const source = rgbaPage(w, h, 225);
+    const processed = rgbaPage(w, h, 225);
+
+    // Fine paper/scan texture stays in the processed page, but the actual
+    // dark content is completely removed. The guard must not count the
+    // background texture as preserved content.
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const texture = ((x * 13 + y * 17) % 4) * 7;
+        const value = 204 + texture;
+        const idx = (y * w + x) * 4;
+        source[idx] = value;
+        source[idx + 1] = value;
+        source[idx + 2] = value;
+        processed[idx] = value;
+        processed[idx + 1] = value;
+        processed[idx + 2] = value;
+      }
+    }
+
+    drawRect(source, w, 24, 28, 136, 31, 70);
+    drawRect(source, w, 78, 28, 81, 96, 70);
+
+    const assessment = assessPreservation(
+      source,
+      w,
+      h,
+      processed,
+      w,
+      h,
+      { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0.01 },
+    );
+
+    expect(assessment.coverageRatio).toBe(0);
+    expect(assessment.edgeRatio).toBe(0);
+    expect(assessment.likelyDamaged).toBe(true);
+  });
+
   it('softens high-impact print controls without changing page polarity', () => {
     const params = {
       preset: 'LIGHT_HANDWRITTEN' as const,

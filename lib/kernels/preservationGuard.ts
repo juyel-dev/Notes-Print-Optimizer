@@ -118,10 +118,31 @@ function buildStats(
         if (neighbors <= 2) thin++;
       }
 
+      /*
+       * Count structural edges only when they touch detected foreground.
+       * Raw page-wide edge counts are easily dominated by scan/photo texture,
+       * JPEG blocks, shadows, or paper grain and can hide real foreground loss.
+       */
       const sampleY = y + yOffset;
-      const rightLum = x + stride < width ? readLuma(data, width, x + stride, sampleY) : lum;
-      const downLum = y + stride < height ? readLuma(data, width, x, sampleY + stride) : lum;
-      if (Math.abs(lum - rightLum) >= 22 || Math.abs(lum - downLum) >= 22) edges++;
+      const rightX = x + stride < width ? x + stride : x;
+      const downY = y + stride < height ? sampleY + stride : sampleY;
+      const rightLum = readLuma(data, width, rightX, sampleY);
+      const downLum = readLuma(data, width, x, downY);
+      const currentForeground = fg;
+      const rightForeground = x + stride < width
+        ? isForeground(rightLum)
+        : false;
+      const downForeground = y + stride < height
+        ? isForeground(downLum)
+        : false;
+      const rightEdge =
+        (currentForeground || rightForeground) &&
+        Math.abs(lum - rightLum) >= 22;
+      const downEdge =
+        (currentForeground || downForeground) &&
+        Math.abs(lum - downLum) >= 22;
+      if (rightEdge) edges++;
+      if (downEdge) edges++;
     }
   }
 
