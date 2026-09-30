@@ -135,21 +135,26 @@ function detectHeader(
     const innerX1 = Math.min(width - 1, x1 - Math.floor((x1 - x0 + 1) * 0.04));
     const innerY0 = Math.max(0, y0 + Math.floor((y1 - y0 + 1) * 0.12));
     const innerY1 = Math.min(height - 1, y1 - Math.floor((y1 - y0 + 1) * 0.12));
-    let titleLight = 0;
+    const meanR = sumR / count;
+    const meanG = sumG / count;
+    const meanB = sumB / count;
+    let titleContrast = 0;
     let titleSamples = 0;
-    for (let y = innerY0; y <= innerY1; y += Math.max(1, Math.floor(runHeight / 10))) {
+    const sampleYStep = Math.max(1, Math.floor(runHeight / 10));
+    for (let y = innerY0; y <= innerY1; y += sampleYStep) {
       for (let x = innerX0; x <= innerX1; x += xStep) {
         const i = (y * width + x) * 4;
         const r = data[i], g = data[i + 1], b = data[i + 2];
-        const l = luminance(r, g, b);
-        if (l >= 150 && (saturation(r, g, b) <= 125 || colorDistance(r, g, b, sumR / count, sumG / count, sumB / count) >= 90)) {
-          titleLight++;
-        }
+        const lumDelta = Math.abs(luminance(r, g, b) - luminance(meanR, meanG, meanB));
+        const rgbDelta = colorDistance(r, g, b, meanR, meanG, meanB);
+        // Topic text may be dark-on-color or light-on-color. We therefore
+        // require contrast against the fill instead of assuming white text.
+        if (lumDelta >= 55 || rgbDelta >= 70) titleContrast++;
         titleSamples++;
       }
     }
-    const titleCoverage = titleSamples > 0 ? titleLight / titleSamples : 0;
-    if (titleCoverage < 0.006 || titleCoverage > 0.35) return null;
+    const titleCoverage = titleSamples > 0 ? titleContrast / titleSamples : 0;
+    if (titleCoverage < 0.008 || titleCoverage > 0.40) return null;
 
     return {
       y0,
@@ -159,7 +164,7 @@ function detectHeader(
       score:
         coverage * 2.0 +
         Math.min(1, widthRatio) * 0.9 +
-        Math.min(1, titleCoverage * 4) * 0.45 +
+        Math.min(1, titleCoverage * 3) * 0.5 +
         (x0 / width < 0.12 ? 0.35 : 0),
       sumR,
       sumG,
