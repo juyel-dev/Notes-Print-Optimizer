@@ -472,12 +472,22 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
    * to distinguish non-dark, non-diagram raster pages from clean lecture pages;
    * recipeSelector currently maps it to the restrained light recipe.
    */
+  const rasterScreenshotSignal =
+    colorfulPixelRatio >= 0.02 &&
+    edgeDensity >= 0.015 &&
+    foregroundStructure.longLineDensity >= 0.04;
+
   const screenshotHeavy =
     !isDarkSource &&
     contrast <= 65 &&
-    edgeDensity >= 0.08 &&
-    (colorfulPixelRatio >= 0.02 || contrast >= 25) &&
-    inkDensity < 0.85;
+    inkDensity < 0.85 &&
+    (
+      (
+        edgeDensity >= 0.08 &&
+        (colorfulPixelRatio >= 0.02 || contrast >= 25)
+      ) ||
+      rasterScreenshotSignal
+    );
 
   const diagramEquationSignal =
     isDarkSource &&
