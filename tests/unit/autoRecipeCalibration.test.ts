@@ -31,7 +31,7 @@ describe('production Auto recipe calibration', () => {
           const production = applyProductionAutoRecipe(imageData, pageIndex);
           const profile = production.profile;
           const beforeInk = countInk(imageData.data);
-          const afterInk = countInk(production.result.buffer);
+          const afterInk = countInk(new Uint8Array(production.result.buffer));
 
           expect(production.params.preset).toBe(selectPresetForPage(profile));
           expect(production.result.width).toBe(imageData.width);

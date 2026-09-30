@@ -7,6 +7,7 @@
  * recipe can never drift between coverage and timing.
  */
 import { analyzeImageData } from '../../lib/optimizer/analysis';
+import type { PageProfile } from '../../lib/optimizer/types';
 import { ParameterGenerator } from '../../lib/optimizer/parameterGenerator';
 import { selectPresetForPage } from '../../lib/optimizer/recipeSelector';
 import { resolveEffectiveInvertMode } from '../../lib/optimizer/engine/v2/resolveInvertMode';
@@ -14,7 +15,7 @@ import { processPage, type KernelProcessResult } from '../../lib/kernels/process
 import { processPageWithWhiteBoxHeal } from '../../lib/kernels/whiteBox';
 
 export interface RecipeOutput {
-  profile: { classification: string; darkBackgroundRatio: number };
+  profile: PageProfile;
   params: ReturnType<typeof ParameterGenerator.getPresetParameters>;
   result: KernelProcessResult;
 }
