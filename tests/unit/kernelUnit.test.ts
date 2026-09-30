@@ -269,6 +269,38 @@ describe('normalizeTemplateElements', () => {
     expect(mask[20 * w + 50]).toBe(1);
   });
 
+
+  it('detects a topic header with dark title text on a colored fill', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 220, h = 130;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 18; data[j + 1] = 20; data[j + 2] = 28; data[j + 3] = 255;
+    }
+    for (let y = 10; y <= 34; y++) {
+      for (let x = 18; x <= 154; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 54; data[j + 1] = 170; data[j + 2] = 88;
+        mask[y * w + x] = 1;
+      }
+    }
+    // Dark title glyph strokes inside the green header.
+    for (let x = 54; x <= 100; x++) {
+      for (let y = 18; y <= 25; y++) {
+        const j = (y * w + x) * 4;
+        data[j] = 12; data[j + 1] = 16; data[j + 2] = 20;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+    expect(mask[14 * w + 25]).toBe(0);
+    expect(mask[20 * w + 70]).toBe(1);
+  });
+
   it('whitens a shifted colored topic header while preserving light title pixels', async () => {
     const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
     const w = 200, h = 120;
