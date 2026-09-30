@@ -84,6 +84,33 @@ describe('ParameterGenerator', () => {
     expect(noisyDense.sharpenAmount).toBe(20);
     expect(noisyDense.denoiseAmount).toBe(10);
 
+    const photoScan = ParameterGenerator.adaptAutoPageParameters(
+      { ...screenshot },
+      {
+        pageIndex: 3,
+        width: 100,
+        height: 100,
+        averageBrightness: 220,
+        contrast: 42,
+        inkDensity: 0.2,
+        darkBackgroundRatio: 0,
+        lightBackgroundRatio: 0.8,
+        dominantHue: 0,
+        hasTopBanner: false,
+        topBannerHeightPct: 0,
+        hasBottomBanner: false,
+        bottomBannerHeightPct: 0,
+        estimatedNoise: 4,
+        strokeThickness: 2.4,
+        density: 'medium',
+        rasterSource: 'photo-scan',
+        classification: 'SCREENSHOT_HEAVY',
+      },
+    );
+
+    expect(photoScan.sharpenAmount).toBe(15);
+    expect(photoScan.denoiseAmount).toBe(12);
+
     const explicit = ParameterGenerator.adaptAutoPageParameters(
       ParameterGenerator.getPresetParameters('LIGHT_HANDWRITTEN'),
       {
