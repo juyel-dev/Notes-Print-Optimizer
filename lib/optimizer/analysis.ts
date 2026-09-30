@@ -8,7 +8,7 @@
  *  - Conservative classification ordering so recipe behavior stays stable while
  *    the profile becomes more informative.
  */
-import type { PageDensity, PageProfile, PageClassification } from './types';
+import type { PageDensity, PageProfile, PageClassification, RasterSource } from './types';
 import { getLuminance } from '../kernels';
 import { detectBanners } from '../kernels';
 import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
@@ -477,6 +477,23 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     edgeDensity >= 0.015 &&
     foregroundStructure.longLineDensity >= 0.04;
 
+  /*
+   * Source distinction is intentionally narrower than SCREENSHOT_HEAVY:
+   * strong UI/card-like structure maps to "screenshot", while weaker
+   * raster-heavy structure maps to the camera/photo-scan proxy branch.
+   * We only emit this hint for pages already classified as raster-heavy;
+   * ordinary scans and clean slides therefore keep their existing branches.
+   */
+  const screenshotSourceSignal =
+    colorfulPixelRatio >= 0.08 &&
+    edgeDensity >= 0.015 &&
+    foregroundStructure.longLineDensity >= 0.05;
+
+  const photoScanSourceSignal =
+    colorfulPixelRatio >= 0.02 &&
+    edgeDensity >= 0.012 &&
+    foregroundStructure.longLineDensity >= 0.035;
+
   const screenshotHeavy =
     !isDarkSource &&
     contrast <= 65 &&
@@ -515,10 +532,13 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     );
 
   let classification: PageClassification;
+  let rasterSource: RasterSource | undefined;
   if (pagePolarity.polarity === 'mixed') {
     classification = 'MIXED';
   } else if (!isDarkSource && screenshotHeavy) {
     classification = 'SCREENSHOT_HEAVY';
+    if (screenshotSourceSignal) rasterSource = 'screenshot';
+    else if (photoScanSourceSignal) rasterSource = 'photo-scan';
   } else if ((!isDarkSource && contrast > 65) || diagramEquationSignal) {
     classification = 'DIAGRAM_EQUATION';
   } else if (darkBgRatio > DARK_BG_RATIO_THRESHOLD) {
@@ -596,6 +616,7 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     density,
     longLineDensity: foregroundStructure.longLineDensity,
     diagramEquationScore: foregroundStructure.diagramEquationScore,
+    rasterSource,
     classification,
   };
 }
