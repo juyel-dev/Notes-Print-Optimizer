@@ -18,6 +18,7 @@ import { applyMaskDilation, setDilationHook } from './maskOps';
 import { applyUnsharpMask, applyUnsharpMaskBW, setUnsharpHook, setUnsharpBwHook } from './sharpen';
 import { ensureCC, getCCLabels, getCCQueue, getCCMinX, getCCMinY, getCCMaxX, getCCMaxY, getCCArea, getCCDrop } from './connectedComponents';
 import type { IWasmKernels } from '../wasm/types';
+import { normalizeTemplateElements } from './templateElements';
 
 let wasmKernels: IWasmKernels | null = null;
 
@@ -128,8 +129,8 @@ function shouldBuildForegroundMask(
 /**
  * Combined connected-components pass: identifies all foreground components
  * and removes those matching the active noise criteria in a single BFS
- * traversal. Decorative-fill removal is temporarily disabled by the feature
- * switch above for A/B testing.
+ * traversal. The historical decorative-fill/banner removal remains disabled;
+ * template-aware cleanup is handled separately below.
  * Replaces the previous approach of 7+ separate CC passes
  * (one per color channel + noise removal) with exactly 1 pass.
  */
@@ -399,6 +400,13 @@ export function processPage(
       }
     }
   }
+
+  /* Template-aware print cleanup: preserve recurring topic titles while
+   * removing only their colored fill, normalize recurring number-marker
+   * fills, and remove the separate PW branding mark. This is tolerant to
+   * small positional shifts and deliberately runs before dilation/noise so
+   * the cleaned areas cannot be recreated as large fills. */
+  normalizeTemplateElements(dst, fm, dw, dh);
 
   /* Post-processing: dilation with numeric kernel size override */
   if (ks > 0) {
