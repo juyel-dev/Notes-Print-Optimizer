@@ -131,7 +131,12 @@ export class ParameterGenerator {
     baseParams: ProcessingParameters,
     pageProfile: PageProfile,
   ): ProcessingParameters {
-    if (baseParams.preset !== 'SCREENSHOT_PRINT') return baseParams;
+    const adaptivePresets = new Set<PresetMode>([
+      'SCREENSHOT_PRINT',
+      'PW_DARK_SLIDE',
+      'DIAGRAM_HIGH_CONTRAST',
+    ]);
+    if (!adaptivePresets.has(baseParams.preset)) return baseParams;
 
     const density = pageProfile.density ?? (
       pageProfile.inkDensity >= 0.45
