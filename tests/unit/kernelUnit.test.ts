@@ -316,9 +316,9 @@ describe('normalizeTemplateElements', () => {
       for (let x = 24; x <= 176; x++) {
         const isBorder = y === 16 || y === 50 || x === 24 || x === 176;
         const j = (y * w + x) * 4;
-        data[j] = isBorder ? 35 : 42;
-        data[j + 1] = isBorder ? 155 : 175;
-        data[j + 2] = isBorder ? 76 : 88;
+        data[j] = isBorder ? 245 : 42;
+        data[j + 1] = isBorder ? 245 : 175;
+        data[j + 2] = isBorder ? 245 : 88;
         mask[y * w + x] = 1;
       }
     }
