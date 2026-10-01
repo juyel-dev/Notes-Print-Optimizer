@@ -243,3 +243,199 @@ describe('processPage edge cases', () => {
     expect(img.data.length).toBe(16 * 16 * 4);
   });
 });
+
+
+describe('normalizeTemplateElements', () => {
+
+  it('does not treat a solid decorative color bar without title content as a header', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 240, h = 140;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 18; data[j + 1] = 20; data[j + 2] = 28; data[j + 3] = 255;
+    }
+    for (let y = 10; y <= 34; y++) {
+      for (let x = 14; x <= 155; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 245; data[j + 1] = 185; data[j + 2] = 40;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(false);
+    expect(mask[20 * w + 50]).toBe(1);
+  });
+
+
+  it('detects a topic header with dark title text on a colored fill', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 220, h = 130;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 18; data[j + 1] = 20; data[j + 2] = 28; data[j + 3] = 255;
+    }
+    // Rounded tube: the top/bottom rows retreat on the right like the
+    // rasterized template cap (plain rectangles are decorative bars).
+    for (let y = 10; y <= 31; y++) {
+      const rounded = y < 13 || y > 28;
+      const rowX1 = rounded ? 142 : 154;
+      for (let x = 18; x <= rowX1; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 54; data[j + 1] = 170; data[j + 2] = 88;
+        mask[y * w + x] = 1;
+      }
+    }
+    // Dark title glyph strokes inside the green header.
+    for (let x = 54; x <= 100; x++) {
+      for (let y = 18; y <= 23; y++) {
+        const j = (y * w + x) * 4;
+        data[j] = 12; data[j + 1] = 16; data[j + 2] = 20;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+    expect(mask[14 * w + 25]).toBe(0);
+    expect(mask[20 * w + 70]).toBe(1);
+  });
+
+  it('bridges text-created gaps and keeps the tube border pixels', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 260, h = 180;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 16; data[j + 1] = 18; data[j + 2] = 26; data[j + 3] = 255;
+    }
+
+    // Tube body with a one-pixel colored outline and interior fill.
+    for (let y = 22; y <= 46; y++) {
+      const roundedTopBottom = y < 27 || y > 41;
+      const rowX1 = roundedTopBottom ? 164 : 176;
+      for (let x = 24; x <= rowX1; x++) {
+        const isBorder = y === 22 || y === 46 || x === 24 || x === rowX1;
+        const j = (y * w + x) * 4;
+        data[j] = isBorder ? 245 : 42;
+        data[j + 1] = isBorder ? 245 : 175;
+        data[j + 2] = isBorder ? 245 : 88;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    // Simulate a thick white title crossing the colored rows. This creates
+    // short row gaps in the fill signal that the detector must bridge.
+    for (let y = 30; y <= 38; y++) {
+      for (let x = 60; x <= 136; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 245; data[j + 1] = 245; data[j + 2] = 245;
+        mask[y * w + x] = 1;
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+
+    // Interior fill is removed on both sides of the title.
+    expect(mask[34 * w + 40]).toBe(0);
+    expect(mask[34 * w + 150]).toBe(0);
+
+    // Border remains, as does the title.
+    expect(mask[22 * w + 100]).toBe(1);
+    expect(mask[34 * w + 80]).toBe(1);
+  });
+
+  it('whitens a shifted colored topic header while preserving light title pixels', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 200, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+      mask[i] = 0;
+    }
+    for (let y = 8; y <= 25; y++) {
+      // Rounded tube cap: retreat on the right for the top/bottom rows.
+      const rowX1 = (y < 11 || y > 22) ? 112 : 122;
+      for (let x = 12; x <= rowX1; x++) {
+        const j = (y * w + x) * 4;
+        data[j] = 40; data[j + 1] = 180; data[j + 2] = 70; data[j + 3] = 255;
+        mask[y * w + x] = 1;
+      }
+    }
+    // White title pixels inside the colored header.
+    for (let x = 38; x <= 70; x++) {
+      const y = 16;
+      const j = (y * w + x) * 4;
+      data[j] = 245; data[j + 1] = 245; data[j + 2] = 245;
+      mask[y * w + x] = 1;
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+    expect(mask[12 * w + 20]).toBe(0);
+    expect(mask[16 * w + 50]).toBe(1);
+  });
+
+  it('whitens recurring colored number-marker fills but preserves the number glyph', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 160, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+    }
+    const cx = 13, cy = 50, radius = 5;
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
+          const j = (y * w + x) * 4;
+          data[j] = 40; data[j + 1] = 180; data[j + 2] = 70;
+          mask[y * w + x] = 1;
+        }
+      }
+    }
+    const glyphX = cx, glyphY = cy;
+    const glyphI = (glyphY * w + glyphX) * 4;
+    data[glyphI] = 245; data[glyphI + 1] = 245; data[glyphI + 2] = 245;
+    mask[glyphY * w + glyphX] = 1;
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.markerCount).toBeGreaterThan(0);
+    expect(mask[cy * w + (cx - radius)]).toBe(0);
+    expect(mask[glyphY * w + glyphX]).toBe(1);
+  });
+
+  it('removes a small top-right PW-like light logo with position tolerance', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 200, h = 120;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4;
+      data[j] = 20; data[j + 1] = 20; data[j + 2] = 20; data[j + 3] = 255;
+    }
+    const cx = 186, cy = 10, radius = 5;
+    for (let y = cy - radius; y <= cy + radius; y++) {
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2) {
+          const j = (y * w + x) * 4;
+          data[j] = 240; data[j + 1] = 240; data[j + 2] = 240;
+          mask[y * w + x] = 1;
+        }
+      }
+    }
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.logoDetected).toBe(true);
+    expect(mask[cy * w + cx]).toBe(0);
+  });
+});

@@ -38,11 +38,10 @@
       "4": {
         "width": 1102,
         "height": 1426,
-        "sha256": "0194551d4a4f6e37de3fccab355da561e639e564108ba9c7988137ed7af3ecdf",
-        "altSha256": "452d9b1432b7843cd59499cfea3e848c8cfcc106cec11803fdbe215181595f9a",
+        "sha256": "452d9b1432b7843cd59499cfea3e848c8cfcc106cec11803fdbe215181595f9a",
         "inkBeforePct": 7.64,
-        "inkAfterPct": 8.23,
-        "classification": "LIGHT_SLIDE"
+        "inkAfterPct": 8.27,
+        "classification": "SCREENSHOT_HEAVY"
       },
       "5": {
         "width": 1102,
@@ -57,9 +56,9 @@
       "0": {
         "width": 1728,
         "height": 972,
-        "sha256": "702f9631843c98781f0c6612a4dbc0a101a7c9525c76e407cc011bfe1f128a18",
+        "sha256": "7117aff726328850f232acfd4daaeefbe78a971c9130fa303d86b3bc56e8b014",
         "inkBeforePct": 97.08,
-        "inkAfterPct": 1.9,
+        "inkAfterPct": 3.52,
         "classification": "DARK_SLIDE"
       },
       "1": {
@@ -84,7 +83,7 @@
         "sha256": "19fff48325a8860f9ba5eb05aa08ea9f7b08ffcb227af9951642eb8050315ad5",
         "inkBeforePct": 40.42,
         "inkAfterPct": 41.89,
-        "classification": "HANDWRITTEN_NOTES"
+        "classification": "MIXED"
       }
     },
     "scanned": {
@@ -150,9 +149,9 @@
       "3": {
         "width": 1728,
         "height": 972,
-        "sha256": "c03a2d0c9458d1f7e19199c03ef1b3b32d6fe33fdc9a7d695d7c63cea653e9e5",
+        "sha256": "21670a19c959ca6484c3dae150f217655ebd0067fd8bcfe4e6451443211a8436",
         "inkBeforePct": 62.37,
-        "inkAfterPct": 0.83,
+        "inkAfterPct": 39.95,
         "classification": "DARK_SLIDE"
       }
     }
