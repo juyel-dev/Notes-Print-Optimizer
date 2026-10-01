@@ -393,6 +393,24 @@ function detectColoredMarkers(
       const glyphSamples = Math.max(1, Math.ceil((y1 - y0 + 1) / glyphStep) * Math.ceil((x1 - x0 + 1) / glyphStep));
       const glyphCoverage = glyphLight / glyphSamples;
 
+      // A filled badge is solid color (plus its light glyph) inside its box,
+      // while a handwritten letter leaves large black gaps between strokes.
+      // Measure the inset interior: badges stay near zero dark pixels, stroke
+      // glyphs exceed ~0.30. This is what keeps cursive letters inside body
+      // text from being mistaken for numbered marker fills.
+      const insetX = Math.max(1, Math.floor(cw * 0.10));
+      const insetY = Math.max(1, Math.floor(ch * 0.10));
+      let interiorDark = 0;
+      let interiorTotal = 0;
+      for (let iy = y0 + insetY; iy <= y1 - insetY; iy++) {
+        for (let ix = x0 + insetX; ix <= x1 - insetX; ix++) {
+          const gi = (iy * width + ix) * 4;
+          interiorTotal++;
+          if (luminance(data[gi], data[gi + 1], data[gi + 2]) < 45) interiorDark++;
+        }
+      }
+      const interiorDarkRatio = interiorTotal > 0 ? interiorDark / interiorTotal : 1;
+
       if (
         area >= Math.max(20, Math.floor(total * 0.00008)) &&
         relArea <= 0.012 &&
@@ -404,7 +422,8 @@ function detectColoredMarkers(
         aspect <= 1.45 &&
         fillRatio >= 0.42 &&
         glyphCoverage >= 0.005 &&
-        glyphCoverage <= 0.45
+        glyphCoverage <= 0.45 &&
+        interiorDarkRatio <= 0.26
       ) {
         out.push({
           box: { x0, y0, x1, y1 },
