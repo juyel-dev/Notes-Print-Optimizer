@@ -126,7 +126,10 @@ function detectHeader(
 
     // Tolerant geometry: the header may shift several percent in either
     // direction, but it should remain a substantial, wide top element.
-    if (coverage < 0.42 || widthRatio < 0.24 || x0 / width > 0.28) return null;
+    // Coverage is measured over full-width row samples, so a large title
+    // inside the tube legitimately displaces fill — keep the bar low and
+    // let the title-contrast and tube-shape gates do the discrimination.
+    if (coverage < 0.30 || widthRatio < 0.24 || x0 / width > 0.28) return null;
 
     // A real topic header should contain readable title pixels inside the
     // colored fill. Solid decorative bars/boxes must not qualify merely from
@@ -156,8 +159,10 @@ function detectHeader(
     const titleCoverage = titleSamples > 0 ? titleContrast / titleSamples : 0;
     if (titleCoverage < 0.008 || titleCoverage > 0.40) return null;
 
-    // Structural signature of the recurring tube: its rounded right cap
-    // retreats at the top/bottom, while the middle reaches farther right.
+    // Structural signature of the recurring tube: its rounded end caps are
+    // shorter at the very first/last rows, while the middle reaches farther.
+    // Compare the run's end rows against its middle (rather than coarse
+    // thirds, which misalign whenever title text occupies the middle rows).
     // This normalized shape test is what separates the real header component
     // from ordinary rectangular colored bars/text in generic dark slides.
     const rowExtents: Array<{ min: number; max: number }> = [];
@@ -184,26 +189,23 @@ function detectHeader(
         : sorted[mid];
     };
 
-    const third = Math.max(1, Math.floor(rowExtents.length / 3));
-    const topRows = rowExtents.slice(0, third);
-    const middleRows = rowExtents.slice(third, Math.max(third + 1, rowExtents.length - third));
-    const bottomRows = rowExtents.slice(Math.max(third + 1, rowExtents.length - third));
+    // End-cap rows: the first/last two sampled rows of the run. A capsule
+    // tube is narrowest exactly at its ends; a rectangle is not.
+    const edgeRows = [
+      ...rowExtents.slice(0, 2),
+      ...rowExtents.slice(Math.max(2, rowExtents.length - 2)),
+    ];
+    const midStart = Math.floor(rowExtents.length / 4);
+    const midEnd = Math.max(midStart + 1, rowExtents.length - midStart);
+    const midBand = rowExtents.slice(midStart, midEnd);
 
-    const middleRight = median(middleRows.map(row => row.max));
-    const topRight = median(topRows.map(row => row.max));
-    const bottomRight = median(bottomRows.map(row => row.max));
-    const middleLeft = median(middleRows.map(row => row.min));
-    const topLeft = median(topRows.map(row => row.min));
-    const bottomLeft = median(bottomRows.map(row => row.min));
+    const middleRight = median(midBand.map(row => row.max));
+    const edgeRight = median(edgeRows.map(row => row.max));
+    const middleLeft = median(midBand.map(row => row.min));
+    const edgeLeft = median(edgeRows.map(row => row.min));
 
-    const rightCapRetreat = Math.min(
-      middleRight - topRight,
-      middleRight - bottomRight,
-    ) / width;
-    const leftBadgeBulge = Math.min(
-      topLeft - middleLeft,
-      bottomLeft - middleLeft,
-    ) / width;
+    const rightCapRetreat = (middleRight - edgeRight) / width;
+    const leftBadgeBulge = (edgeLeft - middleLeft) / width;
 
     // The real template's cap curvature is subtle after rasterization, so
     // use a small normalized tolerance rather than demanding a large arc.

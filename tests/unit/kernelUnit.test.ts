@@ -279,8 +279,12 @@ describe('normalizeTemplateElements', () => {
       const j = i * 4;
       data[j] = 18; data[j + 1] = 20; data[j + 2] = 28; data[j + 3] = 255;
     }
-    for (let y = 10; y <= 34; y++) {
-      for (let x = 18; x <= 154; x++) {
+    // Rounded tube: the top/bottom rows retreat on the right like the
+    // rasterized template cap (plain rectangles are decorative bars).
+    for (let y = 10; y <= 31; y++) {
+      const rounded = y < 13 || y > 28;
+      const rowX1 = rounded ? 142 : 154;
+      for (let x = 18; x <= rowX1; x++) {
         const j = (y * w + x) * 4;
         data[j] = 54; data[j + 1] = 170; data[j + 2] = 88;
         mask[y * w + x] = 1;
@@ -288,7 +292,7 @@ describe('normalizeTemplateElements', () => {
     }
     // Dark title glyph strokes inside the green header.
     for (let x = 54; x <= 100; x++) {
-      for (let y = 18; y <= 25; y++) {
+      for (let y = 18; y <= 23; y++) {
         const j = (y * w + x) * 4;
         data[j] = 12; data[j + 1] = 16; data[j + 2] = 20;
         mask[y * w + x] = 1;
@@ -338,9 +342,9 @@ describe('normalizeTemplateElements', () => {
     const stats = normalizeTemplateElements(data, mask, w, h);
     expect(stats.headerDetected).toBe(true);
 
-    // Interior fill is removed.
+    // Interior fill is removed on both sides of the title.
     expect(mask[34 * w + 40]).toBe(0);
-    expect(mask[34 * w + 120]).toBe(0);
+    expect(mask[34 * w + 150]).toBe(0);
 
     // Border remains, as does the title.
     expect(mask[22 * w + 100]).toBe(1);
@@ -358,7 +362,9 @@ describe('normalizeTemplateElements', () => {
       mask[i] = 0;
     }
     for (let y = 8; y <= 25; y++) {
-      for (let x = 12; x <= 122; x++) {
+      // Rounded tube cap: retreat on the right for the top/bottom rows.
+      const rowX1 = (y < 11 || y > 22) ? 112 : 122;
+      for (let x = 12; x <= rowX1; x++) {
         const j = (y * w + x) * 4;
         data[j] = 40; data[j + 1] = 180; data[j + 2] = 70; data[j + 3] = 255;
         mask[y * w + x] = 1;
