@@ -305,6 +305,47 @@ describe('normalizeTemplateElements', () => {
     expect(mask[20 * w + 70]).toBe(1);
   });
 
+  it('turns the header badge disc white while keeping its outline and icon strokes', async () => {
+    const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
+    const w = 400, h = 600;
+    const data = new Uint8ClampedArray(w * h * 4);
+    const mask = new Uint8Array(w * h);
+    const put = (x: number, y: number, r: number, g: number, b: number) => {
+      const j = (y * w + x) * 4;
+      data[j] = r; data[j + 1] = g; data[j + 2] = b; data[j + 3] = 255;
+      mask[y * w + x] = (0.299 * r + 0.587 * g + 0.114 * b) >= 70 ? 1 : 0;
+    };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) put(x, y, 0, 0, 0);
+
+    // Tube body (green fill) starting under the badge.
+    for (let y = 60; y <= 100; y++) {
+      const rounded = y < 64 || y > 96;
+      const x1 = rounded ? 300 : 312;
+      for (let x = 60; x <= x1; x++) put(x, y, 46, 139, 71);
+    }
+    // White title strokes inside the tube.
+    for (let x = 150; x <= 240; x++) for (let y = 74; y <= 86; y++) put(x, y, 250, 250, 250);
+
+    // Badge: taller than the tube. Light outline > green ring > white disc > navy icon stroke.
+    const cx = 70, cy = 80, R = 40;
+    for (let y = cy - R; y <= cy + R; y++) {
+      for (let x = cx - R; x <= cx + R; x++) {
+        const d = Math.hypot(x - cx, y - cy);
+        if (d <= R) put(x, y, 245, 245, 245);          // outline
+        if (d <= R - 2) put(x, y, 46, 139, 71);        // ring
+        if (d <= R * 0.72) put(x, y, 255, 255, 255);   // disc
+      }
+    }
+    for (let y = 74; y <= 86; y++) for (let x = 64; x <= 68; x++) put(x, y, 20, 40, 125); // icon stroke
+
+    const stats = normalizeTemplateElements(data, mask, w, h);
+    expect(stats.headerDetected).toBe(true);
+    expect(mask[cy * w + (cx + 12)]).toBe(0);   // white disc is paper
+    expect(mask[cy * w + 66]).toBe(1);           // navy icon stroke is ink
+    expect(mask[cy * w + (cx - R + 8)]).toBe(0); // green ring is paper
+    expect(mask[80 * w + 200]).toBe(1);          // title text stays ink
+  });
+
   it('bridges text-created gaps and keeps the tube border pixels', async () => {
     const { normalizeTemplateElements } = await import('../../lib/kernels/templateElements');
     const w = 260, h = 180;

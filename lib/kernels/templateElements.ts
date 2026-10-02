@@ -311,6 +311,95 @@ function clearHeaderFill(
   }
 }
 
+/**
+ * The header's round badge sits on the left end of the tube and is taller
+ * than the tube itself. Its inner disc is white, so the dark-slide
+ * foreground mask reads it as bright ink and prints it as a solid black
+ * circle. Inside the badge the roles are inverted: the light disc is the
+ * paper, and the dark ring / coloured icon strokes are the ink.
+ */
+function clearHeaderBadge(
+  data: Uint8ClampedArray,
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  header: { box: Box; fill: [number, number, number] },
+): boolean {
+  const { box } = header;
+  const tubeH = box.y1 - box.y0 + 1;
+  const bandX0 = box.x0;
+  const bandX1 = Math.min(width - 1, box.x0 + Math.floor(tubeH * 1.5));
+
+  const isContent = (x: number, y: number): boolean => {
+    const i = (y * width + x) * 4;
+    return luminance(data[i], data[i + 1], data[i + 2]) >= 60 ||
+      saturation(data[i], data[i + 1], data[i + 2]) >= 38;
+  };
+  const rowHasContent = (y: number): boolean => {
+    for (let x = bandX0; x <= bandX1; x += 2) if (isContent(x, y)) return true;
+    return false;
+  };
+
+  // Grow from the tube's centre row outwards while rows still contain
+  // badge pixels. A short background gap ends the growth, so text lines
+  // below the header are never absorbed.
+  const gapLimit = Math.max(3, Math.floor(tubeH * 0.04));
+  const mid = Math.floor((box.y0 + box.y1) / 2);
+  let top = mid;
+  let gap = 0;
+  for (let y = mid; y >= Math.max(0, mid - tubeH); y--) {
+    if (rowHasContent(y)) { top = y; gap = 0; } else if (++gap > gapLimit) break;
+  }
+  let bottom = mid;
+  gap = 0;
+  for (let y = mid; y <= Math.min(height - 1, mid + tubeH); y++) {
+    if (rowHasContent(y)) { bottom = y; gap = 0; } else if (++gap > gapLimit) break;
+  }
+
+  const diameter = bottom - top + 1;
+  // The badge must be about as tall as the tube or taller, but not huge.
+  if (diameter < tubeH * 0.85 || diameter > tubeH * 1.9) return false;
+
+  let left = -1;
+  for (let x = bandX0; x <= bandX1 && left < 0; x++) {
+    for (let y = top; y <= bottom; y += 2) {
+      if (isContent(x, y)) { left = x; break; }
+    }
+  }
+  if (left < 0) return false;
+
+  const radius = diameter / 2;
+  const cx = left + radius;
+  const cy = (top + bottom) / 2;
+  // The badge is: thin light outline (outermost) > coloured ring > white
+  // disc > icon. The ring is the same fill as the tube, so it becomes paper
+  // like the tube does; the outline and the dark icon strokes stay as ink.
+  const outer = radius * 1.02;
+  const inner = radius * 0.93;
+  const outer2 = outer * outer;
+  const inner2 = inner * inner;
+  const [fr, fg, fb] = header.fill;
+
+  for (let y = Math.max(0, Math.floor(cy - outer)); y <= Math.min(height - 1, Math.ceil(cy + outer)); y++) {
+    for (let x = Math.max(0, Math.floor(cx - outer)); x <= Math.min(width - 1, Math.ceil(cx + outer)); x++) {
+      const dx = x - cx, dy = y - cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > outer2) continue;
+      const i = (y * width + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const l = luminance(r, g, b);
+      const sat = saturation(r, g, b);
+      if (sat >= 24 && l < 245 && colorDistance(r, g, b, fr, fg, fb) <= 82) {
+        mask[y * width + x] = 0;           // ring (tube-coloured fill) = paper
+      } else if (d2 <= inner2) {
+        if (l >= 150) mask[y * width + x] = 0;                 // disc and light icon fills = paper
+        else if (l >= 18 || sat >= 60) mask[y * width + x] = 1; // dark icon strokes = ink
+      }
+    }
+  }
+  return true;
+}
+
 function detectColoredMarkers(
   data: Uint8ClampedArray,
   width: number,
@@ -572,7 +661,10 @@ export function normalizeTemplateElements(
   height: number,
 ): TemplateElementStats {
   const header = detectHeader(data, width, height);
-  if (header) clearHeaderFill(data, mask, width, height, header);
+  if (header) {
+    clearHeaderFill(data, mask, width, height, header);
+    clearHeaderBadge(data, mask, width, height, header);
+  }
 
   const markers = detectColoredMarkers(data, width, height);
   for (const marker of markers) clearMarkerFill(data, mask, width, marker);
