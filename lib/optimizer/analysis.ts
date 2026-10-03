@@ -12,6 +12,7 @@ import type { PageDensity, PageProfile, PageClassification } from './types';
 import { getLuminance } from '../kernels';
 import { detectBanners } from '../kernels';
 import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
+import { hasDarkFrame } from '../kernels/darkFrame';
 
 const HUE_BIN_COUNT = 18;
 const HUE_BIN_SIZE = 360 / HUE_BIN_COUNT;
@@ -575,6 +576,7 @@ export function analyzeImageData(imageData: ImageData, pageIndex: number): PageP
     contrast: Math.round(contrast),
     inkDensity: Number(clamp01(inkDensity).toFixed(3)),
     darkBackgroundRatio: Number(clamp01(darkBgRatio).toFixed(3)),
+    darkFrame: hasDarkFrame(data, width, height),
     lightBackgroundRatio: Number(clamp01(lightBgRatio).toFixed(3)),
     dominantHue: Math.round(dominantHue),
     hasTopBanner: topBannerPct > 0.03,

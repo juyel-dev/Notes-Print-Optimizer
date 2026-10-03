@@ -175,7 +175,8 @@ export function shouldHealWhiteBoxes(
   if (params.autoWhiteBoxFix === false) return false;
   return (
     profile.classification === 'DARK_SLIDE' ||
-    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD
+    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD ||
+    profile.darkFrame === true
   );
 }
 

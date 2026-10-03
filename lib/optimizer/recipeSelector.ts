@@ -9,6 +9,14 @@ import { DARK_BG_RATIO_THRESHOLD } from '../kernels/constants';
  * transformation that could destroy handwriting, equations, or diagrams.
  */
 export function selectPresetForPage(profile: PageProfile): PresetMode {
+  /* A dark frame means a dark slide even when a large light panel (diagram,
+     table, photo) pulls the global dark ratio under the threshold. */
+  if (profile.darkFrame === true) {
+    return profile.classification === 'DIAGRAM_EQUATION'
+      ? 'DIAGRAM_HIGH_CONTRAST'
+      : 'PW_DARK_SLIDE';
+  }
+
   if (profile.foregroundPolarity === 'mixed') {
     return 'LIGHT_HANDWRITTEN';
   }

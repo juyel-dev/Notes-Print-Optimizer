@@ -19,6 +19,7 @@ import { applyUnsharpMask, applyUnsharpMaskBW, setUnsharpHook, setUnsharpBwHook 
 import { ensureCC, getCCLabels, getCCQueue, getCCMinX, getCCMinY, getCCMaxX, getCCMaxY, getCCArea, getCCDrop } from './connectedComponents';
 import type { IWasmKernels } from '../wasm/types';
 import { normalizeTemplateElements } from './templateElements';
+import { hasDarkFrame } from './darkFrame';
 
 let wasmKernels: IWasmKernels | null = null;
 
@@ -233,7 +234,7 @@ export function processPage(
     denoiseAmount?: number;
     binaizationThreshold?: number;
   },
-  profile: { classification: string; darkBackgroundRatio: number }
+  profile: { classification: string; darkBackgroundRatio: number; darkFrame?: boolean }
 ): KernelProcessResult {
   const sw = width, sh = height;
   const ct = Math.floor(sh * (params.bannerCropTopPct / 100));
@@ -245,7 +246,9 @@ export function processPage(
      is never silently binarized by the kernel's own darker opinion. */
   const isDark =
     profile.classification === 'DARK_SLIDE' ||
-    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD;
+    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD ||
+    profile.darkFrame === true ||
+    (params.invertMode === 'smart' && hasDarkFrame(srcData, sw, sh));
   const useDarkColorClassifier = params.invertMode === 'smart' && isDark;
   const useLightColorMapping = params.smartColorMapping === true && !isDark;
   const shouldProcess = shouldBuildForegroundMask(params, isDark);
@@ -406,7 +409,7 @@ export function processPage(
    * fills, and remove the separate PW branding mark. This is tolerant to
    * small positional shifts and deliberately runs before dilation/noise so
    * the cleaned areas cannot be recreated as large fills. */
-  if (profile.classification === 'DARK_SLIDE') {
+  if (isDark) {
     normalizeTemplateElements(dst, fm, dw, dh);
   }
 

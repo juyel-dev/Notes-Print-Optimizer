@@ -53,6 +53,24 @@ function colorDistance(
   return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
+function hueOf(r: number, g: number, b: number): number {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (d === 0) return 0;
+  let h: number;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  h *= 60;
+  return h < 0 ? h + 360 : h;
+}
+
+function hueDistance(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
 function isHeaderFillColor(r: number, g: number, b: number): boolean {
   const s = saturation(r, g, b);
   const l = luminance(r, g, b);
@@ -73,11 +91,14 @@ function clampBox(box: Box, width: number, height: number): Box {
   };
 }
 
-function detectHeader(
+function detectHeaders(
   data: Uint8ClampedArray,
   width: number,
   height: number,
-): { box: Box; fill: [number, number, number] } | null {
+  yFrom: number,
+  yTo: number,
+  collectAll: boolean,
+): Array<{ box: Box; fill: [number, number, number] }> {
   type Candidate = {
     y0: number;
     y1: number;
@@ -90,8 +111,9 @@ function detectHeader(
     count: number;
   };
 
-  const startY = Math.max(1, Math.floor(height * 0.01));
-  const endY = Math.floor(height * 0.24);
+  const startY = Math.max(1, Math.floor(height * yFrom));
+  const endY = Math.floor(height * yTo);
+  const all: Candidate[] = [];
   const xStep = Math.max(2, Math.floor(width / 140));
 
   const evaluateRun = (y0: number, y1: number): Candidate | null => {
@@ -100,6 +122,28 @@ function detectHeader(
       runHeight < Math.max(8, Math.floor(height * 0.025)) ||
       runHeight > Math.floor(height * 0.18)
     ) return null;
+
+    // The capsule has one dominant fill colour. Handwriting or other coloured
+    // marks next to it (e.g. yellow notes) must not stretch its width or
+    // count as fill, so measure everything against the dominant colour only.
+    const hist = new Map<number, number>();
+    const histYStep = Math.max(1, Math.floor((y1 - y0 + 1) / 12));
+    for (let y = y0; y <= y1; y += histYStep) {
+      for (let x = 0; x < width; x += xStep) {
+        const i = (y * width + x) * 4;
+        if (!isHeaderFillColor(data[i], data[i + 1], data[i + 2])) continue;
+        const k = ((data[i] >> 4) << 8) | ((data[i + 1] >> 4) << 4) | (data[i + 2] >> 4);
+        hist.set(k, (hist.get(k) ?? 0) + 1);
+      }
+    }
+    let modeKey = -1, modeCount = 0;
+    for (const [k, c] of hist) if (c > modeCount) { modeCount = c; modeKey = k; }
+    if (modeKey < 0) return null;
+    const domR = ((modeKey >> 8) & 15) * 16 + 8;
+    const domG = ((modeKey >> 4) & 15) * 16 + 8;
+    const domB = (modeKey & 15) * 16 + 8;
+    const isFill = (r: number, g: number, b: number): boolean =>
+      isHeaderFillColor(r, g, b) && colorDistance(r, g, b, domR, domG, domB) <= 85;
 
     let x0 = width, x1 = -1;
     let colored = 0;
@@ -112,7 +156,7 @@ function detectHeader(
         const i = (y * width + x) * 4;
         const r = data[i], g = data[i + 1], b = data[i + 2];
         samples++;
-        if (!isHeaderFillColor(r, g, b)) continue;
+        if (!isFill(r, g, b)) continue;
         colored++;
         if (x < x0) x0 = x;
         if (x > x1) x1 = x;
@@ -121,15 +165,17 @@ function detectHeader(
     }
 
     if (x1 < x0 || samples === 0) return null;
-    const coverage = colored / samples;
+    // Coverage is measured inside the run's own horizontal span, so a short
+    // title (a narrow capsule) is judged by how filled the capsule is, not by
+    // how much of the whole page width it happens to cover.
+    const spanSamples = Math.max(1, samples * ((x1 - x0 + 1) / width));
+    const coverage = colored / spanSamples;
     const widthRatio = (x1 - x0 + 1) / width;
 
     // Tolerant geometry: the header may shift several percent in either
-    // direction, but it should remain a substantial, wide top element.
-    // Coverage is measured over full-width row samples, so a large title
-    // inside the tube legitimately displaces fill — keep the bar low and
-    // let the title-contrast and tube-shape gates do the discrimination.
-    if (coverage < 0.30 || widthRatio < 0.24 || x0 / width > 0.28) return null;
+    // direction and may be short (small "Question" tag) or long (full-width
+    // title); it must stay a compact, wide, left-anchored top element.
+    if (coverage < 0.30 || widthRatio < 0.10 || x0 / width > 0.28) return null;
 
     // A real topic header should contain readable title pixels inside the
     // colored fill. Solid decorative bars/boxes must not qualify merely from
@@ -157,7 +203,7 @@ function detectHeader(
       }
     }
     const titleCoverage = titleSamples > 0 ? titleContrast / titleSamples : 0;
-    if (titleCoverage < 0.008 || titleCoverage > 0.40) return null;
+    if (titleCoverage < 0.008 || titleCoverage > 0.72) return null;
 
     // Structural signature of the recurring tube: its rounded end caps are
     // shorter at the very first/last rows, while the middle reaches farther.
@@ -172,7 +218,7 @@ function detectHeader(
       let rowMax = -1;
       for (let x = x0; x <= x1; x += xStep) {
         const i = (y * width + x) * 4;
-        if (isHeaderFillColor(data[i], data[i + 1], data[i + 2])) {
+        if (isFill(data[i], data[i + 1], data[i + 2])) {
           if (x < rowMin) rowMin = x;
           if (x > rowMax) rowMax = x;
         }
@@ -238,15 +284,25 @@ function detectHeader(
 
   for (let y = startY; y <= endY; y++) {
     let colored = 0;
-    let samples = 0;
+    let rowMin = width, rowMax = -1;
     for (let x = 0; x < width; x += xStep) {
       const i = (y * width + x) * 4;
-      if (isHeaderFillColor(data[i], data[i + 1], data[i + 2])) colored++;
-      samples++;
+      if (isHeaderFillColor(data[i], data[i + 1], data[i + 2])) {
+        colored++;
+        if (x < rowMin) rowMin = x;
+        if (x > rowMax) rowMax = x;
+      }
     }
 
-    const coverage = samples > 0 ? colored / samples : 0;
-    const strong = coverage >= 0.34;
+    // A row belongs to a capsule when its coloured pixels form a dense,
+    // left-anchored span that is at least ~10% of the page wide. Title text
+    // inside the capsule thins the density, hence the moderate bar.
+    const spanCells = rowMax >= rowMin ? (rowMax - rowMin) / xStep + 1 : 0;
+    const density = spanCells > 0 ? colored / spanCells : 0;
+    const strong =
+      spanCells * xStep >= width * 0.10 &&
+      density >= 0.40 &&
+      rowMin / width <= 0.28;
     if (strong) {
       if (runStart < 0) runStart = y;
       lastStrongRow = y;
@@ -255,6 +311,7 @@ function detectHeader(
 
     if (runStart >= 0 && lastStrongRow >= 0 && y - lastStrongRow > maxFillGap) {
       const candidate = evaluateRun(runStart, lastStrongRow);
+      if (candidate) all.push(candidate);
       if (candidate && (best === null || candidate.score > best.score)) best = candidate;
       runStart = -1;
       lastStrongRow = -1;
@@ -262,12 +319,24 @@ function detectHeader(
   }
   if (runStart >= 0 && lastStrongRow >= runStart) {
     const candidate = evaluateRun(runStart, lastStrongRow);
+    if (candidate) all.push(candidate);
     if (candidate && (best === null || candidate.score > best.score)) best = candidate;
   }
 
-  const header = best;
-  if (header === null || header.count < 20) return null;
+  const picked: Candidate[] = collectAll ? all : (best ? [best] : []);
+  const results: Array<{ box: Box; fill: [number, number, number] }> = [];
+  for (const header of picked) {
+    if (header.count < 20) continue;
+    results.push(buildHeaderResult(header, width, height));
+  }
+  return results;
+}
 
+function buildHeaderResult(
+  header: { y0: number; y1: number; x0: number; x1: number; sumR: number; sumG: number; sumB: number; count: number },
+  width: number,
+  height: number,
+): { box: Box; fill: [number, number, number] } {
   const yPad = Math.max(2, Math.floor((header.y1 - header.y0 + 1) * 0.18));
   const xPad = Math.max(2, Math.floor((header.x1 - header.x0 + 1) * 0.02));
   const box = clampBox({
@@ -283,6 +352,23 @@ function detectHeader(
     header.sumB / header.count,
   ];
   return { box, fill };
+}
+
+function detectHeader(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): { box: Box; fill: [number, number, number] } | null {
+  return detectHeaders(data, width, height, 0.01, 0.24, false)[0] ?? null;
+}
+
+/** Capsule bars further down the page (e.g. numbered answer pills). */
+function detectLowerCapsules(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Array<{ box: Box; fill: [number, number, number] }> {
+  return detectHeaders(data, width, height, 0.26, 0.97, true);
 }
 
 function clearHeaderFill(
@@ -329,11 +415,18 @@ function clearHeaderBadge(
   const tubeH = box.y1 - box.y0 + 1;
   const bandX0 = box.x0;
   const bandX1 = Math.min(width - 1, box.x0 + Math.floor(tubeH * 1.5));
+  const fillHue = hueOf(header.fill[0], header.fill[1], header.fill[2]);
 
+  // Only the badge's coloured ring counts as "badge" evidence while measuring
+  // its size. White handwriting or title letters touching the badge must not
+  // stretch the circle (it would then swallow the first title letters).
   const isContent = (x: number, y: number): boolean => {
     const i = (y * width + x) * 4;
-    return luminance(data[i], data[i + 1], data[i + 2]) >= 60 ||
-      saturation(data[i], data[i + 1], data[i + 2]) >= 38;
+    // Same hue family as the capsule fill. Anti-aliased yellow handwriting on
+    // black mixes into olive tones that pass a plain colour-distance test, so
+    // the hue itself is compared.
+    return isHeaderFillColor(data[i], data[i + 1], data[i + 2]) &&
+      hueDistance(hueOf(data[i], data[i + 1], data[i + 2]), fillHue) <= 28;
   };
   const rowHasContent = (y: number): boolean => {
     for (let x = bandX0; x <= bandX1; x += 2) if (isContent(x, y)) return true;
@@ -347,18 +440,22 @@ function clearHeaderBadge(
   const mid = Math.floor((box.y0 + box.y1) / 2);
   let top = mid;
   let gap = 0;
-  for (let y = mid; y >= Math.max(0, mid - tubeH); y--) {
+  for (let y = mid; y >= Math.max(0, mid - Math.floor(tubeH * 0.95)); y--) {
     if (rowHasContent(y)) { top = y; gap = 0; } else if (++gap > gapLimit) break;
   }
   let bottom = mid;
   gap = 0;
-  for (let y = mid; y <= Math.min(height - 1, mid + tubeH); y++) {
+  for (let y = mid; y <= Math.min(height - 1, mid + Math.floor(tubeH * 0.95)); y++) {
     if (rowHasContent(y)) { bottom = y; gap = 0; } else if (++gap > gapLimit) break;
   }
 
   const diameter = bottom - top + 1;
   // The badge must be about as tall as the tube or taller, but not huge.
-  if (diameter < tubeH * 0.85 || diameter > tubeH * 1.9) return false;
+  if (diameter < tubeH * 0.85 || diameter > tubeH * 1.15) return false;
+  // Thin light outline sits just outside the coloured ring.
+  const outlinePad = Math.max(1, Math.round(diameter * 0.015));
+  top = Math.max(0, top - outlinePad);
+  bottom = Math.min(height - 1, bottom + outlinePad);
 
   let left = -1;
   for (let x = bandX0; x <= bandX1 && left < 0; x++) {
@@ -664,6 +761,11 @@ export function normalizeTemplateElements(
   if (header) {
     clearHeaderFill(data, mask, width, height, header);
     clearHeaderBadge(data, mask, width, height, header);
+  }
+
+  for (const capsule of detectLowerCapsules(data, width, height)) {
+    clearHeaderFill(data, mask, width, height, capsule);
+    clearHeaderBadge(data, mask, width, height, capsule);
   }
 
   const markers = detectColoredMarkers(data, width, height);
