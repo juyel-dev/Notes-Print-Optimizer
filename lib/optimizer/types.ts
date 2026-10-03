@@ -19,6 +19,8 @@ export interface PageProfile {
   /** Legacy non-light-pixel ratio; use foregroundCoverage for polarity-aware content density. */
   inkDensity: number;
   darkBackgroundRatio: number; // Ratio of pixels < 60 brightness
+  /** Outer frame of the page is almost entirely dark (dark slide, even if a big light panel lowers the overall ratio). */
+  darkFrame?: boolean;
   lightBackgroundRatio: number; // Ratio of pixels > 200 brightness
   dominantHue: number; // 0 - 360
   hasTopBanner: boolean;

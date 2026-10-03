@@ -67,6 +67,7 @@ export type PreservationProfile = Pick<
   PageProfile,
   | 'classification'
   | 'darkBackgroundRatio'
+  | 'darkFrame'
   | 'density'
   | 'foregroundCoverage'
   | 'foregroundPolarity'
