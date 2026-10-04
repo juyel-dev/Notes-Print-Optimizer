@@ -5,6 +5,7 @@ import { pwOptimizerStorage } from './storage';
 import { WorkerManager } from '../workers/WorkerManager';
 import { getProcessingEngine, EngineVersion } from './engine';
 import { getPdfjsLib } from './pdfjsLoader';
+import { drawBilevelImage, isBilevelRgba, pageSizeFromSource, readSourceWidthsPt } from './pdfPageEmbed';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { DocumentProfile, LayoutConfig, OptimizationMetrics, PresetMode, ProcessedPage } from './types';
 import '../workers/init';
@@ -232,6 +233,39 @@ export class PdfExporter {
   }
 
   /**
+   * Embed one final page image. Pure black/white pages go in as a lossless
+   * 1-bit image, everything else as JPEG. The PDF page size follows the SOURCE
+   * page (in points), not the render pixel size.
+   */
+  private static async embedFinalPage(
+    pdfDoc: PDFDocument,
+    imageData: ImageData,
+    sourceWidthPt: number | undefined,
+    jpegQuality: number,
+  ): Promise<boolean> {
+    const size = pageSizeFromSource(imageData, sourceWidthPt);
+    if (isBilevelRgba(imageData.data)) {
+      const page = pdfDoc.addPage([size.width, size.height]);
+      drawBilevelImage(pdfDoc, page, imageData);
+      return true;
+    }
+    const canvas = memoryManager.acquireCanvas(imageData.width, imageData.height);
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return false;
+      ctx.putImageData(imageData, 0, 0);
+      const jpegBlob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', jpegQuality));
+      if (!jpegBlob || jpegBlob.size === 0) return false;
+      const embedded = await pdfDoc.embedJpg(await jpegBlob.arrayBuffer());
+      const pdfPage = pdfDoc.addPage([size.width, size.height]);
+      pdfPage.drawImage(embedded, { x: 0, y: 0, width: size.width, height: size.height });
+      return true;
+    } finally {
+      memoryManager.disposeCanvas(canvas);
+    }
+  }
+
+  /**
    * Step-2 -> step-3 boundary for the N-up-based layout step. Resolves
    * every active page to its FINAL image (same per-page rules as the grid
    * composer, via resolveFinalPageImage) and embeds each as its own
@@ -249,21 +283,11 @@ export class PdfExporter {
     onProgress?: (current: number, total: number) => void,
   ): Promise<{ bytes: Uint8Array; pageCount: number }> {
     const pdfDoc = await PDFDocument.create();
+    const sourceWidths = await readSourceWidthsPt(opts?.mergedPdfBytes);
     for (let i = 0; i < activePages.length; i++) {
       if (onProgress) onProgress(i + 1, activePages.length);
       const imageData = await this.resolveFinalPageImage(activePages[i], opts);
-      const canvas = memoryManager.acquireCanvas(imageData.width, imageData.height);
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        ctx.putImageData(imageData, 0, 0);
-        const jpegBlob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.9));
-        if (jpegBlob && jpegBlob.size > 0) {
-          const embedded = await pdfDoc.embedJpg(await jpegBlob.arrayBuffer());
-          const pdfPage = pdfDoc.addPage([canvas.width, canvas.height]);
-          pdfPage.drawImage(embedded, { x: 0, y: 0, width: canvas.width, height: canvas.height });
-        }
-      }
-      memoryManager.disposeCanvas(canvas);
+      await this.embedFinalPage(pdfDoc, imageData, sourceWidths[activePages[i].pageIndex], 0.9);
       await memoryManager.yieldToUI();
     }
     return { bytes: await pdfDoc.save(), pageCount: pdfDoc.getPageCount() };
@@ -368,23 +392,14 @@ export class PdfExporter {
   }
 
   public static async export1UpOptimizedPdf(processedPages: ProcessedPage[], quality: number = 0.85,
-    onProgress?: (current: number, total: number) => void): Promise<Blob> {
+    onProgress?: (current: number, total: number) => void,
+    /** Source page widths in points (index = pageIndex); omit for legacy 1 px = 1 pt. */
+    sourceWidthsPt?: number[]): Promise<Blob> {
     const pdfDoc = await PDFDocument.create();
     for (let i = 0; i < processedPages.length; i++) {
       if (onProgress) onProgress(i + 1, processedPages.length);
       const optData = await this.loadOptimizedImageData(processedPages[i]);
-      const canvas = memoryManager.acquireCanvas(optData.width, optData.height);
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        ctx.putImageData(optData, 0, 0);
-        const jpegBlob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', quality));
-        if (jpegBlob && jpegBlob.size > 0) {
-          const embedded = await pdfDoc.embedJpg(await jpegBlob.arrayBuffer());
-          const pdfPage = pdfDoc.addPage([canvas.width, canvas.height]);
-          pdfPage.drawImage(embedded, { x: 0, y: 0, width: canvas.width, height: canvas.height });
-        }
-      }
-      memoryManager.disposeCanvas(canvas);
+      await this.embedFinalPage(pdfDoc, optData, sourceWidthsPt?.[processedPages[i].pageIndex], quality);
       await memoryManager.yieldToUI();
     }
     return new Blob([(await pdfDoc.save()).buffer as ArrayBuffer], { type: 'application/pdf' });

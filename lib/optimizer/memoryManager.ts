@@ -1,3 +1,4 @@
+import { isBilevelRgba } from './bilevel';
 import { detectDeviceProfile } from '../pipeline/types';
 
 /**
@@ -139,12 +140,19 @@ class MemoryManager {
     this.releaseCanvas(canvas);
   }
 
+  /**
+   * Encode a page for the cache. A pure black/white page (the normal result
+   * of dark-print) is stored as lossless PNG: JPEG rings around every stroke
+   * and the export would then re-encode that damage a second time.
+   */
   public async imageDataToBlob(imageData: ImageData, quality: number = 0.85): Promise<Blob> {
+    const lossless = isBilevelRgba(imageData.data);
     const canvas = this.acquireCanvas(imageData.width, imageData.height);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (ctx) ctx.putImageData(imageData, 0, 0);
+    const type = lossless ? 'image/png' : 'image/jpeg';
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => { this.releaseCanvas(canvas); resolve(blob || new Blob([], { type: 'image/jpeg' })); }, 'image/jpeg', quality);
+      canvas.toBlob((blob) => { this.releaseCanvas(canvas); resolve(blob || new Blob([], { type })); }, type, lossless ? undefined : quality);
     });
   }
 
