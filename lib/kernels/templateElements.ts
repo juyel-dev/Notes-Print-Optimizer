@@ -600,13 +600,17 @@ function detectColoredMarkers(
       if (
         area >= Math.max(20, Math.floor(total * 0.00008)) &&
         relArea <= 0.012 &&
-        cw / width >= 0.006 &&
+        cw / width >= 0.018 &&
         cw / width <= 0.075 &&
-        ch / height >= 0.006 &&
+        ch / height >= 0.03 &&
         ch / height <= 0.11 &&
         aspect >= 0.68 &&
         aspect <= 1.45 &&
-        fillRatio >= 0.42 &&
+        /* A solid disc fills ~78% of its box (square: 100%). Handwritten
+           round letters (e, a, o) in the left notes column are blue/teal like
+           the badge fills but only ~40-60% solid and ~1% of the page wide;
+           the old 0.42 / 0.6% limits erased them ("V get tive"). */
+        fillRatio >= 0.66 &&
         glyphCoverage >= 0.005 &&
         glyphCoverage <= 0.45 &&
         interiorDarkRatio <= 0.26
