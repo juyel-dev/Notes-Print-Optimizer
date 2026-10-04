@@ -29,7 +29,7 @@ export function applyEngineRecipe(imageData: ImageData, pageIndex: number): Reci
   const params = {
     ...baseParams,
     preset,
-    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification),
+    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification, profile),
   };
   const result = processPage(imageData.data, imageData.width, imageData.height, params, {
     classification: profile.classification,
@@ -63,7 +63,7 @@ export function applyProductionAutoRecipe(
   const params = {
     ...autoTunedParams,
     preset,
-    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification),
+    invertMode: resolveEffectiveInvertMode(baseParams.invertMode, profile.classification, profile),
   };
   const result = processPageWithWhiteBoxHeal(
     imageData.data,

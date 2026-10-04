@@ -19,6 +19,7 @@ import { applyUnsharpMask, applyUnsharpMaskBW, setUnsharpHook, setUnsharpBwHook 
 import { ensureCC, getCCLabels, getCCQueue, getCCMinX, getCCMinY, getCCMaxX, getCCMaxY, getCCArea, getCCDrop } from './connectedComponents';
 import type { IWasmKernels } from '../wasm/types';
 import { normalizeTemplateElements } from './templateElements';
+import { repairDarkSourceRegions } from './regionRepair';
 import { hasDarkFrame } from './darkFrame';
 
 let wasmKernels: IWasmKernels | null = null;
@@ -110,6 +111,25 @@ function applyTonalAdjustments(
   }
 }
 
+/**
+ * Light-page pen ink (red ticks, magenta crosses, blue underlines) prints as
+ * pale grey on a mono printer, so the teacher's marks nearly vanish. Pull
+ * saturated mid/dark pixels to a dark neutral grey. Highlighter yellow/green
+ * (lum >= 170) is left alone so it still bleaches out with the paper tone.
+ */
+function darkenVividInk(data: Uint8ClampedArray): void {
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const mx = Math.max(r, g, b);
+    const mn = Math.min(r, g, b);
+    if (mx - mn <= 55) continue;
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (lum >= 170) continue;
+    const v = Math.round(lum * 0.55);
+    data[i] = v; data[i + 1] = v; data[i + 2] = v;
+  }
+}
+
 /** Whether the current page needs the full foreground-mask pipeline. */
 function shouldBuildForegroundMask(
   params: {
@@ -119,10 +139,14 @@ function shouldBuildForegroundMask(
   },
   isDark: boolean,
 ): boolean {
+  /* smartColorMapping alone must NOT force the hard B/W mask on a light page.
+   * The mask keeps only lum < 70 (+ vivid pens), but anti-aliased small print
+   * and Devanagari strokes sit well above 70, so question screenshots lost
+   * most of their text. Light pages stay tonal; vivid pen ink is darkened by
+   * darkenVividInk() instead (see the !shouldProcess branch). */
   return (
     params.invertMode !== 'none' ||
     isDark ||
-    params.smartColorMapping === true ||
     (params.binaizationThreshold ?? 0) > 0
   );
 }
@@ -233,6 +257,8 @@ export function processPage(
     contrastEnhancement?: number;
     denoiseAmount?: number;
     binaizationThreshold?: number;
+    /** User switch for keeping light boxes/panels readable (default ON). */
+    autoWhiteBoxFix?: boolean;
   },
   profile: { classification: string; darkBackgroundRatio: number; darkFrame?: boolean }
 ): KernelProcessResult {
@@ -325,6 +351,7 @@ export function processPage(
    * This fixes the old "invertMode=none => skip every useful control" behavior.
    */
   if (!shouldProcess) {
+    if (useLightColorMapping) darkenVividInk(dst);
     if (params.sharpenAmount > 0) {
       applyUnsharpMask(dst, dw, dh, params.sharpenAmount / 100);
     }
@@ -411,6 +438,9 @@ export function processPage(
    * the cleaned areas cannot be recreated as large fills. */
   if (isDark) {
     normalizeTemplateElements(dst, fm, dw, dh);
+    /* Region-aware repair: light panels and coloured title bands /
+     * number discs need a different rule than chalk-on-board (see module doc). */
+    if (params.autoWhiteBoxFix !== false) repairDarkSourceRegions(dst, fm, dw, dh);
   }
 
   /* Post-processing: dilation with numeric kernel size override */

@@ -56,9 +56,9 @@
       "0": {
         "width": 1728,
         "height": 972,
-        "sha256": "7117aff726328850f232acfd4daaeefbe78a971c9130fa303d86b3bc56e8b014",
+        "sha256": "9d64dc27b94fc8b4f8d877f75eed9799c3769f0e6ca8c6a6d23910eea22d9b58",
         "inkBeforePct": 97.08,
-        "inkAfterPct": 3.52,
+        "inkAfterPct": 1.17,
         "classification": "DARK_SLIDE"
       },
       "1": {
@@ -124,16 +124,15 @@
       "0": {
         "width": 1728,
         "height": 972,
-        "sha256": "54771882537fd13c776404ad82fd7ff525549632d469571a2373eea161c4e61b",
+        "sha256": "022881de2282b3acbf59a3d1a6b9d22a8981aa3660d78e4dc60e96af87fd7697",
         "inkBeforePct": 98.29,
-        "inkAfterPct": 3.95,
+        "inkAfterPct": 3.6,
         "classification": "DARK_SLIDE"
       },
       "1": {
         "width": 1728,
         "height": 972,
-        "sha256": "2ef6b64ef5b6c2997661e868f6e13bf06db33f035cae7b2be59a8d0f5cd5981c",
-        "altSha256": "1f15451b45aa9295cb51cf9c5ff18a80acd638ffd0d6e954c22e0d0afb8eb121",
+        "sha256": "1f15451b45aa9295cb51cf9c5ff18a80acd638ffd0d6e954c22e0d0afb8eb121",
         "inkBeforePct": 3.38,
         "inkAfterPct": 3.39,
         "classification": "LIGHT_SLIDE"
@@ -149,9 +148,9 @@
       "3": {
         "width": 1728,
         "height": 972,
-        "sha256": "21670a19c959ca6484c3dae150f217655ebd0067fd8bcfe4e6451443211a8436",
+        "sha256": "6592a168d1720a5ba3d3b24f24ee4167c00478b908a6c04f5580f923959fadd9",
         "inkBeforePct": 62.37,
-        "inkAfterPct": 39.95,
+        "inkAfterPct": 3.91,
         "classification": "DARK_SLIDE"
       }
     }

@@ -393,6 +393,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         invertMode: resolveEffectiveInvertMode(
           input.customParams?.invertMode ?? baseParams.invertMode,
           profile.classification,
+          profile,
         ),
       };
       pending = {
