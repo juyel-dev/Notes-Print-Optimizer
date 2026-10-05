@@ -116,14 +116,15 @@ function repairLightPanels(
   const gh = Math.ceil(h / f);
   const light = new Uint8Array(gw * gh);
 
+  /* Sample every 2nd pixel in x and y: 4x cheaper and plenty for a 50% test. */
   for (let gy = 0; gy < gh; gy++) {
     const y1 = Math.min(h, (gy + 1) * f);
     for (let gx = 0; gx < gw; gx++) {
       const x1 = Math.min(w, (gx + 1) * f);
       let n = 0, l = 0;
-      for (let y = gy * f; y < y1; y++) {
+      for (let y = gy * f; y < y1; y += 2) {
         let i = (y * w + gx * f) * 4;
-        for (let x = gx * f; x < x1; x++, i += 4) {
+        for (let x = gx * f; x < x1; x += 2, i += 8) {
           n++;
           if (lumOf(src[i], src[i + 1], src[i + 2]) >= LIGHT_LUM) l++;
         }
@@ -132,10 +133,15 @@ function repairLightPanels(
     }
   }
 
+  let lightCells = 0;
+  for (let k = 0; k < light.length; k++) lightCells += light[k];
+  if (lightCells < gw * gh * 0.025) return; // too little light area for any panel
+
   const closed = morph(morph(light, gw, gh, 2, true), gw, gh, 2, false);
   const comps = gridComponents(closed, gw, gh);
   const gridArea = gw * gh;
   const panelCell = new Uint8Array(gw * gh); // 1 = text panel
+  const panelComps: GridComponent[] = [];
 
   for (const c of comps) {
     const bw = c.maxX - c.minX + 1;
@@ -159,20 +165,33 @@ function repairLightPanels(
        classifier rather than forcing text rules on it. */
     if (tot > 0 && mid / tot >= 0.45) continue;
     for (const cell of c.cells) panelCell[cell] = 1;
+    panelComps.push(c);
     out.panels++;
   }
 
-  /* Panel text: ink = dark or vivid-dark pixels. */
-  for (let y = 0; y < h; y++) {
-    const gy = (y / f) | 0;
-    for (let x = 0; x < w; x++) {
-      const k = panelCell[gy * gw + ((x / f) | 0)];
-      if (k !== 1) continue;
-      const i = (y * w + x) * 4;
-      const r = src[i], g = src[i + 1], b = src[i + 2];
-      const l = lumOf(r, g, b);
-      const sat = Math.max(r, g, b) - Math.min(r, g, b);
-      fm[y * w + x] = l < 150 || (sat >= 70 && l < 200) ? 1 : 0;
+  if (out.panels === 0) return; // pure chalkboard page: nothing to repair
+
+  /* Panel text: ink = dark or vivid-dark pixels. Only walk panel bounding
+     boxes, with a per-column cell lookup instead of a division per pixel. */
+  const xCell = new Int32Array(w);
+  for (let x = 0; x < w; x++) xCell[x] = (x / f) | 0;
+  for (const c of panelComps) {
+    const x0 = c.minX * f;
+    const x1 = Math.min(w, (c.maxX + 1) * f);
+    const y0 = c.minY * f;
+    const y1 = Math.min(h, (c.maxY + 1) * f);
+    for (let y = y0; y < y1; y++) {
+      const rowCells = ((y / f) | 0) * gw;
+      for (let x = x0; x < x1; x++) {
+        if (panelCell[rowCells + xCell[x]] !== 1) continue;
+        const i = (y * w + x) * 4;
+        const r = src[i], g = src[i + 1], b = src[i + 2];
+        /* Fast path: clean paper is the vast majority of a panel. */
+        if (r > 200 && g > 200 && b > 200) { fm[y * w + x] = 0; continue; }
+        const l = lumOf(r, g, b);
+        const sat = Math.max(r, g, b) - Math.min(r, g, b);
+        fm[y * w + x] = l < 150 || (sat >= 70 && l < 200) ? 1 : 0;
+      }
     }
   }
 }
@@ -181,6 +200,11 @@ function repairLightPanels(
  * Step 2: hollow out large flat colour fills (title bands, number discs).
  * The fill colour is dropped, the outline is kept, and whatever contrasts
  * with the fill (the white title text, the number) stays as ink.
+ *
+ * Works on a coarse grid of "solid" 12x12 blocks (a flat fill contains whole
+ * solid blocks; strokes and text never do), so a page with no fill costs one
+ * cheap scan and a page with fills only touches those bounding boxes. There is
+ * no full-page labelling or large temporary allocation.
  */
 function hollowFlatFills(
   src: Uint8ClampedArray,
@@ -189,76 +213,121 @@ function hollowFlatFills(
   h: number,
   out: RegionRepairResult,
 ): void {
-  const total = w * h;
-  const label = new Int32Array(total);
-  const queue = new Int32Array(total);
-  const minArea = Math.max(300, Math.floor(total * 0.0015));
-  let next = 1;
-
-  for (let s = 0; s < total; s++) {
-    if (fm[s] !== 1 || label[s] !== 0) continue;
-    const id = next++;
-    let head = 0, tail = 0;
-    queue[tail++] = s;
-    label[s] = id;
-    let x0 = w, y0 = h, x1 = -1, y1 = -1;
-    while (head < tail) {
-      const c = queue[head++];
-      const cx = c % w;
-      const cy = (c / w) | 0;
-      if (cx < x0) x0 = cx;
-      if (cx > x1) x1 = cx;
-      if (cy < y0) y0 = cy;
-      if (cy > y1) y1 = cy;
-      if (cx > 0 && fm[c - 1] === 1 && label[c - 1] === 0) { label[c - 1] = id; queue[tail++] = c - 1; }
-      if (cx < w - 1 && fm[c + 1] === 1 && label[c + 1] === 0) { label[c + 1] = id; queue[tail++] = c + 1; }
-      if (cy > 0 && fm[c - w] === 1 && label[c - w] === 0) { label[c - w] = id; queue[tail++] = c - w; }
-      if (cy < h - 1 && fm[c + w] === 1 && label[c + w] === 0) { label[c + w] = id; queue[tail++] = c + w; }
+  const SB = 6;
+  const sbw = (w / SB) | 0;
+  const sbh = (h / SB) | 0;
+  if (sbw < 4 || sbh < 4) return;
+  const solidGrid = new Uint8Array(sbw * sbh);
+  let solid = 0;
+  for (let by = 0; by < sbh; by++) {
+    for (let bx = 0; bx < sbw; bx++) {
+      let all = true;
+      for (let y = by * SB; y < (by + 1) * SB && all; y += 2) {
+        const row = y * w + bx * SB;
+        for (let x = 0; x < SB; x += 2) if (fm[row + x] !== 1) { all = false; break; }
+      }
+      if (all) { solidGrid[by * sbw + bx] = 1; solid++; }
     }
-    const area = tail;
-    const cw = x1 - x0 + 1;
-    const ch = y1 - y0 + 1;
-    if (area < minArea || Math.min(cw, ch) < 18) continue;
-    if (area / (cw * ch) < 0.5) continue;
-    /* Dominant colour (4 bits/channel histogram, sampled). */
+  }
+  if (solid < 40) return;
+
+  let visited: Uint8Array | null = null; // allocated only if a candidate fill exists
+  let queueBuf: Int32Array | null = null;
+  const minCells = Math.max(12, Math.floor((w * h * 0.001) / (SB * SB)));
+  for (const c of gridComponents(solidGrid, sbw, sbh)) {
+    const bw = c.maxX - c.minX + 1;
+    const bh = c.maxY - c.minY + 1;
+    if (c.cells.length < minCells || Math.min(bw, bh) < 2) continue;
+    if (c.cells.length / (bw * bh) < 0.45) continue;
+
+    /* Dominant colour over the solid cells (4 bits/channel histogram). */
     const bins = new Map<number, number>();
     let sampled = 0;
-    for (let k = 0; k < tail; k += 5) {
-      const i = queue[k] * 4;
-      const key = ((src[i] >> 4) << 8) | ((src[i + 1] >> 4) << 4) | (src[i + 2] >> 4);
-      bins.set(key, (bins.get(key) ?? 0) + 1);
-      sampled++;
+    for (const cell of c.cells) {
+      const x0 = (cell % sbw) * SB;
+      const y0 = ((cell / sbw) | 0) * SB;
+      for (let y = y0; y < y0 + SB; y += 2) {
+        for (let x = x0; x < x0 + SB; x += 2) {
+          const i = (y * w + x) * 4;
+          const key = ((src[i] >> 4) << 8) | ((src[i + 1] >> 4) << 4) | (src[i + 2] >> 4);
+          bins.set(key, (bins.get(key) ?? 0) + 1);
+          sampled++;
+        }
+      }
     }
     let bestKey = 0, bestCount = 0;
     for (const [k, v] of bins) if (v > bestCount) { bestCount = v; bestKey = k; }
     const fr = ((bestKey >> 8) & 15) * 16 + 8;
     const fg = ((bestKey >> 4) & 15) * 16 + 8;
     const fb = (bestKey & 15) * 16 + 8;
-    const fillSat = Math.max(fr, fg, fb) - Math.min(fr, fg, fb);
     /* Only COLOURED flat fills: a white/grey fill is body text or a bold title
        and must stay solid. */
-    if (fillSat < 40) continue;
-    let near = 0;
-    for (let k = 0; k < tail; k += 5) {
-      const i = queue[k] * 4;
-      const d = Math.abs(src[i] - fr) + Math.abs(src[i + 1] - fg) + Math.abs(src[i + 2] - fb);
-      if (d <= 90) near++;
-    }
-    if (near / Math.max(1, sampled) < 0.55) continue;
+    if (Math.max(fr, fg, fb) - Math.min(fr, fg, fb) < 40) continue;
+    if (bestCount / Math.max(1, sampled) < 0.55) continue; // a photo or gradient, not a flat fill
 
-    /* Drop fill pixels except a 2px rim, keep contrasting pixels (text). */
-    for (let k = 0; k < tail; k++) {
-      const c = queue[k];
-      const i = c * 4;
-      const d = Math.abs(src[i] - fr) + Math.abs(src[i + 1] - fg) + Math.abs(src[i + 2] - fb);
-      if (d > 130) continue;
-      const cx = c % w;
-      const cy = (c / w) | 0;
-      const rim =
-        cx < 2 || cy < 2 || cx >= w - 2 || cy >= h - 2 ||
-        label[c - 2] !== id || label[c + 2] !== id ||
-        label[c - 2 * w] !== id || label[c + 2 * w] !== id;
-      if (!rim) fm[c] = 0;
+    /* A title band / number disc is (nearly) its own connected component. A
+       filled shape with long strokes running into it is a diagram element whose
+       fill carries meaning, so leave it solid. Bounded flood fill from the
+       solid area: abort as soon as the component outgrows the fill. */
+    {
+      const solidW = bw * SB;
+      const solidH = bh * SB;
+      const solidArea = c.cells.length * SB * SB;
+      const maxArea = solidArea * 3 + 4000;
+      const maxW = solidW + 4 * SB;
+      const maxH = solidH + 4 * SB;
+      visited ??= new Uint8Array(w * h);
+      const seedCell = c.cells[(c.cells.length / 2) | 0];
+      const seed = (((seedCell / sbw) | 0) * SB + (SB >> 1)) * w + (seedCell % sbw) * SB + (SB >> 1);
+      const qLen = Math.min(w * h, maxArea + 8);
+      if (!queueBuf || queueBuf.length < qLen) queueBuf = new Int32Array(qLen);
+      const q = queueBuf;
+      let head = 0, tail = 0, ok = true;
+      let cx0 = w, cx1 = -1, cy0 = h, cy1 = -1;
+      q[tail++] = seed;
+      visited[seed] = 1;
+      while (head < tail) {
+        const k = q[head++];
+        const x = k % w;
+        const y = (k / w) | 0;
+        if (x < cx0) cx0 = x;
+        if (x > cx1) cx1 = x;
+        if (y < cy0) cy0 = y;
+        if (y > cy1) cy1 = y;
+        if (cx1 - cx0 + 1 > maxW || cy1 - cy0 + 1 > maxH) { ok = false; break; }
+        /* Inlined 4-neighbour push (no per-pixel closures: this loop is hot). */
+        if (x > 0 && fm[k - 1] === 1 && visited[k - 1] === 0) { visited[k - 1] = 1; q[tail++] = k - 1; }
+        if (x < w - 1 && fm[k + 1] === 1 && visited[k + 1] === 0) { visited[k + 1] = 1; q[tail++] = k + 1; }
+        if (y > 0 && fm[k - w] === 1 && visited[k - w] === 0) { visited[k - w] = 1; q[tail++] = k - w; }
+        if (y < h - 1 && fm[k + w] === 1 && visited[k + w] === 0) { visited[k + w] = 1; q[tail++] = k + w; }
+        if (tail >= q.length - 4) { ok = false; break; }
+      }
+      for (let t = 0; t < tail; t++) visited[q[t]] = 0; // reset for the next candidate
+      if (!ok) continue;
+    }
+
+    /* Refine inside the (slightly grown) bounding box: drop fill-coloured ink
+       except a 2px rim, keep contrasting pixels (the title / the number). */
+    const x0 = Math.max(0, c.minX * SB - SB);
+    const x1 = Math.min(w, (c.maxX + 1) * SB + SB);
+    const y0 = Math.max(0, c.minY * SB - SB);
+    const y1 = Math.min(h, (c.maxY + 1) * SB + SB);
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        const k = y * w + x;
+        if (fm[k] !== 1) continue;
+        const i = k * 4;
+        if (Math.abs(src[i] - fr) + Math.abs(src[i + 1] - fg) + Math.abs(src[i + 2] - fb) > 130) continue;
+        const rim =
+          x < 2 || y < 2 || x >= w - 2 || y >= h - 2 ||
+          fm[k - 2] === 0 || fm[k + 2] === 0 || fm[k - 2 * w] === 0 || fm[k + 2 * w] === 0;
+        /* 2 = "cleared": still counts as part of the fill for neighbours'
+           rim tests, so the scan order cannot turn the interior into rim. */
+        if (!rim) fm[k] = 2;
+      }
+    }
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) if (fm[y * w + x] === 2) fm[y * w + x] = 0;
     }
     out.fills++;
   }
