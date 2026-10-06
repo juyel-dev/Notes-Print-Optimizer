@@ -1,4 +1,3 @@
-import { isBilevelRgba } from './bilevel';
 import { detectDeviceProfile } from '../pipeline/types';
 
 /**
@@ -141,18 +140,17 @@ class MemoryManager {
   }
 
   /**
-   * Encode a page for the cache. A pure black/white page (the normal result
-   * of dark-print) is stored as lossless PNG: JPEG rings around every stroke
-   * and the export would then re-encode that damage a second time.
+   * Encode a page for the cache. Deliberately JPEG: it is ~10x faster to encode
+   * than PNG in the browser, and this runs on the main thread once per page.
+   * (A lossless PNG here cost ~120 ms/page and made 100-page runs visibly
+   * slower and less smooth.)
    */
   public async imageDataToBlob(imageData: ImageData, quality: number = 0.85): Promise<Blob> {
-    const lossless = isBilevelRgba(imageData.data);
     const canvas = this.acquireCanvas(imageData.width, imageData.height);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (ctx) ctx.putImageData(imageData, 0, 0);
-    const type = lossless ? 'image/png' : 'image/jpeg';
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => { this.releaseCanvas(canvas); resolve(blob || new Blob([], { type })); }, type, lossless ? undefined : quality);
+      canvas.toBlob((blob) => { this.releaseCanvas(canvas); resolve(blob || new Blob([], { type: 'image/jpeg' })); }, 'image/jpeg', quality);
     });
   }
 
