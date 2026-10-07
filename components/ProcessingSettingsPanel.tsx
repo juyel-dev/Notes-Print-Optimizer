@@ -95,7 +95,7 @@ const RotaryKnob: React.FC<{
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       className={`relative w-8 h-8 rounded-full border flex items-center justify-center touch-none select-none ${
-        disabled ? 'opacity-40 cursor-not-allowed bg-slate-800 border-slate-700' : 'bg-slate-800 border-slate-600 cursor-grab active:cursor-grabbing hover:border-slate-500'
+        disabled ? 'opacity-40 cursor-not-allowed bg-surface-2 border-elevated' : 'bg-surface-2 border-elevated cursor-grab active:cursor-grabbing hover:border-ink-faint'
       }`}
       style={{ touchAction: 'none' }}
       aria-label="Sharpen knob"
@@ -105,22 +105,21 @@ const RotaryKnob: React.FC<{
       aria-valuenow={value}
     >
       <svg width="32" height="32" viewBox="0 0 32 32" className="absolute inset-0">
-        <circle cx="16" cy="16" r="12" fill="none" stroke="#334155" strokeWidth="2.5" />
+        <circle cx="16" cy="16" r="12" fill="none" className="stroke-elevated" strokeWidth="2.5" />
         <circle
           cx="16"
           cy="16"
           r="12"
           fill="none"
-          stroke="#5B7FFF"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeDasharray={`${pct * 75.4} 75.4`}
           transform="rotate(-135 16 16)"
-          className="transition-all duration-100"
+          className="stroke-primary transition-all duration-100"
         />
       </svg>
       <div
-        className="absolute w-1 h-3 bg-[#8FA6FF] rounded-full"
+        className="absolute w-1 h-3 bg-primary-soft rounded-full"
         style={{
           left: '50%',
           top: '50%',
@@ -128,7 +127,7 @@ const RotaryKnob: React.FC<{
           transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-7px)`,
         }}
       />
-      <div className="w-2 h-2 rounded-full bg-slate-200" />
+      <div className="w-2 h-2 rounded-full bg-ink" />
     </div>
   );
 };
@@ -196,45 +195,45 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
   const anyToggleOn = Object.values(toggles).some(Boolean);
 
   return (
-    <div className="rounded-2xl border border-slate-700/60 bg-slate-800/50 shadow-xl overflow-hidden backdrop-blur-sm">
+    <div className="rounded-2xl border border-elevated/60 bg-surface-2/50 shadow-xl overflow-hidden backdrop-blur-sm">
       {/* Header — py-2.5 px-4 compact */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-slate-800/60 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-surface-2/60 transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 border border-accent/20 text-accent-soft">
             <SlidersHorizontal className="h-3.5 w-3.5" />
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-100">Processing Settings</span>
-              <span className="hidden sm:inline text-[11px] text-slate-400">Fine-tune • preview single page</span>
+              <span className="text-xs font-bold text-ink">Processing Settings</span>
+              <span className="hidden sm:inline text-[11px] text-ink-muted">Fine-tune • preview single page</span>
             </div>
-            <span className="sm:hidden block text-[11px] text-slate-400 leading-tight">Fine-tune • preview single page</span>
+            <span className="sm:hidden block text-[11px] text-ink-muted leading-tight">Fine-tune • preview single page</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {isDirty && (
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-500/20">
+            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-soft border border-accent/20">
               Modified
             </span>
           )}
-          {isOpen ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+          {isOpen ? <ChevronUp className="h-4 w-4 text-ink-muted" /> : <ChevronDown className="h-4 w-4 text-ink-muted" />}
         </div>
       </button>
 
       {isOpen && (
-        <div className="border-t border-slate-700/60 px-4 py-4 space-y-4 animate-in fade-in duration-150">
+        <div className="border-t border-elevated/60 px-4 py-4 space-y-4 animate-in fade-in duration-150">
           {/* Preset Base */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Preset Base</label>
+            <label className="text-[10px] font-bold tracking-wider text-ink-muted uppercase">Preset Base</label>
             <select
               value={params.preset}
               onChange={(e) => handlePresetChange(e.target.value as ProcessingParameters['preset'])}
-              className="w-full h-9 px-3 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#5B7FFF] focus:border-[#5B7FFF]"
+              className="w-full h-9 px-3 bg-surface border border-elevated rounded-lg text-sm text-ink focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
             >
               {Object.entries(PRESET_LABELS).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
@@ -243,16 +242,16 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
           </div>
 
           {/* Stroke / Dilation — p-3, conditional accordion */}
-          <div className={`rounded-xl border p-3 transition-colors ${toggles.strokeDilation ? 'bg-slate-900/60 border-[#5B7FFF]/30' : 'bg-slate-900/30 border-slate-700/60'}`}>
+          <div className={`rounded-xl border p-3 transition-colors ${toggles.strokeDilation ? 'bg-surface/60 border-primary/30' : 'bg-surface/30 border-elevated/60'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className={toggles.strokeDilation ? 'text-[#8FA6FF]' : 'text-slate-500'}><PenLine className="h-3.5 w-3.5" /></span>
-                <span className={`text-xs font-semibold ${toggles.strokeDilation ? 'text-slate-100' : 'text-slate-400'}`}>Stroke / Dilation</span>
+                <span className={toggles.strokeDilation ? 'text-primary-soft' : 'text-ink-faint'}><PenLine className="h-3.5 w-3.5" /></span>
+                <span className={`text-xs font-semibold ${toggles.strokeDilation ? 'text-ink' : 'text-ink-muted'}`}>Stroke / Dilation</span>
                 <InfoTooltip title="Stroke / Dilation" content="Makes text strokes thicker or thinner. Higher = bolder. Leave OFF to keep original." position="top" />
               </div>
               <div className="flex items-center gap-2">
                 {toggles.strokeDilation && (
-                  <span className="rounded-md bg-[#5B7FFF]/15 px-1.5 py-0.5 text-[11px] font-bold text-[#A9B8FF] border border-[#5B7FFF]/20 tabular-nums">{params.dilationKernelSize}px</span>
+                  <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[11px] font-bold text-primary-soft border border-primary/20 tabular-nums">{params.dilationKernelSize}px</span>
                 )}
                 <ToggleSwitch enabled={toggles.strokeDilation} onChange={(on) => handleToggleChange('strokeDilation', on)} label="Stroke / Dilation" />
               </div>
@@ -260,7 +259,7 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
             {toggles.strokeDilation && (
               <div className="mt-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] text-slate-500 w-6">1px</span>
+                  <span className="text-[10px] text-ink-faint w-6">1px</span>
                   <input
                     type="range"
                     min={1}
@@ -268,20 +267,20 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
                     step={1}
                     value={params.dilationKernelSize ?? 3}
                     onChange={(e) => handleSliderChange('dilationKernelSize', Number(e.target.value))}
-                    className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#5B7FFF]"
+                    className="flex-1 h-1 bg-elevated rounded-lg appearance-none cursor-pointer accent-primary"
                   />
-                  <span className="text-[10px] text-slate-500 w-6 text-right">7px</span>
+                  <span className="text-[10px] text-ink-faint w-6 text-right">7px</span>
                 </div>
               </div>
             )}
           </div>
 
           {/* Sharpen — rotary knob inline */}
-          <div className={`rounded-xl border p-3 transition-colors ${toggles.sharpen ? 'bg-slate-900/60 border-[#5B7FFF]/30' : 'bg-slate-900/30 border-slate-700/60'}`}>
+          <div className={`rounded-xl border p-3 transition-colors ${toggles.sharpen ? 'bg-surface/60 border-primary/30' : 'bg-surface/30 border-elevated/60'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className={toggles.sharpen ? 'text-[#8FA6FF]' : 'text-slate-500'}><Sparkles className="h-3.5 w-3.5" /></span>
-                <span className={`text-xs font-semibold ${toggles.sharpen ? 'text-slate-100' : 'text-slate-400'}`}>Sharpen</span>
+                <span className={toggles.sharpen ? 'text-primary-soft' : 'text-ink-faint'}><Sparkles className="h-3.5 w-3.5" /></span>
+                <span className={`text-xs font-semibold ${toggles.sharpen ? 'text-ink' : 'text-ink-muted'}`}>Sharpen</span>
                 <InfoTooltip title="Sharpen" content="Makes edges crisper. Higher = sharper." position="top" />
               </div>
               <div className="flex items-center gap-2">
@@ -289,7 +288,7 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
                   <button
                     type="button"
                     onClick={() => setSharpenInputOpen(!sharpenInputOpen)}
-                    className="rounded-md bg-[#5B7FFF]/15 px-1.5 py-0.5 text-[11px] font-bold text-[#A9B8FF] border border-[#5B7FFF]/20 tabular-nums hover:bg-[#5B7FFF]/25"
+                    className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[11px] font-bold text-primary-soft border border-primary/20 tabular-nums hover:bg-primary/25"
                   >
                     {params.sharpenAmount}%
                   </button>
@@ -299,7 +298,7 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
             </div>
             {toggles.sharpen && (
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Intensity</span>
+                <span className="text-[11px] text-ink-muted">Intensity</span>
                 <div className="flex items-center gap-2">
                   <RotaryKnob value={params.sharpenAmount} min={0} max={100} onChange={(v) => handleSliderChange('sharpenAmount', v)} />
                   {sharpenInputOpen ? (
@@ -322,13 +321,13 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
                           setSharpenInputOpen(false);
                         }
                       }}
-                      className="w-14 h-7 px-2 bg-slate-900 border border-slate-700 rounded-md text-xs text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-[#5B7FFF]"
+                      className="w-14 h-7 px-2 bg-surface border border-elevated rounded-md text-xs text-ink text-center focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   ) : (
                     <button
                       type="button"
                       onClick={() => { setSharpenInputVal(String(params.sharpenAmount)); setSharpenInputOpen(true); }}
-                      className="rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-xs font-mono text-slate-300 hover:bg-slate-700"
+                      className="rounded-md bg-surface-2 border border-elevated px-2 py-1 text-xs font-mono text-ink hover:bg-elevated"
                     >
                       {params.sharpenAmount}%
                     </button>
@@ -339,22 +338,22 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
           </div>
 
           {/* Auto-fix white boxes */}
-          <div className={`rounded-xl border p-3 flex items-center justify-between transition-colors ${toggles.autoWhiteBoxFix ? 'bg-slate-900/60 border-[#34C77B]/20' : 'bg-slate-900/30 border-slate-700/60'}`}>
+          <div className={`rounded-xl border p-3 flex items-center justify-between transition-colors ${toggles.autoWhiteBoxFix ? 'bg-surface/60 border-success/20' : 'bg-surface/30 border-elevated/60'}`}>
             <div className="flex items-center gap-2">
-              <span className={toggles.autoWhiteBoxFix ? 'text-[#6EE7A8]' : 'text-slate-500'}><Wand2 className="h-3.5 w-3.5" /></span>
-              <span className={`text-xs font-semibold ${toggles.autoWhiteBoxFix ? 'text-slate-100' : 'text-slate-400'}`}>Auto-fix white boxes</span>
+              <span className={toggles.autoWhiteBoxFix ? 'text-success-soft' : 'text-ink-faint'}><Wand2 className="h-3.5 w-3.5" /></span>
+              <span className={`text-xs font-semibold ${toggles.autoWhiteBoxFix ? 'text-ink' : 'text-ink-muted'}`}>Auto-fix white boxes</span>
               <InfoTooltip title="Auto-fix white boxes" content="Big white notes on dark pages stay as original — not black." position="top" />
             </div>
             <ToggleSwitch enabled={toggles.autoWhiteBoxFix} onChange={(on) => handleToggleChange('autoWhiteBoxFix', on)} label="Auto-fix white boxes" />
           </div>
 
-          <p className="text-center text-xs text-slate-400 italic mb-3">Preview updates only selected page</p>
+          <p className="text-center text-xs text-ink-muted italic mb-3">Preview updates only selected page</p>
 
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleReset}
-              className="h-9 px-4 rounded-lg border border-slate-700 bg-transparent text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors flex items-center gap-1.5"
+              className="h-9 px-4 rounded-lg border border-elevated bg-transparent text-xs font-medium text-ink hover:bg-elevated/60 hover:text-ink transition-colors flex items-center gap-1.5"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Reset
             </button>
@@ -364,8 +363,8 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
               disabled={isProcessing || isPreviewProcessing}
               className={`h-9 px-5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 !isProcessing && !isPreviewProcessing
-                  ? 'bg-[#3654D9] hover:bg-[#5B7FFF] text-white shadow-sm shadow-[#5B7FFF]/20'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  ? 'bg-primary-strong hover:bg-primary text-white shadow-sm shadow-primary/20'
+                  : 'bg-surface-2 text-ink-faint cursor-not-allowed border border-elevated'
               }`}
             >
               {isProcessing ? <><span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Re-processing...</> : isPreviewProcessing ? <><RefreshCw className="h-3 w-3 animate-spin" /> Preview...</> : <><RefreshCw className="h-3 w-3" /> Re-process All</>}
@@ -373,7 +372,7 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
           </div>
 
           {!isDirty && !anyToggleOn && (
-            <p className="text-center text-xs text-slate-500">Enable a toggle to override preset, then Re-process All</p>
+            <p className="text-center text-xs text-ink-faint">Enable a toggle to override preset, then Re-process All</p>
           )}
         </div>
       )}

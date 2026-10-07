@@ -49,6 +49,12 @@ const ActionBar: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
+/** 1.4 MB / 820 KB — stable, human-readable sizes for the summary tiles. */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
 export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handlers, onToolModeChange, enhanceHandoffActive, onBackToEnhance }) => {
   const {
     currentPhase,
@@ -200,9 +206,22 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
           <h1 className="truncate text-[15px] font-bold text-ink">Dark Notes → Print</h1>
           <p className="truncate text-[11px] text-ink-faint">Auto-whiten · N-up · Print-ready · 100% on-device</p>
         </div>
-        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
-          {stepLabel}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
+            {stepLabel}
+          </span>
+          <ol className="flex gap-1" aria-label={`Step ${currentPhase} of 4`}>
+            {[1, 2, 3, 4].map((n) => (
+              <li
+                key={n}
+                aria-current={n === currentPhase ? 'step' : undefined}
+                className={`h-1 rounded-full transition-[width,background-color] duration-300 ease-out ${
+                  n === currentPhase ? 'w-6 bg-accent' : n < currentPhase ? 'w-3 bg-primary' : 'w-3 bg-elevated'
+                }`}
+              />
+            ))}
+          </ol>
+        </div>
       </header>
 
       {/* PHASE 1: UPLOAD & MERGE */}
@@ -281,7 +300,8 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                 <div className="min-w-0">
                   <h3 className="text-sm font-bold text-success-soft">Dark Backgrounds Stripped</h3>
                   <p className="truncate text-xs text-ink-muted">
-                    Processed {processedPages.length} pages · ~82% ink savings.
+                    Processed {processedPages.length} pages
+                    {inkSavedPct !== null ? ` · ~${inkSavedPct}% less ink` : ''}
                   </p>
                 </div>
               </div>
@@ -408,13 +428,28 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                   Your notes have been stripped of dark backgrounds, sharpened, and formatted for paper-saving printouts.
                 </p>
 
-                {inkSavedPct !== null && (
-                  <div className="mt-2 flex items-center gap-2 text-xs font-bold">
-                    <span className="rounded-lg border border-primary/30 bg-primary/20 px-3 py-1 text-primary-soft">
-                      Estimated ink reduction: ~{inkSavedPct}%
-                    </span>
-                  </div>
-                )}
+                <dl className="mt-2 grid w-full grid-cols-2 gap-2 text-left sm:grid-cols-4">
+                  {[
+                    { label: 'Pages', value: String(LayoutService.getActivePages(processedPages, excludedPages).length) },
+                    { label: 'Sheets', value: String(layoutResult.result.sheets) },
+                    { label: 'File size', value: formatBytes(layoutResult.result.blob.size) },
+                    ...(inkSavedPct !== null ? [{ label: 'Ink saved', value: `~${inkSavedPct}%`, accent: true }] : []),
+                  ].map((t) => (
+                    <div
+                      key={t.label}
+                      className={`rounded-xl border px-3 py-2 ${
+                        'accent' in t && t.accent
+                          ? 'border-primary/30 bg-primary-faint/40'
+                          : 'border-surface-2 bg-surface-2/50'
+                      }`}
+                    >
+                      <dt className="text-2xs font-bold uppercase tracking-wider text-ink-muted">{t.label}</dt>
+                      <dd className={`mt-0.5 text-base font-bold tabular-nums ${'accent' in t && t.accent ? 'text-primary-soft' : 'text-ink'}`}>
+                        {t.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
 
                 <div className="mt-1 w-full max-w-xs">
                   <FileNameField
