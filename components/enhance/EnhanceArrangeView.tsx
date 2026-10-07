@@ -102,8 +102,8 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
       </div>
 
       {state.error && (
-        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-800/70 bg-red-950/60 px-4 py-3 text-xs text-red-200">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-xs text-danger-soft">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
           <span>{state.error}</span>
         </div>
       )}

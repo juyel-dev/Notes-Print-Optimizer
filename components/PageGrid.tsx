@@ -89,7 +89,7 @@ const LazyPageCard: React.FC<{
   return (
     <div
       ref={cardRef}
-      className={`group relative flex flex-col rounded-xl border transition-all overflow-hidden ${
+      className={`group relative flex flex-col overflow-hidden rounded-xl border transition-[border-color,background-color,box-shadow,opacity] duration-200 ${
         isExcluded
           ? 'border-surface-2 bg-surface/40 opacity-30'
           : isSelected
@@ -160,14 +160,16 @@ const LazyPageCard: React.FC<{
           <img
             src={isKeptOriginal && originalThumb ? originalThumb : page.thumbnailDataUrl}
             alt={`Slide ${idx + 1}`}
-            className="max-h-full max-w-full object-contain rounded-sm shadow-sm"
+            decoding="async"
+            draggable={false}
+            className="animate-enter max-h-full max-w-full rounded-sm object-contain shadow-sm"
           />
         ) : (
           <div className="h-full w-full bg-surface-2/50 animate-pulse rounded-md" />
         )}
 
         {/* Hover overlay — subtle */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-bg/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 text-ink backdrop-blur-[1px]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-bg/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 text-ink">
           <Eye className="h-3.5 w-3.5 text-primary-soft" />
           <span className="text-[10px] font-semibold tracking-wide">View</span>
         </div>
@@ -254,7 +256,7 @@ export const PageGrid: React.FC<PageGridProps> = ({
               </button>
             </div>
           )}
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary-soft border border-primary/30">
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold tabular-nums text-primary-soft border border-primary/30">
             {activeCount} of {pages.length} Pages
           </span>
           {keptCount > 0 && (

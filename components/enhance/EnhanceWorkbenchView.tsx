@@ -248,7 +248,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
       )}
 
       {state.error && (
-        <div role="alert" className="rounded-xl border border-red-800/70 bg-red-950/60 px-4 py-3 text-xs text-red-200">
+        <div role="alert" className="rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-xs text-danger-soft">
           {state.error}
         </div>
       )}

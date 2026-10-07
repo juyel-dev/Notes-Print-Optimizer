@@ -147,9 +147,9 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
       {uploadError && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-red-800/70 bg-red-950/60 px-4 py-3 text-xs text-red-200"
+          className="flex items-start gap-2 rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-xs text-danger-soft"
         >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <span>{uploadError}</span>
         </div>
       )}
