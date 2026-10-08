@@ -81,3 +81,18 @@ jobs:
 
       - name: Smoke Tests (Playwright)
         run: npx playwright test --config=playwright.config.ts --project=chromium --grep-invert "worker pool runtime"
+
+      # Non-blocking: screenshots of the main screens (light/dark x desktop/
+      # mobile) so a PR's UI can be reviewed without running it locally.
+      - name: Visual capture (non-blocking)
+        continue-on-error: true
+        run: npx playwright test --config=playwright.visual.config.ts
+
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: visual-output/**/*.png
+          if-no-files-found: ignore
+          retention-days: 14

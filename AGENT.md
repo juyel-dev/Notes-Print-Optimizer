@@ -36,8 +36,8 @@ Label map lives in `components/tools/ToolsBox.tsx:108` — keep synced. Duplicat
 
 ## 4. Branch & gate
 
-- **Prod:** `juyel-dev/Notes-Print-Optimizer:main` (protected, `ci` required, strict)
-- **Dev:** `juyel-dev-s-org/Notes-Print-Optimizer-forked:main` — all work here.
+- **Repo:** `juyel-dev/Notes-Print-Optimizer` (single repo — there is **no fork**). `main` is production; `ci` is required.
+- **Workflow:** feature branch → push → PR to `main` → wait for `ci` green → squash merge. Never push to `main` directly.
 - **Gate before ANY push:**
 
 ```
