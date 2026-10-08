@@ -96,3 +96,69 @@ jobs:
           path: visual-output/**/*.png
           if-no-files-found: ignore
           retention-days: 14
+
+  # Shows the screenshots inline in the PR (no zip download needed).
+  # Isolated from `ci`: it never runs PR code, it only copies PNGs, and it only
+  # runs for same-repo PRs (fork PRs get a read-only token anyway).
+  publish-screenshots:
+    needs: ci
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Download screenshots
+        id: dl
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-screenshots
+          path: shots
+
+      - name: Publish to ui-screenshots branch and comment on the PR
+        if: steps.dl.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          rm -rf site
+          if git ls-remote --exit-code --heads "$URL" ui-screenshots >/dev/null 2>&1; then
+            git clone --depth 1 --branch ui-screenshots "$URL" site
+          else
+            mkdir site && git -C site init -q -b ui-screenshots
+          fi
+          cd site
+          rm -rf "pr-${PR}" && mkdir -p "pr-${PR}"
+          cp -r ../shots/. "pr-${PR}/"
+          # keep only the 12 newest PR folders so the branch stays small
+          ls -d pr-* | sort -t- -k2 -n | head -n -12 | xargs -r rm -rf
+          git checkout -q --orphan fresh && git add -A
+          git commit -q -m "ui screenshots for PR #${PR}"
+          git push -q --force "$URL" fresh:ui-screenshots
+          SHA=$(git rev-parse HEAD)
+          BASE="https://raw.githubusercontent.com/${REPO}/${SHA}/pr-${PR}"
+          {
+            echo "<!-- ui-screenshots -->"
+            echo "### UI screenshots (commit \`${GITHUB_SHA:0:7}\`)"
+            echo "Captured by CI: light/dark x desktop/mobile. Best-effort — a missing step means the flow stopped there."
+            for d in $(cd "pr-${PR}" && ls -d */ | tr -d / | sort); do
+              echo "<details><summary><b>${d}</b></summary><p>"
+              for f in $(cd "pr-${PR}/${d}" && ls *.png | grep -v '^full-' | sort); do
+                echo "<img src=\"${BASE}/${d}/${f}\" width=\"320\" title=\"${f}\"> "
+              done
+              echo "</p></details>"
+            done
+          } > ../comment.md
+          cd ..
+          ID=$(gh api "repos/${REPO}/issues/${PR}/comments" --jq '[.[] | select(.body | contains("<!-- ui-screenshots -->"))][0].id // empty')
+          if [ -n "$ID" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${ID}" -F body=@comment.md >/dev/null
+          else
+            gh pr comment "$PR" --repo "$REPO" --body-file comment.md
+          fi
