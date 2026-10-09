@@ -51,7 +51,7 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9.39.1",
     "eslint-config-next": "^15.5.22",
-    "fake-indexeddb": "^5.0.2",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^24.0.0",
     "postcss": "^8.5.23",
     "serve": "^14.2.6",
