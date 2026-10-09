@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Security advisories surface here as PRs instead of suddenly turning the
+  # `Dependency Audit` CI step red on unrelated branches.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

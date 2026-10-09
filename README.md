@@ -31,19 +31,20 @@
 | License | Juyel Source License (JSL) v1.0 (`LICENSE`, `public/content/JSL_LICENSE.md`) |
 | CI | `ci.yml` required check `ci` (strict, admins enforced) + `lighthouse` + `budget` |
 
-## 2. Repository topology (two-repo model)
+## 2. Repository topology (single repo)
 
 | Repo | Role | Branch | Protection |
 |---|---|---|---|
 | `juyel-dev/Notes-Print-Optimizer` | **PRODUCTION** (live users) | `main` | protected: required `ci` strict, enforced for admins |
-| `juyel-dev-s-org/Notes-Print-Optimizer-forked` | **DEVELOPMENT / preview** | `main` + feature branches | none |
+
+There is **no separate fork**. All work happens on feature branches in this repo.
 
 **Mandatory rules:**
 
-1. All development in **fork**. Never push production `main` directly — only via PR `juyel-dev-s-org:main → juyel-dev:main`.
-2. Merge only with `gh pr merge --merge` (or `--rebase` for doc-only); `ci` + `lighthouse` + `budget` must be green.
+1. Never push `main` directly — feature branch → PR to `main`.
+2. Merge with a squash merge (matches the `(#NNN)` history); `ci` must be green (plus `lighthouse` / `budget` where they run).
 3. **Production URL:** `https://print-optimizer.vercel.app/` via `VERCEL_PROJECT_PRODUCTION_URL` (`lib/site.ts:8`). Adding a custom domain requires fresh Vercel deploy — do not hardcode domains.
-4. **Fork preview URL:** Vercel preview comment on each PR.
+4. **Preview URL:** Vercel preview comment on each PR. UI screenshots: the `ui-screenshots` artifact on the PR's CI run.
 5. **Base path:** Opt-in only via `NEXT_PUBLIC_BASE_PATH`. Root hosts (Vercel) need nothing — never infer from `GITHUB_ACTIONS`.
 6. Stale `develop` branch exists — **do NOT use**.
 
@@ -218,13 +219,13 @@ Copy `.env.example` → `.env.local`:
 
 **OG cards:** Static PNGs `print-optimizer/og/<slug>.png` + `home.png` (1200×630) in `juyel-dev/image` repo. Contract frozen by `tests/unit/siteContract.test.ts`. Verify: `npm run check:og`.
 
-## 11. Release flow (fork → production)
+## 11. Release flow (branch → production)
 
-1. Feature branch in fork → commit (conventional) → push fork.
+1. Feature branch → commit (conventional) → push.
 2. Run §4 gate (`tsc`, `lint`, `test`, `build`, optional smoke).
-3. PR: `gh pr create -R juyel-dev/Notes-Print-Optimizer --base main --head juyel-dev-s-org:main` (or feature branch).
-4. Wait `mergeStateStatus === CLEAN` (`ci`+`lighthouse`+`budget` green).
-5. Merge: `gh pr merge -R juyel-dev/Notes-Print-Optimizer --merge --delete-branch=false`
+3. PR: `gh pr create -R juyel-dev/Notes-Print-Optimizer --base main --head <feature-branch>`.
+4. Wait `mergeStateStatus === CLEAN` (`ci` green).
+5. Merge: `gh pr merge -R juyel-dev/Notes-Print-Optimizer --squash`
 6. Confirm Vercel production deploy green → verify live URLs (tools + offline).
 
 ---
