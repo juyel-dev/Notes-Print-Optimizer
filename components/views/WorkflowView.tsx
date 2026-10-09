@@ -206,22 +206,9 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
           <h1 className="truncate text-[15px] font-bold text-ink">Dark Notes → Print</h1>
           <p className="truncate text-[11px] text-ink-faint">Auto-whiten · N-up · Print-ready · 100% on-device</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
-            {stepLabel}
-          </span>
-          <ol className="flex gap-1" aria-label={`Step ${currentPhase} of 4`}>
-            {[1, 2, 3, 4].map((n) => (
-              <li
-                key={n}
-                aria-current={n === currentPhase ? 'step' : undefined}
-                className={`h-1 rounded-full transition-[width,background-color] duration-300 ease-out ${
-                  n === currentPhase ? 'w-6 bg-accent' : n < currentPhase ? 'w-3 bg-primary' : 'w-3 bg-elevated'
-                }`}
-              />
-            ))}
-          </ol>
-        </div>
+        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
+          {stepLabel}
+        </span>
       </header>
 
       {/* PHASE 1: UPLOAD & MERGE */}

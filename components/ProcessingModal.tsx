@@ -12,6 +12,11 @@ interface ProcessingModalProps {
   progressiveThumbnails?: Map<number, string>;
 }
 
+/** Engine progress strings carry an internal "[V2] " tag; users never need it. */
+export function cleanActionText(text: string | undefined): string {
+  return (text ?? '').replace(/^\s*\[[A-Za-z0-9._-]+\]\s*/, '').trim();
+}
+
 /** "12s", "1m 05s" — whole seconds, no flicker from decimals. */
 export function formatDuration(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -112,7 +117,7 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ progress, phas
               {phaseTitle || 'Processing'}
             </span>
             <h3 id="processing-modal-title" className="truncate text-sm font-bold text-ink">
-              {progress.currentAction || 'Working on your document…'}
+              {cleanActionText(progress.currentAction) || 'Working on your document…'}
             </h3>
           </div>
         </div>
@@ -133,7 +138,7 @@ export const ProcessingModal: React.FC<ProcessingModalProps> = ({ progress, phas
             aria-valuenow={percent}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={progress.currentAction || 'Processing document'}
+            aria-label={cleanActionText(progress.currentAction) || 'Processing document'}
           >
             {/* transform, not width: the fill animates on the compositor and
                 never triggers layout. */}

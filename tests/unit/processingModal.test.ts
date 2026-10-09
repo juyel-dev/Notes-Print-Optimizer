@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateRemainingMs, formatDuration } from '../../components/ProcessingModal';
+import { cleanActionText, estimateRemainingMs, formatDuration } from '../../components/ProcessingModal';
 import type { ProcessingProgress } from '../../lib/optimizer/types';
 
 const base: ProcessingProgress = {
@@ -36,5 +36,17 @@ describe('estimateRemainingMs', () => {
     expect(estimateRemainingMs({ ...base, totalPages: 0 })).toBeNull();
     expect(estimateRemainingMs({ ...base, elapsedMs: 0 })).toBeNull();
     expect(estimateRemainingMs({ ...base, currentPage: 100 })).toBeNull();
+  });
+});
+
+describe('cleanActionText', () => {
+  it('strips the internal engine tag and keeps the message', () => {
+    expect(cleanActionText('[V2] Rendering page 3/4')).toBe('Rendering page 3/4');
+    expect(cleanActionText('[V2]Completed page 1/4')).toBe('Completed page 1/4');
+  });
+  it('leaves normal text and empty input alone', () => {
+    expect(cleanActionText('Merging PDFs')).toBe('Merging PDFs');
+    expect(cleanActionText('Page [2] done')).toBe('Page [2] done');
+    expect(cleanActionText(undefined)).toBe('');
   });
 });
