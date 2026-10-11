@@ -23,7 +23,7 @@ export const ImagePdfUploadView: React.FC<{ workflow: ImagePdfWorkflow }> = ({ w
       footer={
         <>
           <span>Up to {workflow.maxFiles} images · {MAX_FILE_SIZE_MB} MB each</span>
-          <span aria-hidden="true" className="text-ink-faint">•</span>
+          <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
           <span>JPG · PNG · WebP</span>
         </>
       }

@@ -20,7 +20,7 @@ export const ImagesUploadView: React.FC<{ workflow: ImagesWorkflow }> = ({ workf
       footer={
         <>
           <span>Single PDF · {MAX_FILE_SIZE_MB} MB max</span>
-          <span aria-hidden="true" className="text-ink-faint">•</span>
+          <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
           <span>JPG · PNG · WebP</span>
         </>
       }

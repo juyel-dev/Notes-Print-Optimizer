@@ -24,7 +24,7 @@ export const EnhanceUploadView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wor
           <ShieldCheck className="h-3.5 w-3.5" />
           100% Private On-Device
         </span>
-        <span aria-hidden="true" className="text-ink-faint">•</span>
+        <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
         <span>Up to {MAX_ENHANCE_FILES} PDFs · {MAX_FILE_SIZE_MB} MB each</span>
       </>
     }

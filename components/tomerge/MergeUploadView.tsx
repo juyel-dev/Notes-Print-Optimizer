@@ -21,7 +21,7 @@ export const MergeUploadView: React.FC<{ workflow: MergeWorkflow }> = ({ workflo
       footer={
         <>
           <span>Up to {workflow.maxFiles} PDFs · {MAX_FILE_SIZE_MB} MB each</span>
-          <span aria-hidden="true" className="text-ink-faint">•</span>
+          <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
           <span>Order stays editable</span>
         </>
       }
