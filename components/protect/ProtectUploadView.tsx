@@ -22,7 +22,7 @@ export const ProtectUploadView: React.FC<{ workflow: ProtectWorkflow }> = ({ wor
           <ShieldCheck className="h-3.5 w-3.5" />
           100% Private On-Device
         </span>
-        <span aria-hidden="true" className="text-ink-faint">•</span>
+        <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
         <span>Single PDF · {MAX_FILE_SIZE_MB} MB max</span>
       </>
     }

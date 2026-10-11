@@ -216,9 +216,9 @@ export const PrintLayoutStep: React.FC<PrintLayoutStepProps> = ({
 
         {error && <p role="alert" className="mt-3 rounded-xl border border-danger/30 bg-danger-faint/50 px-3 py-2 text-xs font-semibold text-danger">{error}</p>}
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row">
           <button type="button" onClick={onBack}
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-elevated bg-surface px-5 text-sm font-bold text-ink hover:bg-surface-2">
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-elevated bg-surface px-5 text-sm font-bold text-ink hover:bg-surface-2">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {backLabel}
           </button>
           <button type="button" onClick={generate} disabled={busy || totalPages === 0}

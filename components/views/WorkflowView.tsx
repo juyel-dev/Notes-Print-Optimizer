@@ -204,7 +204,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
         </button>
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate text-[15px] font-bold text-ink">Dark Notes → Print</h1>
-          <p className="truncate text-[11px] text-ink-faint">Auto-whiten · N-up · Print-ready · 100% on-device</p>
+          <p className="truncate text-[11px] text-ink-faint">Auto-whiten · N-up<span className="hidden sm:inline"> · Print-ready · 100% on-device</span></p>
         </div>
         <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
           {stepLabel}
