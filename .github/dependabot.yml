@@ -1,12 +1,18 @@
 version: 2
 updates:
-  # Security advisories surface here as PRs instead of suddenly turning the
-  # `Dependency Audit` CI step red on unrelated branches.
+  # Security advisories and routine updates arrive as PRs instead of suddenly
+  # turning the `Dependency Audit` CI step red on unrelated branches.
+  # Major versions are ignored on purpose: typescript 7, eslint 10 and
+  # pdfjs-dist 6 all fail CI, and a pdf.js major can change rendering. Those are
+  # upgraded by hand, one at a time, with a visual check.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
