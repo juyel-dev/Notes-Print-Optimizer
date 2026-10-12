@@ -5,7 +5,7 @@ import { pwOptimizerStorage } from './storage';
 import { WorkerManager } from '../workers/WorkerManager';
 import { getProcessingEngine, EngineVersion } from './engine';
 import { getPdfjsLib } from './pdfjsLoader';
-import { drawBilevelImage, isBilevelRgba, pageSizeFromSource, readSourceWidthsPt } from './pdfPageEmbed';
+import { drawBilevelImage, drawHybridPage, pageSizeFromSource, planPage, readSourceWidthsPt, type Rect } from './pdfPageEmbed';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { DocumentProfile, LayoutConfig, OptimizationMetrics, PresetMode, ProcessedPage } from './types';
 import '../workers/init';
@@ -232,10 +232,27 @@ export class PdfExporter {
     return img;
   }
 
+  /** JPEG-encode one rectangle of a page image (patch for a hybrid page). */
+  private static async encodeRectJpeg(imageData: ImageData, rect: Rect, quality: number): Promise<Uint8Array | null> {
+    const canvas = memoryManager.acquireCanvas(rect.w, rect.h);
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return null;
+      ctx.putImageData(imageData, -rect.x, -rect.y, rect.x, rect.y, rect.w, rect.h);
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', quality));
+      return blob && blob.size > 0 ? new Uint8Array(await blob.arrayBuffer()) : null;
+    } finally {
+      memoryManager.disposeCanvas(canvas);
+    }
+  }
+
   /**
-   * Embed one final page image. Pure black/white pages go in as a lossless
-   * 1-bit image, everything else as JPEG. The PDF page size follows the SOURCE
-   * page (in points), not the render pixel size.
+   * Embed one final page image at the SOURCE page size. Planned per page:
+   *  - black/white content -> lossless 1-bit image (the cached copy is JPEG, so
+   *    the plan is tolerant and recovers the original bilevel pixels);
+   *  - black/white with a few tonal/colour regions (restored white boxes,
+   *    highlights, photos) -> 1-bit page + JPEG patches only over those regions;
+   *  - mostly tonal -> one JPEG for the page, as before.
    */
   private static async embedFinalPage(
     pdfDoc: PDFDocument,
@@ -244,10 +261,17 @@ export class PdfExporter {
     jpegQuality: number,
   ): Promise<boolean> {
     const size = pageSizeFromSource(imageData, sourceWidthPt);
-    if (isBilevelRgba(imageData.data)) {
+    const plan = planPage(imageData);
+    if (plan.kind === 'bilevel') {
       const page = pdfDoc.addPage([size.width, size.height]);
       drawBilevelImage(pdfDoc, page, imageData);
       return true;
+    }
+    if (plan.kind === 'hybrid') {
+      const page = pdfDoc.addPage([size.width, size.height]);
+      const ok = await drawHybridPage(pdfDoc, page, imageData, plan.rects, (r) => this.encodeRectJpeg(imageData, r, jpegQuality));
+      if (ok) return true;
+      pdfDoc.removePage(pdfDoc.getPageCount() - 1); // fall back to a full-page JPEG
     }
     const canvas = memoryManager.acquireCanvas(imageData.width, imageData.height);
     try {
