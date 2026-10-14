@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { AlertCircle, FileUp } from 'lucide-react';
+import { AlertCircle, FileUp, Plus } from 'lucide-react';
 import { MAX_FILE_SIZE_MB, PDF_DROPZONE_ACCEPT, type DropzoneAccept } from '@/lib/services/UploadService';
 
 export interface PdfDropzoneProps {
@@ -17,6 +17,11 @@ export interface PdfDropzoneProps {
   accept?: DropzoneAccept;
   onFiles: (files: File[]) => void;
   footer?: React.ReactNode;
+  /** Slim "add more" row for screens that already hold files. */
+  compact?: boolean;
+  compactLabel?: string;
+  compactHint?: string;
+  compactMeta?: string;
 }
 
 interface SkippedSummary {
@@ -45,6 +50,10 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
   accept = PDF_DROPZONE_ACCEPT,
   onFiles,
   footer,
+  compact = false,
+  compactLabel = 'Add more files',
+  compactHint = 'or drop them here',
+  compactMeta,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -98,10 +107,14 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
           if (e.dataTransfer.files.length > 0) void processFileList(e.dataTransfer.files);
         }}
         onClick={() => fileInputRef.current?.click()}
-        className={`group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft ${minHeights} ${
+        className={`group relative flex cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft ${
+          compact
+            ? 'min-h-16 flex-row items-center justify-between gap-4 px-5 py-3 text-left'
+            : `flex-col items-center justify-center p-8 text-center lg:p-12 ${minHeights}`
+        } ${
           isDragging
             ? 'border-solid border-primary bg-primary-faint/40'
-            : 'border-elevated bg-surface/90 shadow-lg hover:border-primary/70 hover:bg-surface-2/80'
+            : 'border-elevated bg-surface hover:border-primary/70'
         }`}
       >
         <input
@@ -116,31 +129,51 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
           className="hidden"
         />
 
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/25 to-accent/15 text-primary-soft shadow-lg transition-all duration-200 group-hover:scale-105 group-hover:text-ink">
-          <FileUp className="h-8 w-8" />
-        </div>
+        {compact ? (
+          <>
+            <span className="flex min-w-0 items-center gap-3 text-[15px] font-semibold text-ink">
+              <Plus className="h-5 w-5 shrink-0 text-primary-soft" aria-hidden="true" />
+              <span className="truncate">{compactLabel}</span>
+              <span className="hidden font-medium text-ink-muted sm:inline">{compactHint}</span>
+            </span>
+            {compactMeta && (
+              <span className="hidden shrink-0 font-mono text-xs text-ink-faint md:inline">{compactMeta}</span>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary-faint text-primary-soft transition-colors duration-200 group-hover:text-ink">
+              <FileUp className="h-8 w-8" aria-hidden="true" />
+            </div>
 
-        <div className="relative mt-4 flex flex-col items-center gap-1.5">
-          <h2 className="text-base font-bold text-ink">{title}</h2>
-          <p className="max-w-sm text-xs leading-relaxed text-ink-muted lg:max-w-md lg:text-sm">{description}</p>
-        </div>
+            <div className="relative mt-5 flex flex-col items-center gap-2">
+              <h2
+                className="text-xl font-bold tracking-[-0.015em] text-ink lg:text-2xl"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {title}
+              </h2>
+              <p className="max-w-sm text-sm leading-relaxed text-ink-muted lg:max-w-md lg:text-base">{description}</p>
+            </div>
 
-        {/* Real button (not a decorative span) — stops click bubbling to the zone */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}
-          className="relative mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary-strong px-6 text-sm font-bold text-white shadow-md transition-all duration-150 hover:bg-primary active:scale-[0.98]"
-        >
-          {ctaLabel}
-        </button>
+            {/* Real button (not a decorative span) — stops click bubbling to the zone */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="relative mt-6 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-[14px] bg-primary-strong px-7 text-base font-bold text-white transition-[background-color,transform] duration-150 hover:bg-primary-deep active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+            >
+              {ctaLabel}
+            </button>
 
-        {footer && (
-          <div className="relative mt-6 flex flex-wrap items-center justify-center gap-2.5 border-t border-surface-2 pt-4 text-xs text-ink-muted">
-            {footer}
-          </div>
+            {footer && (
+              <div className="relative mt-7 flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-surface-2 pt-5 text-sm text-ink-muted">
+                {footer}
+              </div>
+            )}
+          </>
         )}
       </div>
 

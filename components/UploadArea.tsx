@@ -8,26 +8,30 @@ import { PdfDropzone } from '@/components/ui/PdfDropzone';
 interface UploadAreaProps {
   onFilesUpload: (files: File[]) => void;
   isProcessing: boolean;
+  /** Collapse to a slim "add more" row once files are loaded. */
+  compact?: boolean;
 }
 
 /** Dark-Notes→Print upload screen. Thin wrapper over the shared PdfDropzone. */
-export const UploadArea: React.FC<UploadAreaProps> = ({ onFilesUpload }) => (
+export const UploadArea: React.FC<UploadAreaProps> = ({ onFilesUpload, compact = false }) => (
   <PdfDropzone
-    title="Upload Class Note PDFs"
-    description="Tap to choose PDFs from your phone or drag & drop lecture slides to convert for eco-friendly printing."
+    title="Drop your lecture PDFs here"
+    description="or choose files from your phone or computer. Dark slides become white, ink-saving pages."
     ctaLabel="Select PDF Files"
     ariaLabel="Upload PDF files"
     multiple
     onFiles={onFilesUpload}
+    compact={compact}
+    compactLabel="Add more PDFs"
+    compactHint="or drop them here"
+    compactMeta={`${MAX_TOTAL_SIZE_MB} MB total · ${MAX_FILE_SIZE_MB} MB each`}
     footer={
       <>
-        <span className="flex items-center gap-1 font-semibold text-success">
-          <ShieldCheck className="h-3.5 w-3.5" />
+        <span className="flex items-center gap-1.5 font-semibold text-success">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
           100% Private On-Device
         </span>
-        <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
         <span>Saves 80% Paper &amp; Ink</span>
-        <span aria-hidden="true" className="hidden text-ink-faint sm:inline">•</span>
         <span>Up to {MAX_TOTAL_SIZE_MB} MB total · {MAX_FILE_SIZE_MB} MB each</span>
       </>
     }

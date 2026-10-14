@@ -44,7 +44,7 @@ const ProcessingSettingsPanel = dynamic(() => import('@/components/ProcessingSet
  * same DOM node, different positioning classes only.
  */
 const ActionBar: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-2 border-t border-surface-2 bg-surface/95 p-3 pb-safe shadow-2xl backdrop-blur-md md:static md:border-0 md:bg-transparent md:p-0 md:pt-3 md:shadow-none md:backdrop-blur-none">
+  <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-2 border-t border-surface-2 bg-surface/95 p-3 pb-safe shadow-2xl backdrop-blur-md md:sticky md:bottom-0 md:z-20 md:-mx-4 md:px-4 md:py-3 md:pb-3 md:shadow-none">
     {children}
   </div>
 );
@@ -203,7 +203,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="flex min-w-0 flex-1 flex-col">
-          <h1 className="truncate text-[15px] font-bold text-ink">Dark Notes → Print</h1>
+          <h1 className="truncate text-base font-bold tracking-[-0.01em] text-ink sm:text-xl" style={{ fontFamily: 'var(--font-display)' }}>Dark Notes → Print</h1>
           <p className="truncate text-[11px] text-ink-faint">Auto-whiten · N-up<span className="hidden sm:inline"> · Print-ready · 100% on-device</span></p>
         </div>
         <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
@@ -217,7 +217,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
           <div className="animate-enter flex flex-col gap-4 md:gap-5">
 
             <div id="upload-area" className="scroll-mt-4">
-              <UploadArea onFilesUpload={onFilesUpload} isProcessing={isProcessing} />
+              <UploadArea onFilesUpload={onFilesUpload} isProcessing={isProcessing} compact={uploadedItems.length > 0} />
             </div>
 
             {uploadedItems.length > 0 && (
@@ -285,7 +285,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                   <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-success-soft">Dark Backgrounds Stripped</h3>
+                  <h3 className="text-base font-bold text-success-soft sm:text-lg" style={{ fontFamily: 'var(--font-display)' }}>Dark Backgrounds Stripped</h3>
                   <p className="truncate text-xs text-ink-muted">
                     Processed {processedPages.length} pages
                     {inkSavedPct !== null ? ` · ~${inkSavedPct}% less ink` : ''}
