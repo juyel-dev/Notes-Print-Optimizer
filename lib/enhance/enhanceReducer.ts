@@ -42,7 +42,8 @@ export function enhanceReducer(state: EnhanceState, action: EnhanceAction): Enha
       return { ...state, settings: action.settings, pdfBlob: null };
 
     case 'SET_SELECTED':
-      return { ...state, selectedIndex: action.index, pdfBlob: null };
+      // Selecting a different page changes only the preview, not the rendered output.
+      return { ...state, selectedIndex: action.index };
 
     case 'MOVE_FILE': {
       const target = action.direction === 'UP' ? action.index - 1 : action.index + 1;
