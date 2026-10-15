@@ -61,13 +61,14 @@ export function useWorkflowRuntime() {
   const clearProgressiveThumbnails = useCallback(() => setProgressiveThumbnails(new Map()), []);
 
   useEffect(() => {
-    pwOptimizerStorage.clearCache();
-    pwOptimizerStorage.evictStaleEntries();
+    // IndexedDB is shared across same-origin tabs. Do not clear its entire
+    // store on mount: another tab may be using those pages for a PDF export.
+    void pwOptimizerStorage.evictStaleEntries();
     memoryManager.checkStorageQuota().then(q => {
       if (q && !q.ok) console.warn(`[Storage] ${q.percentUsed.toFixed(0)}% used - near quota`);
     });
     const handleUnload = () => {
-      pwOptimizerStorage.clearCache();
+      void pwOptimizerStorage.clearOwnedCache();
       memoryManager.revokeAllBlobUrls();
       if (previewPdfDocRef.current?.doc) {
         try {
