@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, ArrowLeft, Ban, Check, ChevronDown, Columns2, Download, LayoutGrid, Loader2, RotateCcw, Share2, Wand2, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Ban, Check, ChevronDown, ChevronLeft, ChevronRight, Download, LayoutGrid, Loader2, RotateCcw, Share2, Wand2, ZoomIn, ZoomOut } from 'lucide-react';
 import {
   DEFAULT_ENHANCE_SETTINGS,
   ENHANCE_DETAIL_DPI,
@@ -14,6 +14,7 @@ import {
   type EnhanceSettings,
 } from '@/lib/enhance/types';
 import { renderEnhancedPreview } from '@/lib/enhance/livePreview';
+import { defaultEnhanceBaseName } from '@/lib/enhance/enhanceReducer';
 import type { EnhanceWorkflow } from '@/lib/enhance/useEnhanceWorkflow';
 import { Button } from '@/components/ui/Button';
 import { SliderRow } from '@/components/ui/Slider';
@@ -29,10 +30,29 @@ export interface EnhanceWorkbenchViewProps {
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft';
 const DETAILS: EnhanceDetail[] = ['standard', 'high', 'ultra'];
 
-function defaultBaseName(fileName: string): string {
-  const base = fileName.replace(/(-enhanced|-PrintReady)?\.pdf$/i, '');
-  return !base || base === 'enhanced-print' ? 'Enhanced' : base;
-}
+
+/** Lightweight CSS-only placeholder; no JS timer or duplicate PDF render. */
+const PreviewSkeleton: React.FC<{ pageNumber: number; totalPages: number }> = ({ pageNumber, totalPages }) => (
+  <section role="status" aria-label="Preparing enhanced preview" className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/60 p-3">
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-sm font-bold text-ink">Preview</span>
+      <span className="text-xs tabular-nums text-ink-muted">Preparing page {pageNumber}{totalPages > 0 ? ` · ${totalPages} total` : ''}</span>
+    </div>
+    <div className="enhance-skeleton-shimmer relative mx-auto aspect-[210/297] max-h-[36vh] min-h-[220px] w-full max-w-[420px] rounded-lg border border-elevated/60 bg-surface-2" aria-hidden="true">
+      <div className="absolute inset-x-[11%] top-[12%] flex flex-col gap-3">
+        <span className="h-2 w-[62%] rounded bg-elevated/70" />
+        <span className="h-1.5 w-[84%] rounded bg-elevated/50" />
+        <span className="h-1.5 w-[72%] rounded bg-elevated/50" />
+        <span className="mt-2 h-16 w-[82%] rounded border border-elevated/60 bg-surface/40" />
+        <span className="h-1.5 w-[91%] rounded bg-elevated/50" />
+        <span className="h-1.5 w-[76%] rounded bg-elevated/50" />
+        <span className="h-1.5 w-[87%] rounded bg-elevated/50" />
+        <span className="mt-2 h-10 w-[62%] rounded border border-elevated/60 bg-surface/40" />
+      </div>
+    </div>
+    <p className="text-center text-xs text-ink-muted">The preview will return when this processing pass finishes.</p>
+  </section>
+);
 
 export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ workflow, onChooseLayout }) => {
   const {
@@ -46,12 +66,16 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
     handleReset,
     handleBackToArrange,
   } = workflow;
-  const [showBefore, setShowBefore] = useState(false);
+  const [comparePosition, setComparePosition] = useState(50);
+  const [compareDragging, setCompareDragging] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [tuneOpen, setTuneOpen] = useState(false);
   const [live, setLive] = useState<string | null>(null);
   const [liveBusy, setLiveBusy] = useState(false);
-  const [outBase, setOutBase] = useState(() => defaultBaseName(state.fileName));
+  const [liveError, setLiveError] = useState(false);
+  const [outBase, setOutBase] = useState(() => defaultEnhanceBaseName(state.fileName));
+  const [filenameEdited, setFilenameEdited] = useState(false);
+  const previewRef = React.useRef<HTMLDivElement>(null);
   const selected = state.results[state.selectedIndex];
   const applied = state.appliedSettings;
 
@@ -61,38 +85,75 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
   const isDirty = !hasResults || !applied || toneDirty || detailDirty;
   const activePreset = matchPreset(state.settings);
 
-  // Live preview: re-enhance just the selected page (from its in-memory original) while sliders move.
+  // Keep the default output name in sync once processing has read the real source filename.
+  // A manual rename is preserved across later processing passes.
+  useEffect(() => {
+    if (!filenameEdited) setOutBase(defaultEnhanceBaseName(state.fileName));
+  }, [state.fileName, filenameEdited]);
+
+  // Preview only the selected page. Abort stale image decodes/encodes when
+  // settings change quickly, rather than spending CPU on obsolete previews.
   const toneKey = `${state.settings.darken}|${state.settings.contrast}|${state.settings.sharpen}|${state.settings.cleanBackground}|${state.settings.grayscale}|${state.settings.evenLighting}`;
   const originalUrl = selected?.originalDataUrl;
   useEffect(() => {
     if (!originalUrl || !toneDirty || state.isProcessing) {
       setLive(null);
       setLiveBusy(false);
+      setLiveError(false);
       return;
     }
+    const controller = new AbortController();
     let cancelled = false;
+    setLive(null);
     setLiveBusy(true);
+    setLiveError(false);
     const t = window.setTimeout(async () => {
       try {
-        const url = await renderEnhancedPreview(originalUrl, state.settings);
-        if (!cancelled) setLive(url);
+        const url = await renderEnhancedPreview(originalUrl, state.settings, controller.signal);
+        if (!cancelled && !controller.signal.aborted) setLive(url);
       } catch {
-        if (!cancelled) setLive(null);
+        if (!cancelled && !controller.signal.aborted) {
+          setLive(null);
+          setLiveError(true);
+        }
       } finally {
         if (!cancelled) setLiveBusy(false);
       }
     }, 200);
     return () => {
       cancelled = true;
+      controller.abort();
       window.clearTimeout(t);
     };
-    // state.settings is captured through toneKey on purpose
+    // state.settings is captured through toneKey on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [originalUrl, toneKey, toneDirty, state.isProcessing]);
 
   const updateSetting = <K extends keyof EnhanceSettings>(key: K, value: EnhanceSettings[K]) => {
     if (key !== 'detail') setTuneOpen(true); // a manual tweak means the user wants the sliders in view
     handleSetSettings({ ...state.settings, [key]: value });
+  };
+
+  const updateCompareFromX = (clientX: number) => {
+    const rect = previewRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+    setComparePosition(Math.round(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))));
+  };
+
+  const handleCompareKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      setComparePosition((p) => Math.max(0, p - 2));
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      setComparePosition((p) => Math.min(100, p + 2));
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      setComparePosition(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      setComparePosition(100);
+    }
   };
   const firstRun = state.isProcessing && !hasResults;
   const pct = state.progress ? Math.min(100, Math.round((state.progress.current / Math.max(1, state.progress.total)) * 100)) : 0;
@@ -102,10 +163,10 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
     return bytes / (1024 * 1024);
   }, [state.results]);
 
-  const showingLive = !showBefore && toneDirty && !!live;
-  const imgSrc = !selected ? '' : showBefore ? selected.originalDataUrl : showingLive ? (live as string) : selected.dataUrl;
-  const badge = showBefore ? 'BEFORE' : showingLive ? 'LIVE PREVIEW' : toneDirty && liveBusy ? 'UPDATING…' : 'AFTER';
-  const badgeClass = showBefore
+  const showingLive = toneDirty && !!live;
+  const imgSrc = !selected ? '' : showingLive ? (live as string) : selected.dataUrl;
+  const badge = showingLive ? 'LIVE PREVIEW' : toneDirty && liveBusy ? 'UPDATING…' : toneDirty && liveError ? 'LAST APPLIED' : 'ENHANCED';
+  const badgeClass = toneDirty && liveError && !liveBusy
     ? 'bg-warning-strong/90 text-warning-faint'
     : showingLive || (toneDirty && liveBusy)
       ? 'bg-primary-strong/90 text-white'
@@ -178,85 +239,110 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
         </div>
       )}
 
-      <div className={`flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 ${firstRun ? 'hidden' : ''}`}>
+      <div className={`flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 pb-28 lg:pb-0`}>
         {/* ── Preview column ─────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
-          {selected && (
-            <div className="sticky top-[68px] z-20 -mx-4 flex flex-col gap-2 bg-bg/95 px-4 pb-2 pt-1 backdrop-blur-md lg:top-[84px] lg:mx-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none">
+        <div className="flex min-w-0 flex-col gap-3">
+          {state.isProcessing ? (
+            <PreviewSkeleton
+              pageNumber={selected ? selected.index + 1 : 1}
+              totalPages={state.progress?.total ?? (state.results.length || state.files.length)}
+            />
+          ) : selected && (
+            <div className="flex flex-col gap-2 -mx-4 bg-bg px-4 pb-2 pt-1 lg:mx-0 lg:bg-transparent lg:px-0">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-sm font-bold tracking-wide text-ink">
                   Preview <span className="font-normal text-ink-muted">· page {selected.index + 1} of {state.results.length}</span>
                 </h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setZoom((z) => !z)}
-                    aria-pressed={zoom}
-                    aria-label={zoom ? 'Zoom out' : 'Zoom in to check handwriting detail'}
-                    className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${FOCUS} ${zoom ? 'border-primary/50 bg-primary-faint text-primary-soft' : 'border-elevated bg-surface text-ink'}`}
-                  >
-                    {zoom ? <ZoomOut className="h-4 w-4" aria-hidden="true" /> : <ZoomIn className="h-4 w-4" aria-hidden="true" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowBefore((b) => !b)}
-                    aria-pressed={showBefore}
-                    className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors ${FOCUS} ${showBefore ? 'border-primary/50 bg-primary-faint text-primary-soft' : 'border-elevated bg-surface text-ink'}`}
-                  >
-                    <Columns2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {showBefore ? 'Before' : 'Compare'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => !z)}
+                  aria-pressed={zoom}
+                  aria-label={zoom ? 'Zoom out' : 'Zoom in to check handwriting detail'}
+                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${FOCUS} ${zoom ? 'border-primary/50 bg-primary-faint text-primary-soft' : 'border-elevated bg-surface text-ink'}`}
+                >
+                  {zoom ? <ZoomOut className="h-4 w-4" aria-hidden="true" /> : <ZoomIn className="h-4 w-4" aria-hidden="true" />}
+                </button>
               </div>
 
               <div
+                ref={previewRef}
                 className={`relative select-none overflow-auto rounded-2xl border border-surface-2 bg-surface/80 ${zoom ? 'max-h-[60vh]' : 'max-h-[36vh] lg:max-h-[72vh]'}`}
                 style={{ WebkitTouchCallout: 'none', touchAction: zoom ? 'pan-x pan-y' : 'pan-y' } as React.CSSProperties}
                 onContextMenu={(e) => e.preventDefault()}
-                onPointerDown={(e) => {
-                  if (zoom) return;
-                  setShowBefore(true);
-                  try {
-                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-                  } catch {
-                    /* capture unsupported */
-                  }
-                }}
-                onPointerUp={(e) => {
-                  try {
-                    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-                  } catch {
-                    /* already released */
-                  }
-                  if (!zoom) setShowBefore(false);
-                }}
-                onPointerCancel={() => !zoom && setShowBefore(false)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imgSrc}
-                  alt={`${badge === 'BEFORE' ? 'Original' : 'Enhanced'} page ${selected.index + 1}`}
+                  alt={`${showingLive ? 'Live enhanced' : 'Enhanced'} page ${selected.index + 1}`}
                   className={`pointer-events-none select-none ${zoom ? 'h-auto w-[220%] max-w-none' : 'mx-auto h-auto max-h-[36vh] w-auto max-w-full object-contain lg:max-h-[72vh]'}`}
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
-                <span className={`pointer-events-none absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${badgeClass}`}>{badge}</span>
                 {!zoom && (
-                  <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-surface/80 px-2 py-1 text-xs font-medium text-ink backdrop-blur">
-                    Hold to compare
-                  </span>
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    style={{ clipPath: `inset(0 ${100 - comparePosition}% 0 0)` }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={selected.originalDataUrl} alt="" className="mx-auto h-auto max-h-[36vh] w-auto max-w-full object-contain lg:max-h-[72vh]" draggable={false} />
+                  </div>
                 )}
+                {!zoom && (
+                  <>
+                    <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold text-ink-muted backdrop-blur">ORIGINAL</span>
+                    <span className={`pointer-events-none absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${badgeClass}`}>{badge}</span>
+                    <div
+                      role="slider"
+                      tabIndex={0}
+                      aria-label="Before/after preview divider"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={comparePosition}
+                      aria-valuetext={`${comparePosition}% original visible`}
+                      className={`absolute bottom-0 top-0 z-10 flex w-11 -translate-x-1/2 cursor-ew-resize items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-soft ${compareDragging ? 'bg-primary/10' : ''}`}
+                      style={{ left: `${comparePosition}%`, touchAction: 'none' }}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        setCompareDragging(true);
+                        updateCompareFromX(e.clientX);
+                      }}
+                      onPointerMove={(e) => {
+                        if (compareDragging) updateCompareFromX(e.clientX);
+                      }}
+                      onPointerUp={(e) => {
+                        setCompareDragging(false);
+                        try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+                      }}
+                      onPointerCancel={() => setCompareDragging(false)}
+                      onLostPointerCapture={() => setCompareDragging(false)}
+                      onKeyDown={handleCompareKeyDown}
+                    >
+                      <span aria-hidden="true" className="absolute bottom-0 top-0 w-0.5 bg-primary shadow-md shadow-primary/50" />
+                      <span aria-hidden="true" className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white/90 bg-primary-strong text-white shadow-lg shadow-primary/30">
+                        <span className="flex items-center gap-0.5">
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </span>
+                      </span>
+                    </div>
+                  </>
+                )}
+                {zoom && <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-bold text-ink">Zoomed detail</span>}
               </div>
-              {toneDirty && (
-                <p role="status" className="text-xs font-semibold text-primary-soft">
-                  Previewing this page only — tap Apply to update all {state.results.length} page{state.results.length === 1 ? '' : 's'}.
-                </p>
+              {!zoom && <p className="text-center text-xs text-ink-muted">Drag the divider to compare the original and enhanced page. Use the arrow keys for fine adjustments.</p>}
+              {toneDirty && !liveError && (
+                <p role="status" className="text-xs font-semibold text-primary-soft">Previewing this page only — tap Apply to update all {state.results.length} page{state.results.length === 1 ? '' : 's'}.</p>
+              )}
+              {toneDirty && liveError && !liveBusy && (
+                <p role="status" className="text-xs font-semibold text-warning-strong">Live preview could not be refreshed. This is the last applied result; Apply will still process all pages.</p>
               )}
             </div>
           )}
 
           {state.results.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Pages">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Pages">
               {state.results.map((page) => (
                 <button
                   key={page.index}
@@ -264,11 +350,13 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
                   role="tab"
                   aria-selected={state.selectedIndex === page.index}
                   aria-label={`Page ${page.index + 1}`}
+                  disabled={state.isProcessing}
                   onClick={() => {
                     handleSetSelected(page.index);
-                    setShowBefore(false);
+                    setComparePosition(50);
+                    setZoom(false);
                   }}
-                  className={`relative h-16 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${FOCUS} ${state.selectedIndex === page.index ? 'border-primary' : 'border-elevated/80'}`}
+                  className={`relative h-16 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${FOCUS} ${state.selectedIndex === page.index ? 'border-primary' : 'border-elevated/80'} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={page.dataUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -297,6 +385,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
                     onClick={() => handleSetSettings({ ...p.settings, detail: state.settings.detail })}
                     aria-pressed={on}
                     title={p.hint}
+                    disabled={state.isProcessing || state.exportBusy}
                     className={`h-11 rounded-full border px-3.5 text-xs font-bold transition-colors ${FOCUS} ${on ? 'border-primary/50 bg-primary/15 text-primary-soft' : 'border-elevated bg-surface-2/60 text-ink-muted hover:bg-elevated hover:text-ink'}`}
                   >
                     {p.label}
@@ -313,6 +402,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
               onClick={() => setTuneOpen((o) => !o)}
               aria-expanded={tuneOpen}
               aria-controls="enh-tune"
+              disabled={state.isProcessing || state.exportBusy}
               className={`flex min-h-[52px] w-full items-center justify-between gap-2 px-3.5 text-left ${FOCUS}`}
             >
               <span>
@@ -323,16 +413,16 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
             </button>
             {tuneOpen && (
               <div id="enh-tune" className="flex flex-col gap-4 border-t border-surface-2/70 p-3.5">
-          <SliderRow label="Darken ink" hint="Push faint pencil/ink toward black" value={state.settings.darken} min={ENHANCE_SETTING_RANGE.darken[0]} max={ENHANCE_SETTING_RANGE.darken[1]} onChange={(v) => updateSetting('darken', v)} />
-            <SliderRow label="Contrast" hint="Remove flat gray from scanned paper" value={state.settings.contrast} min={ENHANCE_SETTING_RANGE.contrast[0]} max={ENHANCE_SETTING_RANGE.contrast[1]} onChange={(v) => updateSetting('contrast', v)} />
-            <SliderRow label="Sharpen" hint="Crisp handwriting edges" value={state.settings.sharpen} min={ENHANCE_SETTING_RANGE.sharpen[0]} max={ENHANCE_SETTING_RANGE.sharpen[1]} onChange={(v) => updateSetting('sharpen', v)} />
+          <SliderRow label="Darken ink" hint="Push faint pencil/ink toward black" value={state.settings.darken} min={ENHANCE_SETTING_RANGE.darken[0]} max={ENHANCE_SETTING_RANGE.darken[1]} onChange={(v) => updateSetting('darken', v)} disabled={state.isProcessing || state.exportBusy} />
+            <SliderRow label="Contrast" hint="Remove flat gray from scanned paper" value={state.settings.contrast} min={ENHANCE_SETTING_RANGE.contrast[0]} max={ENHANCE_SETTING_RANGE.contrast[1]} onChange={(v) => updateSetting('contrast', v)} disabled={state.isProcessing || state.exportBusy} />
+            <SliderRow label="Sharpen" hint="Crisp handwriting edges" value={state.settings.sharpen} min={ENHANCE_SETTING_RANGE.sharpen[0]} max={ENHANCE_SETTING_RANGE.sharpen[1]} onChange={(v) => updateSetting('sharpen', v)} disabled={state.isProcessing || state.exportBusy} />
             <div className="flex flex-col divide-y divide-surface-2/70 border-t border-surface-2/70 pt-2">
-              <ToggleRow label="Even out lighting" hint="Remove camera shadows and uneven light across the page" enabled={state.settings.evenLighting} onChange={(v) => updateSetting('evenLighting', v)} />
-              <ToggleRow label="Clean background" hint="Map paper tint to pure white" enabled={state.settings.cleanBackground} onChange={(v) => updateSetting('cleanBackground', v)} />
-              <ToggleRow label="Grayscale" hint="Monochrome output — maximum print contrast" enabled={state.settings.grayscale} onChange={(v) => updateSetting('grayscale', v)} />
+              <ToggleRow label="Even out lighting" hint="Remove camera shadows and uneven light across the page" enabled={state.settings.evenLighting} onChange={(v) => updateSetting('evenLighting', v)} disabled={state.isProcessing || state.exportBusy} />
+              <ToggleRow label="Clean background" hint="Map paper tint to pure white" enabled={state.settings.cleanBackground} onChange={(v) => updateSetting('cleanBackground', v)} disabled={state.isProcessing || state.exportBusy} />
+              <ToggleRow label="Grayscale" hint="Monochrome output — maximum print contrast" enabled={state.settings.grayscale} onChange={(v) => updateSetting('grayscale', v)} disabled={state.isProcessing || state.exportBusy} />
             </div>
                 {!activePreset && (
-                  <button type="button" onClick={() => handleSetSettings({ ...DEFAULT_ENHANCE_SETTINGS, detail: state.settings.detail })} className={`self-start rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted hover:text-ink h-11 ${FOCUS}`}>
+                  <button type="button" onClick={() => handleSetSettings({ ...DEFAULT_ENHANCE_SETTINGS, detail: state.settings.detail })} disabled={state.isProcessing || state.exportBusy} className={`self-start rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted hover:text-ink h-11 ${FOCUS}`}>
                     Reset to Balanced
                   </button>
                 )}
@@ -349,6 +439,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
                   type="button"
                   onClick={() => updateSetting('detail', d)}
                   aria-pressed={state.settings.detail === d}
+                  disabled={state.isProcessing || state.exportBusy}
                   className={`flex min-h-[52px] flex-col items-center justify-center rounded-xl border px-1 text-center transition-colors ${FOCUS} ${state.settings.detail === d ? 'border-primary/50 bg-primary/15 text-primary-soft' : 'border-elevated/60 bg-surface-2/60 text-ink-muted hover:bg-elevated'}`}
                 >
                   <span className="text-xs font-extrabold">{ENHANCE_DETAIL_LABEL[d]}</span>
@@ -370,7 +461,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
       {!state.isProcessing && hasResults && (
         <div className="sticky bottom-0 z-20 -mx-4 border-t border-surface-2 bg-bg/95 px-4 pt-3 backdrop-blur-md" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
           <div className="mb-2">
-            <FileNameField baseName={outBase} onChange={setOutBase} suffix="-PrintReady.pdf" label="Filename" />
+            <FileNameField baseName={outBase} onChange={(value) => { setOutBase(value); setFilenameEdited(true); }} suffix="-PrintReady.pdf" label="Filename" />
           </div>
           <div className={`grid gap-2 ${onChooseLayout ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <Button size="lg" loading={state.exportBusy} onClick={() => handleDownloadPrintPdf(outBase)} disabled={toneDirty || detailDirty}>
