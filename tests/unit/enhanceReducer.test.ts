@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { enhanceReducer, buildEnhanceFileName } from '@/lib/enhance/enhanceReducer';
+import { enhanceReducer, buildEnhanceFileName, defaultEnhanceBaseName } from '@/lib/enhance/enhanceReducer';
 import { INITIAL_ENHANCE_STATE } from '@/lib/enhance/types';
 import type { EnhancePageResult, EnhanceSettings } from '@/lib/enhance/types';
 import type { UploadedPdfItem } from '@/lib/workflow/types';
@@ -46,6 +46,15 @@ describe('buildEnhanceFileName', () => {
   });
 });
 
+describe('defaultEnhanceBaseName', () => {
+  it('derives a readable name from single-file and exported filenames', () => {
+    expect(defaultEnhanceBaseName('Physics Notes-enhanced.pdf')).toBe('Physics Notes');
+    expect(defaultEnhanceBaseName('Physics Notes-PrintReady.pdf')).toBe('Physics Notes');
+    expect(defaultEnhanceBaseName('enhanced-print.pdf')).toBe('Enhanced');
+    expect(defaultEnhanceBaseName('lecture.PDF')).toBe('lecture');
+  });
+});
+
 describe('enhanceReducer', () => {
   it('RESET returns the initial state', () => {
     const mid = enhanceReducer(INITIAL_ENHANCE_STATE, {
@@ -75,6 +84,21 @@ describe('enhanceReducer', () => {
     const back = enhanceReducer(withResults, { type: 'SET_STEP', step: 'upload' });
     expect(back.step).toBe('upload');
     expect(back.results).toHaveLength(1);
+  });
+
+  it('SET_SELECTED changes only the preview and keeps a valid exported PDF', () => {
+    const blob = new Blob(['%PDF'], { type: 'application/pdf' });
+    const s = enhanceReducer({
+      ...INITIAL_ENHANCE_STATE,
+      step: 'enhance',
+      results: [page(0), page(1)],
+      selectedIndex: 0,
+      pdfBlob: blob,
+      fileName: 'notes-PrintReady.pdf',
+    }, { type: 'SET_SELECTED', index: 1 });
+    expect(s.selectedIndex).toBe(1);
+    expect(s.pdfBlob).toBe(blob);
+    expect(s.fileName).toBe('notes-PrintReady.pdf');
   });
 
   it('SET_SETTINGS updates settings and invalidates the export', () => {

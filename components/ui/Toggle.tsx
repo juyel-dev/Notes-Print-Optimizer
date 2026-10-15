@@ -49,18 +49,20 @@ export interface ToggleRowProps {
   hint?: string;
   enabled: boolean;
   onChange: (on: boolean) => void;
+  disabled?: boolean;
 }
 
 /** Full-row switch (label + hint left, pill right). ≥48px touch target.
  *  Single <button role="switch"> — no nested controls. */
-export const ToggleRow: React.FC<ToggleRowProps> = ({ label, hint, enabled, onChange }) => (
+export const ToggleRow: React.FC<ToggleRowProps> = ({ label, hint, enabled, onChange, disabled }) => (
   <button
     type="button"
     role="switch"
     aria-checked={enabled}
     aria-label={hint ? `${label} — ${hint}` : label}
+    disabled={disabled}
     onClick={() => onChange(!enabled)}
-    className="flex min-h-[48px] w-full items-center justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft"
+    className="flex min-h-[48px] w-full items-center justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft disabled:cursor-not-allowed disabled:opacity-50"
   >
     <span className="flex flex-col">
       <span className="text-sm font-bold text-ink">{label}</span>

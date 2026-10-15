@@ -5,6 +5,12 @@
 
 import { INITIAL_ENHANCE_STATE, type EnhanceAction, type EnhanceState } from './types';
 
+/** Derive a clean output base name from processor/export filenames. */
+export function defaultEnhanceBaseName(fileName: string): string {
+  const base = fileName.replace(/(-enhanced|-PrintReady)?\.pdf$/i, '');
+  return !base || base === 'enhanced-print' ? 'Enhanced' : base;
+}
+
 export function buildEnhanceFileName(sources: { name: string }[]): string {
   if (sources.length === 1) {
     const base = sources[0].name.replace(/\.pdf$/i, '');
@@ -36,7 +42,8 @@ export function enhanceReducer(state: EnhanceState, action: EnhanceAction): Enha
       return { ...state, settings: action.settings, pdfBlob: null };
 
     case 'SET_SELECTED':
-      return { ...state, selectedIndex: action.index, pdfBlob: null };
+      // Selecting a different page changes only the preview, not the rendered output.
+      return { ...state, selectedIndex: action.index };
 
     case 'MOVE_FILE': {
       const target = action.direction === 'UP' ? action.index - 1 : action.index + 1;

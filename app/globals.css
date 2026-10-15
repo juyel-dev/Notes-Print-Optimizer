@@ -359,3 +359,31 @@ details.faq-item::details-content {
 details.faq-item[open]::details-content {
   block-size: auto;
 }
+
+
+/* Lightweight compositor-friendly shimmer used only for the Enhance preview skeleton. */
+.enhance-skeleton-shimmer {
+  isolation: isolate;
+  overflow: hidden;
+}
+.enhance-skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -55%;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-primary) 14%, transparent),
+    transparent
+  );
+  transform: skewX(-16deg);
+  will-change: transform;
+  animation: enhance-skeleton-sweep 1.5s ease-in-out infinite;
+}
+@keyframes enhance-skeleton-sweep {
+  to { transform: translateX(390%) skewX(-16deg); }
+}
