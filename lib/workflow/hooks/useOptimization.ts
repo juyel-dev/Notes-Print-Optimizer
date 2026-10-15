@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { OptimizationService } from '../../services/OptimizationService';
 import { pwOptimizerStorage } from '../../optimizer/storage';
+import { createCachePdfId } from '../../optimizer/cacheIds';
 import { memoryManager } from '../../optimizer/memoryManager';
 import { getPdfjsLib } from '../../optimizer/pdfjsLoader';
 import { ParameterGenerator } from '../../optimizer/parameterGenerator';
@@ -60,7 +61,7 @@ export function useOptimization({
       const startTime = Date.now();
       const abortController = new AbortController();
       abortRef.current = abortController;
-      const pdfId = `pw_doc_${Date.now()}`;
+      const pdfId = createCachePdfId('pw_doc');
       clearProgressiveThumbnails();
       await withProcessing(async () => {
         const signal = abortController.signal;
@@ -243,7 +244,7 @@ export function useOptimization({
         optimizedImageData,
         effectiveParams.outputQuality,
       );
-      const previewPdfId = `pw_preview_${Date.now()}`;
+      const previewPdfId = createCachePdfId('pw_preview');
       try {
         await pwOptimizerStorage.storePage(previewPdfId, pageIndex, null, optBlob);
       } catch (error) {
@@ -325,7 +326,7 @@ export function useOptimization({
     const startTime = Date.now();
     const abortController = new AbortController();
     abortRef.current = abortController;
-    const pdfId = `pw_reprocess_${Date.now()}`;
+    const pdfId = createCachePdfId('pw_reprocess');
     clearProgressiveThumbnails();
 
     // Keep the previous single-page preview alive while a full-document
