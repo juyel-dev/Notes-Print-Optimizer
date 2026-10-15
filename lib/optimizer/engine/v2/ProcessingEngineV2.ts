@@ -47,6 +47,7 @@ import { processPageWithWhiteBoxHeal } from '../../../kernels/whiteBox';
 import { WorkerPoolImageProcessor } from '../../processor/WorkerPoolImageProcessor';
 import { WorkerManager } from '../../../workers/WorkerManager';
 import { resolveEffectiveInvertMode } from './resolveInvertMode';
+import { settleThumbnailSession } from './thumbnailSession';
 import type { WorkerProcessResult } from '../../../workers/protocol';
 
 /* ------------------------------------------------------------------ */
@@ -479,10 +480,12 @@ export class ProcessingEngineV2 implements IProcessingEngine {
 
     // The new page list is complete and persisted. Retire the old thumbnails
     // only now, so failed/aborted runs can continue displaying the last good set.
-    for (const url of previousThumbnailUrls) {
-      memoryManager.revokeBlobUrl(url);
-      this.activeThumbnailUrls.delete(url);
-    }
+    settleThumbnailSession(
+      this.activeThumbnailUrls,
+      previousThumbnailUrls,
+      true,
+      (url) => memoryManager.revokeBlobUrl(url),
+    );
 
     return {
       processedPages,
@@ -499,11 +502,12 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       // Newly generated partial-page URLs may already have been sent to the
       // progressive-preview callback. Revoke them on failure and preserve only
       // the URLs that still belong to the last successful result.
-      for (const url of Array.from(this.activeThumbnailUrls)) {
-        if (previousThumbnailUrls.has(url)) continue;
-        memoryManager.revokeBlobUrl(url);
-        this.activeThumbnailUrls.delete(url);
-      }
+      settleThumbnailSession(
+        this.activeThumbnailUrls,
+        previousThumbnailUrls,
+        false,
+        (url) => memoryManager.revokeBlobUrl(url),
+      );
       throw error;
     } finally {
       try { await pdfDoc.destroy(); } catch { /* PDF.js document may already be destroyed */ }
