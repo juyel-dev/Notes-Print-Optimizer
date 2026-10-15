@@ -103,6 +103,9 @@ export function useOptimization({
         actions.setProcessedPages(pages);
         actions.setPhase(2);
       }, 'Processing failed due to browser memory limits.', null);
+      // Failed/aborted runs may have reported progressive URLs that the engine
+      // has now revoked. The old ProcessedPage thumbnails remain authoritative.
+      clearProgressiveThumbnails();
       if (abortRef.current === abortController) abortRef.current = null;
     },
     [mergedPdfBytes, masterParams, processingToggles, actions, withProcessing, abortRef, setProgressiveThumbnails, clearProgressiveThumbnails],
@@ -373,6 +376,9 @@ export function useOptimization({
       }
       actions.setExcludedPages(new Set());
     }, 'Re-processing failed. Try reducing settings values.', null);
+    // Drop partial progressive URLs on both success and failure; successful
+    // results are now available through ProcessedPage.thumbnailDataUrl.
+    clearProgressiveThumbnails();
     if (abortRef.current === abortController) abortRef.current = null;
   }, [
     mergedPdfBytes,
