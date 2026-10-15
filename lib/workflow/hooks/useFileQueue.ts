@@ -60,7 +60,9 @@ export function useFileQueue({
         // The old thumbnails remain usable; an older failure must not affect
         // a newer reorder/upload request.
         if (requestId !== previewRequestIdRef.current) return;
-        throw error;
+        console.error('[Upload] Failed to rebuild merged PDF preview:', error);
+        actions.setError('Could not rebuild the merged PDF preview. Your previous thumbnails are still available; try again.');
+        return;
       }
 
       if (!result) return;
