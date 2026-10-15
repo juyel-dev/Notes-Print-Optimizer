@@ -268,7 +268,9 @@ export function useOptimization({
         inkCoverageAfterPct: result.inkCoverageAfterPct,
         width: optWidth,
         height: optHeight,
-        storageKey: `${previewPdfId}_page_${pageIndex}`,
+        // Storage APIs take the document ID and page index separately.
+        // Including the page suffix here would make getPage append it twice.
+        storageKey: previewPdfId,
       };
       actions.updateSingleProcessedPage(pageIndex, updatedPage);
     } catch (err: unknown) {
