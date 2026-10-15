@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **QR Studio UI redesign (Generate + Scan):** preview and download actions now sit directly under the input on phones (they were buried under every control), with a sticky preview on desktop. Style options moved into three accordions (Colour / Shape & logo / Size & recovery) instead of two duplicated control stacks. New scan-readiness tiles (contrast, data fill, recovery) replace the small chips. Scan result shows Wi-Fi networks as separate name / security / password fields (password hidden by default) and gives mail/phone results an Open action. Gradient end colour is now user-selectable; the retired indigo `#6366f1` default and the Violet swatch were replaced with Cobalt/Marigold swatches.
+
+### Fixed
+
+- **QR Studio: blank preview / blank PNG after visiting the Scan tab** — the generator unmounted on tab switch, leaving an empty canvas (and a detached styled instance). It now stays mounted.
+- **QR Studio: styled (Advanced) quiet zone collapsed to ~2 px** — `qr-code-styling` margin is pixels, not modules; now converted from the module-based setting.
+- **QR Studio: Copy image could copy a stale plain-mode canvas, or the payload text, while reporting success**; it now copies only the visible image and reports failure honestly.
+- **QR Studio: export size field could not be typed into** (snapped on every keystroke); now commits on blur/Enter.
+- **QR Studio: duplicate controls/IDs** (`qr-dark`, `qr-light`) from rendering Controls twice; single render now.
+- **QR Studio: default phone/email values encoded placeholder data** and Wi-Fi payload was announced by screen readers via the canvas label (leaking the password); defaults are empty and the label is generic. Size/"bytes" now count real UTF-8 bytes.
+- **QR Studio: inverted (light-on-dark) and gradient colours were not contrast-checked**; logo with ECC L/M now warns.
+- **QR Scanner: React children inside the `html5-qrcode` mount node** could break on start/stop; mount node is now library-owned. Starts on the rear camera by default instead of `cameras[0]` (often the front camera); uses the native BarcodeDetector when available; history persistence no longer runs side effects inside a state updater.
+
 ### Performance
 
 - **Lighthouse CI no longer blocks every PR push.** `.github/workflows/lighthouse.yml`'s `lighthouse` and `budget` jobs (6-10 min combined) were running on every `pull_request` push, on top of the fast `ci` job — slowing down active-development iteration for a check that only matters right before shipping. Now triggers on `push` to `main`/`master` and `workflow_dispatch` only; `ci.yml` (lint/typecheck/test/build/smoke) stays on every PR for fast feedback. The `budget` job's 13-route check also moved from one job looping over all routes sequentially to a matrix strategy (one job per route, all in parallel) — same coverage, much less wall-clock time on the runs that do happen.
