@@ -48,6 +48,7 @@ import { WorkerPoolImageProcessor } from '../../processor/WorkerPoolImageProcess
 import { WorkerManager } from '../../../workers/WorkerManager';
 import { resolveEffectiveInvertMode } from './resolveInvertMode';
 import { settleThumbnailSession } from './thumbnailSession';
+import { linkedAbortController } from './linkedAbortController';
 import type { WorkerProcessResult } from '../../../workers/protocol';
 
 /* ------------------------------------------------------------------ */
@@ -191,13 +192,12 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     // succeeds. A failed or cancelled reprocess must not leave the UI pointing
     // at URLs that were revoked before any replacement pages were committed.
     const previousThumbnailUrls = new Set(this.activeThumbnailUrls);
-    this.abortController = new AbortController();
-    const localSignal = this.abortController.signal;
+    const abortLink = linkedAbortController(signal);
+    this.abortController = abortLink.controller;
+    const localSignal = abortLink.controller.signal;
 
-    if (signal) {
-      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-      signal.addEventListener('abort', () => this.abortController?.abort(), { once: true });
-    }
+    try {
+      if (localSignal.aborted) throw new DOMException('Aborted', 'AbortError');
 
     /* Phase-2: load WASM kernels (JS fallback if unavailable) */
     try {
@@ -511,6 +511,10 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       throw error;
     } finally {
       try { await pdfDoc.destroy(); } catch { /* PDF.js document may already be destroyed */ }
+    }
+    } finally {
+      abortLink.dispose();
+      if (this.abortController === abortLink.controller) this.abortController = null;
     }
   }
 
