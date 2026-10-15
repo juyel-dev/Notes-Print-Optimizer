@@ -75,6 +75,48 @@ function luminance(r: number, g: number, b: number): number {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 }
 
+/**
+ * Recover very dim ink from a dark source page when the normal color classifier
+ * leaves a sparse page essentially blank. The WASM classifier intentionally
+ * rejects HSV values below 70; that also rejects some dark-gold/orange pen marks.
+ * Sample the ORIGINAL pixels (before contrast/whitening) and keep only pixels
+ * measurably brighter than the page mean. The caller gates this to near-empty
+ * masks on low-coverage dark pages, so ordinary pages retain existing output.
+ */
+function recoverDimDarkForeground(
+  source: Uint8ClampedArray,
+  mask: Uint8Array,
+  sourceWidth: number,
+  width: number,
+  height: number,
+  sourceYOffset: number,
+  averageBrightness: number,
+): number {
+  const luminanceFloor = Math.max(8, Math.min(64, averageBrightness + 4));
+  const channelFloor = averageBrightness + 8;
+  let recovered = 0;
+
+  for (let y = 0; y < height; y++) {
+    const maskRow = y * width;
+    const sourceRow = (y + sourceYOffset) * sourceWidth * 4;
+    for (let x = 0; x < width; x++) {
+      const maskIndex = maskRow + x;
+      if (mask[maskIndex] === 1) continue;
+
+      const i = sourceRow + x * 4;
+      const r = source[i], g = source[i + 1], b = source[i + 2];
+      const lum = luminance(r, g, b);
+      if (lum < luminanceFloor || lum >= 70) continue;
+      if (Math.max(r, g, b) < channelFloor) continue;
+
+      mask[maskIndex] = 1;
+      recovered++;
+    }
+  }
+
+  return recovered;
+}
+
 /** Apply the safe, non-binary print cleanup knobs before mask extraction. */
 function applyTonalAdjustments(
   data: Uint8ClampedArray,
@@ -260,7 +302,16 @@ export function processPage(
     /** User switch for keeping light boxes/panels readable (default ON). */
     autoWhiteBoxFix?: boolean;
   },
-  profile: { classification: string; darkBackgroundRatio: number; darkFrame?: boolean }
+  profile: {
+    classification: string;
+    darkBackgroundRatio: number;
+    darkFrame?: boolean;
+    averageBrightness?: number;
+    foregroundCoverage?: number;
+    foregroundPolarity?: 'light-on-dark' | 'dark-on-light' | 'mixed';
+    density?: 'sparse' | 'medium' | 'dense';
+    thinStrokeRisk?: boolean;
+  }
 ): KernelProcessResult {
   const sw = width, sh = height;
   const ct = Math.floor(sh * (params.bannerCropTopPct / 100));
@@ -407,6 +458,46 @@ export function processPage(
       }
     }
     removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
+  }
+
+  /*
+   * Recover low-value writing on almost-empty dark pages. Do not override
+   * explicit binarization or normal pages: this only runs when the profile says
+   * dark + sparse AND the classifier retained less than 0.5% foreground.
+   * Reading srcData avoids contrast settings pushing already-dim ink below
+   * the recovery threshold.
+   */
+  const dimSparseDarkPage =
+    isDark &&
+    params.invertMode === 'smart' &&
+    binaizationThreshold === 0 &&
+    profile.averageBrightness != null &&
+    profile.averageBrightness < 55 &&
+    profile.foregroundCoverage != null &&
+    profile.foregroundCoverage <= 0.03;
+
+  if (dimSparseDarkPage) {
+    let classifiedPixels = 0;
+    for (let i = 0; i < fm.length; i++) {
+      if (fm[i] === 1) classifiedPixels++;
+    }
+
+    if (classifiedPixels < Math.max(48, totalPixels * 0.005)) {
+      const recovered = recoverDimDarkForeground(
+        srcData,
+        fm,
+        sw,
+        dw,
+        dh,
+        ct,
+        profile.averageBrightness!,
+      );
+      if (recovered > 0) {
+        // Remove isolated noise while keeping connected handwritten strokes.
+        // This pass is cheap because the recovery branch is deliberately rare.
+        removeDecorativeAndNoise(fm, dw, dh, denoiseAmount);
+      }
+    }
   }
 
   /*

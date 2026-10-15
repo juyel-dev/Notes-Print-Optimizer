@@ -23,7 +23,16 @@ export interface PixelTask {
     /** Auto white-box heal flag (kernels/whiteBox). */
     autoWhiteBoxFix?: boolean;
   };
-  profile: { classification: 'DARK_SLIDE' | 'LIGHT_SLIDE' | 'HANDWRITTEN_NOTES' | 'SCREENSHOT_HEAVY' | 'DIAGRAM_EQUATION' | 'MIXED'; darkBackgroundRatio: number };
+  profile: {
+    classification: 'DARK_SLIDE' | 'LIGHT_SLIDE' | 'HANDWRITTEN_NOTES' | 'SCREENSHOT_HEAVY' | 'DIAGRAM_EQUATION' | 'MIXED';
+    darkBackgroundRatio: number;
+    darkFrame?: boolean;
+    averageBrightness?: number;
+    foregroundCoverage?: number;
+    foregroundPolarity?: 'light-on-dark' | 'dark-on-light' | 'mixed';
+    density?: 'sparse' | 'medium' | 'dense';
+    thinStrokeRisk?: boolean;
+  };
 }
 
 export interface ComposeTask {

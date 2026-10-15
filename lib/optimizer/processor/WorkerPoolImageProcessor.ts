@@ -52,7 +52,16 @@ export class WorkerPoolImageProcessor implements IImageProcessor {
             binaizationThreshold: params.binaizationThreshold,
             autoWhiteBoxFix: params.autoWhiteBoxFix,
           },
-          profile: { classification: profile.classification, darkBackgroundRatio: profile.darkBackgroundRatio },
+          profile: {
+            classification: profile.classification,
+            darkBackgroundRatio: profile.darkBackgroundRatio,
+            darkFrame: profile.darkFrame,
+            averageBrightness: profile.averageBrightness,
+            foregroundCoverage: profile.foregroundCoverage,
+            foregroundPolarity: profile.foregroundPolarity,
+            density: profile.density,
+            thinStrokeRisk: profile.thinStrokeRisk,
+          },
         });
         return {
           pageIndex: result.pageIndex,
