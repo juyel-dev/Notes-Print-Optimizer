@@ -40,7 +40,7 @@ export function useEnhanceWorkflow() {
         signal,
       );
       if (signal.aborted) return;
-      dispatch({ type: 'PROCESS_COMPLETE', results, fileName: buildEnhanceFileName(items) });
+      dispatch({ type: 'PROCESS_COMPLETE', results, fileName: buildEnhanceFileName(items), settings });
     } catch (err) {
       if (signal.aborted) {
         if (abortRef.current?.signal === signal) {

@@ -93,6 +93,7 @@ export function enhanceReducer(state: EnhanceState, action: EnhanceAction): Enha
         isProcessing: false,
         progress: null,
         results: action.results,
+        appliedSettings: action.settings,
         selectedIndex: 0,
         fileName: action.fileName,
         step: 'enhance',

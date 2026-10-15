@@ -33,12 +33,17 @@ export class EnhanceExporter {
     onProgress?: (p: EnhanceExportProgress) => void,
   ): Promise<Blob> {
     const pdfDoc = await PDFDocument.create();
+    pdfDoc.setProducer('Print Optimizer');
     for (let i = 0; i < results.length; i++) {
       if (onProgress) onProgress({ current: i, total: results.length });
       const page = results[i];
       const embedded = await pdfDoc.embedJpg(dataUrlToBytes(page.dataUrl));
-      const pdfPage = pdfDoc.addPage([page.width, page.height]);
-      pdfPage.drawImage(embedded, { x: 0, y: 0, width: page.width, height: page.height });
+      // Page size = the SOURCE page size in points (not the raster pixel size), so printing at
+      // "actual size" matches the original sheet instead of a ~1.7x larger one.
+      const w = page.pdfWidth ?? page.width;
+      const h = page.pdfHeight ?? page.height;
+      const pdfPage = pdfDoc.addPage([w, h]);
+      pdfPage.drawImage(embedded, { x: 0, y: 0, width: w, height: h });
       await memoryManager.yieldToUI();
     }
     const pdfBytes = await pdfDoc.save();

@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Enhance Light PDF overhaul.** *Quality:* new **Even out lighting** step (block-wise paper estimate + smooth gain map) removes camera shadows and gradients, which the old single global threshold could not; **Print detail** (120 / 150 / 200 DPI) with a per-page pixel cap so huge pages cannot exhaust phone memory; one-tap **presets** (Balanced, Faint pencil, Phone photo, Gentle, Max print). *UX:* **live preview** of the selected page while sliders move (no more blind "Apply & wait"), sticky preview with settings beside it on desktop, **Compare** + **Zoom** buttons, progress + Cancel now also shown during re-enhance, the download is blocked while settings are un-applied so it always matches the preview, and the bar shows page count and estimated size. *Memory:* the in-memory "original" is now a downscaled preview instead of a full-resolution copy.
+
+### Fixed
+
+- **Enhance: exported PDF pages were ~1.7x too large** (raster pixel size was used as the PDF page size in points). Pages now keep the source sheet size, so "actual size" printing matches the original.
+- **Enhance: "Up to date" could be shown for stale results** when a slider was moved during a run; the reducer now records the exact settings each result set was produced with.
+- **Enhance: password-protected / damaged PDFs failed with a generic message**; the file is now named and the cause explained. Partially opened documents are released on failure.
+- **Enhance: multi-file output name** defaulted to `enhanced-print.pdf-PrintReady.pdf`; now `enhanced-print-PrintReady.pdf` / `Enhanced-PrintReady.pdf`.
+- **Enhance: the preview trapped vertical scrolling on touch** (`touch-action: none`); it now scrolls normally and hold-to-compare cancels cleanly.
+
 ### Fixed
 
 - **QR Studio: uploading a logo broke the preview and the download.** `qr-code-styling` re-reads the logo with `XMLHttpRequest(data:…)` by default (`saveAsBlob: true`); our CSP `connect-src` blocks that silently, so the render never finished. Now `saveAsBlob: false` (no CSP loosening, no network). Also: removing a logo now really clears it, the chosen file name is shown (instead of the native "No file chosen"), and images that cannot be decoded / have no size are rejected with a message. Regression test: `tests/unit/qrLogoCsp.test.ts`.

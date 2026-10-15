@@ -9,18 +9,18 @@
 import { getPdfjsLib } from '@/lib/optimizer/pdfjsLoader';
 import { memoryManager } from '@/lib/optimizer/memoryManager';
 import { enhanceImageData } from './enhanceKernels';
-import type { EnhancePageResult, EnhanceSettings } from './types';
+import { ENHANCE_DETAIL_DPI, type EnhancePageResult, type EnhanceSettings } from './types';
+import { planRender, previewSize } from './renderPlan';
 import type { UploadedPdfItem } from '@/lib/workflow/types';
 
-/** Render scale: 120 DPI (120/72 ≈ 1.67×) — print-safe detail without phone OOM. */
-const RENDER_SCALE = 120 / 72;
 const JPEG_QUALITY = 0.92;
+const PREVIEW_JPEG_QUALITY = 0.85;
 
 function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new Error('Processing cancelled.');
 }
 
-function canvasToDataUrl(canvas: HTMLCanvasElement): Promise<string> {
+function canvasToDataUrl(canvas: HTMLCanvasElement, quality: number = JPEG_QUALITY): Promise<string> {
   return new Promise((res, rej) => {
     canvas.toBlob(
       (blob) => {
@@ -34,9 +34,22 @@ function canvasToDataUrl(canvas: HTMLCanvasElement): Promise<string> {
         fr.readAsDataURL(blob);
       },
       'image/jpeg',
-      JPEG_QUALITY,
+      quality,
     );
   });
+}
+
+/** Turns pdf.js failures into messages a person can act on. */
+export function friendlyPdfError(err: unknown, fileName: string): Error {
+  const name = err && typeof err === 'object' && 'name' in err ? String((err as { name: unknown }).name) : '';
+  if (name === 'PasswordException') {
+    return new Error(`"${fileName}" is password-protected. Remove the password first, then enhance it.`);
+  }
+  if (name === 'InvalidPDFException' || name === 'FormatError') {
+    return new Error(`"${fileName}" looks damaged or is not a valid PDF.`);
+  }
+  if (err instanceof Error && err.message) return err;
+  return new Error(`Could not open "${fileName}".`);
 }
 
 export interface EnhanceJobProgress {
@@ -61,15 +74,26 @@ export class EnhanceProcessor {
     const results: EnhancePageResult[] = [];
     let totalPages = 0;
 
-    const docs = [];
-    for (const item of items) {
-      // pdf.js transfers buffer ownership to its worker, detaching it on the
-      // main thread. Slice a private copy per run so Apply & Re-Enhance can
-      // safely reuse item.arrayBuffer (same guard as the main pipeline).
-      const task = pdfjsLib.getDocument({ data: new Uint8Array(item.arrayBuffer.slice(0)) });
-      const doc = await task.promise;
-      docs.push({ item, doc });
-      totalPages += doc.numPages;
+    const dpi = ENHANCE_DETAIL_DPI[settings.detail] ?? ENHANCE_DETAIL_DPI.standard;
+    const docs: Array<{ item: UploadedPdfItem; doc: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']> }> = [];
+    try {
+      for (const item of items) {
+        throwIfAborted(signal);
+        // pdf.js transfers buffer ownership to its worker, detaching it on the
+        // main thread. Slice a private copy per run so Apply & Re-Enhance can
+        // safely reuse item.arrayBuffer (same guard as the main pipeline).
+        try {
+          const task = pdfjsLib.getDocument({ data: new Uint8Array(item.arrayBuffer.slice(0)) });
+          const doc = await task.promise;
+          docs.push({ item, doc });
+          totalPages += doc.numPages;
+        } catch (err) {
+          throw friendlyPdfError(err, item.name);
+        }
+      }
+    } catch (err) {
+      for (const { doc } of docs) { try { await doc.destroy(); } catch { /* noop */ } }
+      throw err;
     }
 
     if (totalPages === 0) throw new Error('No pages found in the selected PDFs.');
@@ -83,9 +107,11 @@ export class EnhanceProcessor {
 
           const page = await doc.getPage(p);
           throwIfAborted(signal);
-          const viewport = page.getViewport({ scale: RENDER_SCALE });
-          const vw = Math.max(1, Math.floor(viewport.width));
-          const vh = Math.max(1, Math.floor(viewport.height));
+          const base = page.getViewport({ scale: 1 });
+          const plan = planRender(base.width, base.height, dpi);
+          const viewport = page.getViewport({ scale: plan.scale });
+          const vw = plan.width;
+          const vh = plan.height;
           const canvas = memoryManager.acquireCanvas(vw, vh);
           const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
           await page.render({ canvasContext: ctx, viewport }).promise;
@@ -95,7 +121,19 @@ export class EnhanceProcessor {
           const enhanced = enhanceImageData(imageData, settings);
           throwIfAborted(signal);
 
-          const originalDataUrl = await canvasToDataUrl(canvas);
+          // Keep only a downscaled original in memory (before/after + live preview source).
+          const ps = previewSize(vw, vh);
+          let originalDataUrl: string;
+          if (ps.width === vw) {
+            originalDataUrl = await canvasToDataUrl(canvas, PREVIEW_JPEG_QUALITY);
+          } else {
+            const small = memoryManager.acquireCanvas(ps.width, ps.height);
+            const sctx = small.getContext('2d')!;
+            sctx.imageSmoothingQuality = 'high';
+            sctx.drawImage(canvas, 0, 0, ps.width, ps.height);
+            originalDataUrl = await canvasToDataUrl(small, PREVIEW_JPEG_QUALITY);
+            memoryManager.disposeCanvas(small);
+          }
           throwIfAborted(signal);
           const outCanvas = memoryManager.acquireCanvas(vw, vh);
           const outCtx = outCanvas.getContext('2d')!;
@@ -106,7 +144,7 @@ export class EnhanceProcessor {
           memoryManager.disposeCanvas(canvas);
           memoryManager.disposeCanvas(outCanvas);
 
-          results.push({ index: results.length, width: vw, height: vh, dataUrl, originalDataUrl });
+          results.push({ index: results.length, width: vw, height: vh, pdfWidth: plan.pdfWidth, pdfHeight: plan.pdfHeight, dataUrl, originalDataUrl });
           done++;
           await memoryManager.yieldToUI();
         }
