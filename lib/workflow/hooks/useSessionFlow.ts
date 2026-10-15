@@ -56,11 +56,14 @@ export function useSessionFlow({
       abortRef.current.abort();
       abortRef.current = null;
     }
-    pwOptimizerStorage.clearCache();
+    // Only clear pages written by this tab. Another tab's workflow must
+    // remain usable while this one resets or exits.
+    const cleanup = pwOptimizerStorage.clearOwnedCache();
     memoryManager.revokeAllBlobUrls();
     revokePreviewAssets();
     clearProgressiveThumbnails();
     actions.resetWorkflow();
+    return cleanup;
   }, [actions, abortRef, revokePreviewAssets, clearProgressiveThumbnails]);
 
   /**
@@ -71,7 +74,7 @@ export function useSessionFlow({
    */
   const handleEnhanceLayoutHandoff = useCallback(async (pages: HandoffPageInput[]) => {
     if (pages.length === 0) return;
-    handleResetWorkflow();
+    await handleResetWorkflow();
     const pdfId = EnhanceHandoffService.buildPdfId();
     await EnhanceHandoffService.persistPages(pages, pdfId);
     actions.setProcessedPages(EnhanceHandoffService.buildProcessedPages(pages, pdfId));
@@ -85,10 +88,13 @@ export function useSessionFlow({
   }, [finalPrintPdfBlob]);
 
   const handleProceedToPhase4 = useCallback(() => {
-    pwOptimizerStorage.clearCache();
+    // Keep phase changes responsive while asynchronously cleaning this tab's
+    // own cache, without deleting another tab's in-progress pages.
+    const cleanup = pwOptimizerStorage.clearOwnedCache();
     memoryManager.revokeAllBlobUrls();
     revokePreviewAssets();
     actions.setPhase(4);
+    return cleanup;
   }, [actions, revokePreviewAssets]);
 
   const handleDownloadOptimized1Up = useCallback(async () => {
