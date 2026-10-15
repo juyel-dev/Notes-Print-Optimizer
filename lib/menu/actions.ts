@@ -14,8 +14,6 @@
 export async function clearAppCaches(): Promise<{ ok: boolean; message: string }> {
   let clearedCaches = 0;
   let failedSteps = 0;
-  const TOTAL_STEPS = 4;
-
   // 1. Browser Cache Storage (service worker / static caches)
   try {
     if (typeof window !== 'undefined' && 'caches' in window) {
@@ -28,7 +26,8 @@ export async function clearAppCaches(): Promise<{ ok: boolean; message: string }
   // 2. Optimizer IndexedDB cache + tracked blob URLs (lazy, decoupled)
   try {
     const { pwOptimizerStorage } = await import('../optimizer/storage');
-    pwOptimizerStorage.clearCache();
+    const cleared = await pwOptimizerStorage.clearCache();
+    if (!cleared) failedSteps++;
   } catch { failedSteps++; }
   try {
     const { memoryManager } = await import('../optimizer/memoryManager');
@@ -41,12 +40,11 @@ export async function clearAppCaches(): Promise<{ ok: boolean; message: string }
     clearContentCache();
   } catch { failedSteps++; }
 
-  const allFailed = failedSteps === TOTAL_STEPS;
-  const message = allFailed
-    ? 'Could not clear cache - browser storage may be unavailable.'
+  const message = failedSteps > 0
+    ? 'Some cached data could not be cleared. Some data may remain on this device — try again.'
     : clearedCaches > 0
-      ? `Cleared ${clearedCaches} cache${clearedCaches === 1 ? '' : 's'}.`
+      ? `Cleared ${clearedCaches} browser cache${clearedCaches === 1 ? '' : 's'} and on-device processing data.`
       : 'Cache cleared.';
 
-  return { ok: !allFailed, message };
+  return { ok: failedSteps === 0, message };
 }
