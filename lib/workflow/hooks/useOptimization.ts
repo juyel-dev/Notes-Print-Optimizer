@@ -244,8 +244,13 @@ export function useOptimization({
       const previewPdfId = `pw_preview_${Date.now()}`;
       try {
         await pwOptimizerStorage.storePage(previewPdfId, pageIndex, null, optBlob);
-      } catch {
-        // IDB write failure is non-fatal for preview
+      } catch (error) {
+        // Never publish a ProcessedPage whose storage key does not exist; the
+        // print exporter reads the final pixels from IndexedDB, not this RAM buffer.
+        memoryManager.revokeBlobUrl(thumbUrl);
+        if (previewBlobUrlRef.current === thumbUrl) previewBlobUrlRef.current = null;
+        console.warn('[PreviewReprocess] Failed to persist page preview:', error);
+        throw new Error('Could not save preview page to browser storage.');
       }
 
       // Release optimized ImageData - no longer needed
@@ -269,7 +274,11 @@ export function useOptimization({
     } catch (err: unknown) {
       if ((err as { name?: string })?.name !== 'AbortError') {
         console.error('[PreviewReprocess] Failed:', err);
-        actions.setError('Preview processing failed. Try adjusting settings.');
+        actions.setError(
+          err instanceof Error && err.message === 'Could not save preview page to browser storage.'
+            ? 'Could not save the preview page to browser storage. Free up space and try again.'
+            : 'Preview processing failed. Try adjusting settings.',
+        );
       }
     } finally {
       // Guaranteed cleanup - release any remaining resources
