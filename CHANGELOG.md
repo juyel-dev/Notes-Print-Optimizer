@@ -7,6 +7,7 @@
 ### Fixed
 
 - **Batch cache writes could evict too much when page sizes changed in opposite directions.** Base eviction space on the net change across the whole batch, and add coverage proving a 50 MiB shrink offsets a 50 MiB growth without evicting an unrelated page.
+- **The best-effort visual CI capture could hold the required check for too long.** Cap the screenshot pass at 180 seconds; partial screenshots remain useful and the optional capture can no longer delay code checks indefinitely.
 
 - **An old processing request could cancel a newer run.** Link each external AbortSignal to that run's local controller, remove listeners when the run settles, and test that an earlier request's cancellation cannot abort a later processing run.
 
