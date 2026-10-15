@@ -239,7 +239,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
         </div>
       )}
 
-      <div className={`flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 pb-28 lg:pb-0`}>
+      <div className={`flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 pb-[260px] lg:pb-0`}>
         {/* ── Preview column ─────────────────────────────────────────── */}
         <div className="flex min-w-0 flex-col gap-3">
           {state.isProcessing ? (
@@ -458,7 +458,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
 
       {/* Sticky action bar — filename + download left, layout right */}
       {!state.isProcessing && hasResults && (
-        <div className="sticky bottom-0 z-20 -mx-4 border-t border-surface-2 bg-bg/95 px-4 pt-3 backdrop-blur-md" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="sticky bottom-0 z-20 -mx-4 border-t border-surface-2 bg-bg/95 px-4 pt-3 backdrop-blur-md lg:static lg:mx-0 lg:rounded-2xl lg:border lg:p-4 lg:backdrop-blur-none" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
           <div className="mb-2">
             <FileNameField baseName={outBase} onChange={(value) => { setOutBase(value); setFilenameEdited(true); }} suffix="-PrintReady.pdf" label="Filename" />
           </div>
