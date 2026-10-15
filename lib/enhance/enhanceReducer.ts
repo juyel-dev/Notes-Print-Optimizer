@@ -7,8 +7,15 @@ import { INITIAL_ENHANCE_STATE, type EnhanceAction, type EnhanceState } from './
 
 /** Derive a clean output base name from processor/export filenames. */
 export function defaultEnhanceBaseName(fileName: string): string {
-  const base = fileName.replace(/(-enhanced|-PrintReady)?\.pdf$/i, '');
-  return !base || base === 'enhanced-print' ? 'Enhanced' : base;
+  let base = fileName.replace(/\.pdf$/i, '');
+  // Strip export suffixes repeatedly (`x-enhanced-enhanced.pdf`) and
+  // case-insensitively (`Enhanced-print.PDF`).
+  let prev = '';
+  while (prev !== base) {
+    prev = base;
+    base = base.replace(/(-enhanced|-PrintReady)$/i, '');
+  }
+  return !base || base.toLowerCase() === 'enhanced-print' ? 'Enhanced' : base;
 }
 
 export function buildEnhanceFileName(sources: { name: string }[]): string {

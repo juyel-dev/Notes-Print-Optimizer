@@ -220,6 +220,7 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
   const [logoError, setLogoError] = useState<string | null>(null);
   const [logoName, setLogoName] = useState('');
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const logoProbeRef = useRef(0);
   const [gradient, setGradient] = useState(false);
   const [gradientEnd, setGradientEnd] = useState(DEFAULT_GRADIENT_END);
 
@@ -487,6 +488,9 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
   };
 
   const onLogoFile = (f: File | null) => {
+    // New pick invalidates any in-flight decode: a slow first file must not
+    // overwrite the newer pick (or a removal) when it finishes late.
+    const ticket = ++logoProbeRef.current;
     setLogoError(null);
     if (!f) {
       setLogoDataUrl(null);
@@ -503,10 +507,12 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
     }
     const reader = new FileReader();
     reader.onload = () => {
+      if (ticket !== logoProbeRef.current) return;
       const url = reader.result as string;
       // Make sure the browser can decode it (and it has a size) before handing it to the renderer.
       const probe = new window.Image();
       probe.onload = () => {
+        if (ticket !== logoProbeRef.current) return;
         if (!probe.naturalWidth || !probe.naturalHeight) {
           setLogoError('That image has no size (common with some SVGs) — use a PNG or JPG logo instead.');
           return;
@@ -514,7 +520,10 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
         setLogoDataUrl(url);
         setLogoName(f.name);
       };
-      probe.onerror = () => setLogoError('That image could not be decoded — try a PNG or JPG logo.');
+      probe.onerror = () => {
+        if (ticket !== logoProbeRef.current) return;
+        setLogoError('That image could not be decoded — try a PNG or JPG logo.');
+      };
       probe.src = url;
     };
     reader.onerror = () => setLogoError('Could not read that image.');
@@ -997,7 +1006,7 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
                 </label>
                 {gradient && <ColorField id="qr-grad-end" label="Gradient end" value={gradientEnd} onChange={setGradientEnd} />}
                 <div>
-                  <span className="text-xs font-bold text-ink">Logo (centre)</span>
+                  <label htmlFor="qr-logo" className="text-xs font-bold text-ink">Logo (centre)</label>
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       ref={logoInputRef}
@@ -1079,9 +1088,9 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
               <input
                 type="range"
                 min={128}
-                max={1024}
+                max={2048}
                 step={32}
-                value={Math.min(size, 1024)}
+                value={size}
                 aria-label="QR size slider"
                 onChange={(e) => setSizeBoth(Number(e.target.value))}
                 className={RANGE}

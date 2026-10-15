@@ -3,6 +3,8 @@ import {
   filterPersistableScanHistory,
   isWifiQrPayload,
   parsePersistedScanHistory,
+  parseWifiQrPayload,
+  wifiSafeDisplayLabel,
 } from '../../lib/qr/scanHistory';
 
 describe('QR scan history persistence', () => {
@@ -35,5 +37,47 @@ describe('QR scan history persistence', () => {
     expect(parsePersistedScanHistory('{broken')).toEqual([]);
     const history = Array.from({ length: 25 }, (_, index) => `https://example.com/${index}`);
     expect(filterPersistableScanHistory(history)).toHaveLength(20);
+  });
+});
+
+describe('QR Wi-Fi payload parsing', () => {
+  it('parses ssid, auth, password and hidden flag', () => {
+    expect(parseWifiQrPayload('WIFI:T:WPA;S:home;P:s3cret;H:true;;')).toEqual({
+      ssid: 'home',
+      auth: 'WPA',
+      password: 's3cret',
+      hidden: true,
+    });
+  });
+
+  it('defaults missing auth to nopass and handles escapes', () => {
+    const parsed = parseWifiQrPayload('WIFI:S:café\\;bar;;');
+    expect(parsed?.ssid).toBe('café;bar');
+    expect(parsed?.auth).toBe('nopass');
+    expect(parsed?.password).toBe('');
+  });
+
+  it('returns null when no SSID is present', () => {
+    expect(parseWifiQrPayload('WIFI:T:WPA;P:secret;;')).toBeNull();
+    expect(parseWifiQrPayload('WIFI:;;')).toBeNull();
+  });
+});
+
+describe('QR Wi-Fi safe display labels', () => {
+  it('passes non-Wi-Fi payloads through unchanged', () => {
+    expect(wifiSafeDisplayLabel('https://example.com')).toBe('https://example.com');
+    expect(wifiSafeDisplayLabel('hello world')).toBe('hello world');
+  });
+
+  it('shows only the SSID for parseable Wi-Fi payloads', () => {
+    const label = wifiSafeDisplayLabel('WIFI:T:WPA;S:home;P:super-secret;;');
+    expect(label).toBe('home');
+    expect(label).not.toContain('super-secret');
+  });
+
+  it('redacts unparseable Wi-Fi payloads instead of leaking them raw', () => {
+    const label = wifiSafeDisplayLabel('WIFI:T:WPA;P:super-secret;;');
+    expect(label).not.toContain('super-secret');
+    expect(label).not.toMatch(/^WIFI:/i);
   });
 });
