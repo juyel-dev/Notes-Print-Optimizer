@@ -6,6 +6,10 @@
 
 ### Changed
 
+- **Enhance Light PDF — UI/UX polish.** Real 3-step progress indicator (done / current / next) replaces the header pill; each new step scrolls to the top and moves focus to the title (screen readers announce the change). Upload screen gains a 3-step "how it works" strip and capture tips, and now shows read errors that were previously invisible there. Arrange shows file count and total size. Workbench: a focused full-screen progress state on the first run (percent + Cancel), errors moved to the top with **Try again / Change files**, sliders tucked into a **Fine-tune** section (presets stay one tap away; it opens when you tweak, with **Reset to Balanced** for custom mixes), download button confirms with **Download again** and "Saved as …", and an `aria-live` "Enhancement complete" announcement. Sub-12px text in the tool raised to the 12px floor.
+
+### Changed
+
 - **Enhance Light PDF overhaul.** *Quality:* new **Even out lighting** step (block-wise paper estimate + smooth gain map) removes camera shadows and gradients, which the old single global threshold could not; **Print detail** (120 / 150 / 200 DPI) with a per-page pixel cap so huge pages cannot exhaust phone memory; one-tap **presets** (Balanced, Faint pencil, Phone photo, Gentle, Max print). *UX:* **live preview** of the selected page while sliders move (no more blind "Apply & wait"), sticky preview with settings beside it on desktop, **Compare** + **Zoom** buttons, progress + Cancel now also shown during re-enhance, the download is blocked while settings are un-applied so it always matches the preview, and the bar shows page count and estimated size. *Memory:* the in-memory "original" is now a downscaled preview instead of a full-resolution copy.
 
 ### Fixed

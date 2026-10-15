@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { useEnhanceWorkflow } from '@/lib/enhance/useEnhanceWorkflow';
 import type { EnhanceStep } from '@/lib/enhance/types';
 import { useSeoVisibility } from '@/components/seo/SeoVisibilityContext';
@@ -15,11 +15,11 @@ export interface EnhanceToolViewProps {
   onHandoffToLayout?: (pages: Array<{ dataUrl: string; width: number; height: number }>) => void;
 }
 
-const STEP_LABEL: Record<EnhanceStep, string> = {
-  upload: '1 · Upload',
-  arrange: '2 · Arrange',
-  enhance: '3 · Enhance',
-};
+const STEPS: Array<{ key: EnhanceStep; label: string }> = [
+  { key: 'upload', label: 'Upload' },
+  { key: 'arrange', label: 'Arrange' },
+  { key: 'enhance', label: 'Enhance' },
+];
 
 /**
  * Self-contained mobile tool: upload → arrange → enhance (download / N-Up).
@@ -30,6 +30,18 @@ export const EnhanceToolView: React.FC<EnhanceToolViewProps> = ({ onBack, onHand
   const workflow = useEnhanceWorkflow();
   const { state } = workflow;
   const { setVisible } = useSeoVisibility();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const firstRender = useRef(true);
+  // New step = new screen: start at the top and tell assistive tech where we are.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0 });
+    titleRef.current?.focus({ preventScroll: true });
+  }, [state.step]);
+  const stepIndex = STEPS.findIndex((x) => x.key === state.step);
   // Premium: About/FAQ/Related visible only on upload + finished workbench (Download ready).
   // While arranging or tweaking settings before any result, keep focus on the task.
   useEffect(() => {
@@ -50,13 +62,39 @@ export const EnhanceToolView: React.FC<EnhanceToolViewProps> = ({ onBack, onHand
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="flex min-w-0 flex-1 flex-col">
-          <h1 className="truncate text-[15px] font-bold text-ink">Enhance Light PDF</h1>
-          <p className="truncate text-[11px] text-ink-faint">Faint scans → clear printouts · 100% on-device</p>
+          <h1 ref={titleRef} tabIndex={-1} className="truncate text-[15px] font-bold text-ink outline-none">Enhance Light PDF</h1>
+          <p className="truncate text-xs text-ink-faint">Faint scans → clear printouts · 100% on-device</p>
         </div>
-        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
-          {STEP_LABEL[state.step]}
-        </span>
       </header>
+
+      <ol aria-label="Progress" className="flex items-center gap-2 px-1">
+        {STEPS.map((st, i) => {
+          const done = i < stepIndex;
+          const current = i === stepIndex;
+          return (
+            <React.Fragment key={st.key}>
+              <li aria-current={current ? 'step' : undefined} className="flex items-center gap-2">
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-extrabold tabular-nums transition-colors ${
+                    done
+                      ? 'border-success/40 bg-success/15 text-success'
+                      : current
+                        ? 'border-primary bg-primary-strong text-white shadow-md shadow-primary/25'
+                        : 'border-elevated bg-surface text-ink-faint'
+                  }`}
+                >
+                  {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" /> : i + 1}
+                </span>
+                <span className={`text-xs font-bold ${current ? 'text-ink' : done ? 'text-ink-muted' : 'text-ink-faint'}`}>
+                  {st.label}
+                  <span className="sr-only">{done ? ' (done)' : current ? ' (current step)' : ''}</span>
+                </span>
+              </li>
+              {i < STEPS.length - 1 && <span aria-hidden="true" className={`h-px flex-1 ${i < stepIndex ? 'bg-success/40' : 'bg-elevated'}`} />}
+            </React.Fragment>
+          );
+        })}
+      </ol>
 
       {state.step === 'upload' && <EnhanceUploadView workflow={workflow} />}
       {state.step === 'arrange' && <EnhanceArrangeView workflow={workflow} />}
