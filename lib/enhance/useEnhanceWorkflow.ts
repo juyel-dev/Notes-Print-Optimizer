@@ -63,11 +63,21 @@ export function useEnhanceWorkflow() {
 
   const handleUpload = useCallback(async (files: File[]) => {
     if (state.isProcessing || state.exportBusy) return;
-    const pdfs = files.slice(0, MAX_ENHANCE_FILES);
-    if (pdfs.length === 0) {
+    const existing = state.step === 'arrange' ? state.files : [];
+    const remainingSlots = Math.max(0, MAX_ENHANCE_FILES - existing.length);
+    if (files.length === 0) {
       dispatch({ type: 'PROCESS_ERROR', error: 'No files selected.' });
       return;
     }
+    if (remainingSlots === 0) {
+      dispatch({
+        type: 'PROCESS_ERROR',
+        error: `You can arrange up to ${MAX_ENHANCE_FILES} PDFs. Remove a file before adding another.`,
+      });
+      return;
+    }
+    const pdfs = files.slice(0, remainingSlots);
+    const skippedCount = files.length - pdfs.length;
     try {
       for (const f of pdfs) {
         if (!(await isLikelyPdfFile(f))) {
@@ -77,9 +87,14 @@ export function useEnhanceWorkflow() {
       }
       const items = await UploadService.readFiles(pdfs);
       // Adding from the arrange stage appends; uploading fresh replaces.
-      const base = state.step === 'arrange' ? state.files : [];
-      const merged = [...base, ...items].slice(0, MAX_ENHANCE_FILES);
+      const merged = [...existing, ...items];
       dispatch({ type: 'SET_FILES', files: merged, step: 'arrange' });
+      if (skippedCount > 0) {
+        dispatch({
+          type: 'PROCESS_ERROR',
+          error: `Added ${items.length} PDF(s); ${skippedCount} extra file(s) were skipped because the limit is ${MAX_ENHANCE_FILES}.`,
+        });
+      }
     } catch {
       dispatch({ type: 'PROCESS_ERROR', error: 'Failed to read the selected files.' });
     }
