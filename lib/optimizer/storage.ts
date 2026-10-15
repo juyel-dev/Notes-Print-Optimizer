@@ -96,7 +96,10 @@ class PWOptimizerStorage {
          auto-commits and puts fail with TransactionInactiveError). */
       const oldSizes = await this.getSizesByKey(records.map(r => r.id));
       const sizeDelta = records.reduce((s, r, i) => s + r.sizeBytes - (oldSizes[i] ?? 0), 0);
-      const neededBytes = records.reduce((s, r, i) => s + Math.max(0, r.sizeBytes - (oldSizes[i] ?? 0)), 0);
+      // Evict based on the net cache growth, not only positive rows: shrinking
+      // pages in the same batch offset pages that grow, so the final cache may
+      // need no extra space at all.
+      const neededBytes = Math.max(0, sizeDelta);
       if (neededBytes > 0) await this.evictIfNeeded(neededBytes, new Set(records.map((record) => record.id)));
 
       const db = await this.getDB();
