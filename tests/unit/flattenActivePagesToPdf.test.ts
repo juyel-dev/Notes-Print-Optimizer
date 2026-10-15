@@ -57,6 +57,29 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     expect(loaded.getPageCount()).toBe(3);
   });
 
+  it('fails explicitly if a page cannot be encoded instead of silently omitting it from the PDF', async () => {
+    const tonal = new Uint8ClampedArray(40 * 30 * 4);
+    for (let i = 0; i < tonal.length; i += 4) {
+      tonal[i] = 128;
+      tonal[i + 1] = 128;
+      tonal[i + 2] = 128;
+      tonal[i + 3] = 255;
+    }
+
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(new ImageData(tonal, 40, 30));
+    vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue({
+      width: 40,
+      height: 30,
+      getContext: () => ({ putImageData: () => {} }),
+      toBlob: (callback: BlobCallback) => callback(null),
+    } as unknown as HTMLCanvasElement);
+    vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
+
+    await expect(
+      PdfExporter.flattenActivePagesToPdf([makeProcessedPage(0)]),
+    ).rejects.toThrow('Could not encode page 1 for print layout.');
+  });
+
   it('reports progress once per page', async () => {
     const fakeCanvas = {
       width: 10, height: 10,
