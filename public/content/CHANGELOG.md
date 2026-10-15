@@ -6,6 +6,8 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ### Fixed
 
+- Processing cancellation is now isolated per run: aborting an earlier request cannot cancel a newer document job, and external abort listeners are removed after completion.
+
 - Storage cache eviction now protects rows being replaced and waits for the eviction transaction to finish, preventing cache-size undercounting and over-budget IndexedDB data during single or batch writes.
 - Failed or cancelled reprocessing now keeps the last successful page thumbnails intact, releases PDF.js/canvas resources on render errors, removes only partial progressive thumbnails, and preserves a single-page preview until the replacement is encoded and saved successfully.
 
