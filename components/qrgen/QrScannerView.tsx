@@ -96,12 +96,30 @@ function loadHistory(): string[] {
   return [];
 }
 
+type QrScannerInstance = InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']>;
+
+async function disposeQrScannerInstance(instance: QrScannerInstance): Promise<void> {
+  try {
+    // Html5Qrcode.SCANNING = 2. If start() was still pending, it may not yet
+    // be stoppable; start() calls this helper again if that pending start wins.
+    if (instance.getState() === 2) await instance.stop();
+  } catch {
+    /* it may already be stopped or still starting */
+  }
+  try {
+    instance.clear();
+  } catch {
+    /* nothing to clear */
+  }
+}
+
 /**
  * QR Scanner — camera (html5-qrcode lazy, native BarcodeDetector when present) +
  * file/paste + torch + history. 100% on-device, lazy-loaded so Generate stays light.
  */
 export const QrScannerView: React.FC = () => {
-  const html5Ref = useRef<InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']> | null>(null);
+  const html5Ref = useRef<QrScannerInstance | null>(null);
+  const scanSessionRef = useRef(0);
   const [cameras, setCameras] = useState<CameraInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
   const [scanning, setScanning] = useState(false);
@@ -145,36 +163,33 @@ export const QrScannerView: React.FC = () => {
   }, []);
 
   const stop = useCallback(async () => {
+    // Invalidates a camera start that may still be waiting for dynamic import
+    // or browser permission; its continuation must not re-open the camera.
+    scanSessionRef.current += 1;
     setScanning(false);
     setTorchOn(false);
     setTorchSupported(false);
     const inst = html5Ref.current;
     html5Ref.current = null;
-    if (!inst) return;
-    try {
-      // 2 = SCANNING
-      if (inst.getState() === 2) await inst.stop();
-    } catch {
-      /* already stopped */
-    }
-    try {
-      inst.clear();
-    } catch {
-      /* nothing to clear */
-    }
+    if (inst) await disposeQrScannerInstance(inst);
   }, []);
 
   const start = useCallback(async () => {
     setError(null);
+    if (html5Ref.current) await stop();
+    const requestId = ++scanSessionRef.current;
+    let inst: QrScannerInstance | null = null;
+
     try {
-      if (html5Ref.current) await stop();
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
-      const inst = new Html5Qrcode(READER_ID, {
+      if (requestId !== scanSessionRef.current) return;
+
+      inst = new Html5Qrcode(READER_ID, {
         verbose: false,
         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
         useBarCodeDetectorIfSupported: true,
       });
-      html5Ref.current = inst as unknown as InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']>;
+      html5Ref.current = inst;
       // Prefer the rear camera on phones; fall back to a specific device if the user picked one.
       const source: string | MediaTrackConstraints = selectedId || { facingMode: 'environment' };
       await inst.start(
@@ -183,24 +198,38 @@ export const QrScannerView: React.FC = () => {
         (decoded) => onDecoded(decoded),
         () => {}
       );
+
+      if (requestId !== scanSessionRef.current) {
+        if (html5Ref.current === inst) html5Ref.current = null;
+        await disposeQrScannerInstance(inst);
+        return;
+      }
+
       setScanning(true);
       // camera list (labels are only available once permission is granted)
       try {
         const cams = await Html5Qrcode.getCameras();
+        if (requestId !== scanSessionRef.current) return;
         setCameras(cams.map((c) => ({ id: c.id, label: c.label || c.id })));
       } catch {
         /* selector is optional */
       }
+      if (requestId !== scanSessionRef.current) return;
+
       // torch detection
       try {
         const video = document.querySelector(`#${READER_ID} video`) as HTMLVideoElement | null;
         const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
         const caps = track?.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined;
-        if (caps && 'torch' in caps) setTorchSupported(true);
+        if (caps && 'torch' in caps && requestId === scanSessionRef.current) setTorchSupported(true);
       } catch {
         /* torch unsupported */
       }
     } catch (e: unknown) {
+      if (requestId !== scanSessionRef.current) {
+        if (inst && html5Ref.current !== inst) await disposeQrScannerInstance(inst);
+        return;
+      }
       const msg = e instanceof Error ? e.message : String(e);
       if (/NotAllowedError|Permission denied/i.test(msg)) setError('Camera blocked — allow access in your browser, or scan an image below.');
       else if (/NotFoundError|No camera|Requested device not found/i.test(msg)) setError('No camera detected. Use image upload below.');
