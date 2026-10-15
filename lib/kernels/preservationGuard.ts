@@ -66,6 +66,7 @@ const DEFAULT_POLICY: PreservationPolicy = {
 export type PreservationProfile = Pick<
   PageProfile,
   | 'classification'
+  | 'averageBrightness'
   | 'darkBackgroundRatio'
   | 'darkFrame'
   | 'density'
@@ -154,6 +155,7 @@ function buildStats(
   isDarkSource: boolean,
   before: boolean,
   yOffset = 0,
+  includeDimDarkInk = false,
 ): MaskStats {
   const total = width * height;
   const stride = Math.max(1, Math.floor(Math.sqrt(total / 120000)));
@@ -172,7 +174,9 @@ function buildStats(
 
   const spread = isDarkSource ? 22 : 24;
   const darkThreshold = Math.max(70, Math.min(190, mean - spread));
-  const lightThreshold = Math.min(245, Math.max(150, mean + spread));
+  const lightThreshold = includeDimDarkInk
+    ? Math.max(8, Math.min(80, mean + 4))
+    : Math.min(245, Math.max(150, mean + spread));
 
   let foreground = 0;
   let edges = 0;
@@ -248,7 +252,21 @@ export function assessPreservation(
 
   const beforeHeight = Math.min(processedHeight, sourceHeight - cropTopPx);
   const compareHeight = Math.max(0, beforeHeight);
-  const before = buildStats(source, processedWidth, compareHeight, isDarkSource, true, cropTopPx);
+  const includeDimDarkInk =
+    isDarkSource &&
+    profile.averageBrightness != null &&
+    profile.averageBrightness < 55 &&
+    profile.foregroundCoverage != null &&
+    profile.foregroundCoverage <= 0.03;
+  const before = buildStats(
+    source,
+    processedWidth,
+    compareHeight,
+    isDarkSource,
+    true,
+    cropTopPx,
+    includeDimDarkInk,
+  );
   const after = buildStats(processed, processedWidth, processedHeight, isDarkSource, false);
 
   if (before.foreground < policy.minForegroundSamples) {
