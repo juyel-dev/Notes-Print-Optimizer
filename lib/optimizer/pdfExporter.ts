@@ -381,17 +381,31 @@ export class PdfExporter {
 
       const tw = Math.min(500, Math.round(width / 3)), th = Math.min(750, Math.round(height / 3));
       const tc = memoryManager.acquireCanvas(tw, th);
+      let previewBitmap: ImageBitmap | null = null;
+      let previewBlob: Blob | null = null;
       try {
-        const previewBlob = new Blob([jpegBuffer], { type: 'image/jpeg' });
-        const bmp = await createImageBitmap(previewBlob, { resizeWidth: tw, resizeHeight: th, resizeQuality: 'medium' });
+        const previewSource = new Blob([jpegBuffer], { type: 'image/jpeg' });
+        previewBitmap = await createImageBitmap(previewSource, {
+          resizeWidth: tw,
+          resizeHeight: th,
+          resizeQuality: 'medium',
+        });
         const tCtx = tc.getContext('2d');
-        if (tCtx) { tCtx.drawImage(bmp, 0, 0); bmp.close(); }
-      } catch {
-        console.warn('[export] Preview generation failed for sheet', si + 1);
+        if (!tCtx) throw new Error('Could not initialize the sheet-preview canvas.');
+        tCtx.drawImage(previewBitmap, 0, 0);
+        previewBlob = await new Promise<Blob>((resolve, reject) => {
+          tc.toBlob((encoded) => {
+            if (encoded && encoded.size > 0) resolve(encoded);
+            else reject(new Error('Could not encode the sheet preview.'));
+          }, 'image/jpeg', 0.6);
+        });
+      } catch (error) {
+        console.warn('[export] Preview generation failed for sheet', si + 1, error);
+      } finally {
+        try { previewBitmap?.close(); } catch { /* bitmap may already be closed */ }
+        memoryManager.disposeCanvas(tc);
       }
-      const previewBlob = await new Promise<Blob>((res) => tc.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
-      memoryManager.disposeCanvas(tc);
-      if (previewBlob.size > 0) sheetPreviews.push(memoryManager.createTrackedBlobUrl(previewBlob, 'sheet-preview'));
+      if (previewBlob) sheetPreviews.push(memoryManager.createTrackedBlobUrl(previewBlob, 'sheet-preview'));
 
       const embedded = await pdfDoc.embedJpg(jpegBuffer);
       const pdfPage = pdfDoc.addPage([width, height]);
