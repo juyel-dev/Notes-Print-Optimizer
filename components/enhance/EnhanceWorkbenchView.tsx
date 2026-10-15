@@ -274,7 +274,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
                 <img
                   src={imgSrc}
                   alt={`${showingLive ? 'Live enhanced' : 'Enhanced'} page ${selected.index + 1}`}
-                  className={`pointer-events-none select-none ${zoom ? 'h-auto w-[220%] max-w-none' : 'mx-auto h-auto max-h-[36vh] w-auto max-w-full object-contain lg:max-h-[72vh]'}`}
+                  className={`pointer-events-none select-none ${zoom ? 'h-auto w-[220%] max-w-none' : 'block mx-auto h-auto max-h-[36vh] w-auto max-w-full object-contain lg:max-h-[72vh]'}`}
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
@@ -342,13 +342,12 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
           )}
 
           {state.results.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Pages">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="group" aria-label="Pages">
               {state.results.map((page) => (
                 <button
                   key={page.index}
                   type="button"
-                  role="tab"
-                  aria-selected={state.selectedIndex === page.index}
+                  aria-pressed={state.selectedIndex === page.index}
                   aria-label={`Page ${page.index + 1}`}
                   disabled={state.isProcessing}
                   onClick={() => {
