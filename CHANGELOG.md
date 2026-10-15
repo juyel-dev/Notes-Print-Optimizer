@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **QR Studio: uploading a logo broke the preview and the download.** `qr-code-styling` re-reads the logo with `XMLHttpRequest(data:…)` by default (`saveAsBlob: true`); our CSP `connect-src` blocks that silently, so the render never finished. Now `saveAsBlob: false` (no CSP loosening, no network). Also: removing a logo now really clears it, the chosen file name is shown (instead of the native "No file chosen"), and images that cannot be decoded / have no size are rejected with a message. Regression test: `tests/unit/qrLogoCsp.test.ts`.
+
 ### Changed
 
 - **QR Studio UI redesign (Generate + Scan):** preview and download actions now sit directly under the input on phones (they were buried under every control), with a sticky preview on desktop. Style options moved into three accordions (Colour / Shape & logo / Size & recovery) instead of two duplicated control stacks. New scan-readiness tiles (contrast, data fill, recovery) replace the small chips. Scan result shows Wi-Fi networks as separate name / security / password fields (password hidden by default) and gives mail/phone results an Open action. Gradient end colour is now user-selectable; the retired indigo `#6366f1` default and the Violet swatch were replaced with Cobalt/Marigold swatches.
