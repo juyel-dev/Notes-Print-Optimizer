@@ -47,6 +47,7 @@ import { processPageWithWhiteBoxHeal } from '../../../kernels/whiteBox';
 import { WorkerPoolImageProcessor } from '../../processor/WorkerPoolImageProcessor';
 import { WorkerManager } from '../../../workers/WorkerManager';
 import { resolveEffectiveInvertMode } from './resolveInvertMode';
+import { settleThumbnailSession } from './thumbnailSession';
 import type { WorkerProcessResult } from '../../../workers/protocol';
 
 /* ------------------------------------------------------------------ */
@@ -186,7 +187,10 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     const { pdfBuffer, pdfId } = input;
     const signal = options.signal;
 
-    this.cleanupThumbnails();
+    // Keep the last successful document's thumbnails alive until this run
+    // succeeds. A failed or cancelled reprocess must not leave the UI pointing
+    // at URLs that were revoked before any replacement pages were committed.
+    const previousThumbnailUrls = new Set(this.activeThumbnailUrls);
     this.abortController = new AbortController();
     const localSignal = this.abortController.signal;
 
@@ -205,6 +209,8 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     const pdfDoc = await pdfjsLib.getDocument({
       data: new Uint8Array(pdfBuffer),
     }).promise;
+
+    try {
     const totalPages = pdfDoc.numPages;
     const scale = adaptiveScale();
     const device = detectDeviceProfile();
@@ -350,22 +356,31 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       /* Phase 1: Render */
       let tPhase = performance.now();
       const page = await pdfDoc.getPage(i);
-      const viewport = page.getViewport({ scale });
-      const vw = Math.ceil(viewport.width);
-      const vh = Math.ceil(viewport.height);
+      let renderTarget: ReturnType<typeof createCanvas2D> = null;
+      let srcImageData: ImageData | null = null;
+      let renderMs = 0;
 
-      const renderTarget = createCanvas2D(vw, vh);
-      if (!renderTarget) throw new Error(`Cannot create canvas for page ${i}`);
+      try {
+        const viewport = page.getViewport({ scale });
+        const vw = Math.ceil(viewport.width);
+        const vh = Math.ceil(viewport.height);
 
-      await page.render({
-        canvasContext: renderTarget.ctx as CanvasRenderingContext2D,
-        viewport,
-      }).promise;
+        renderTarget = createCanvas2D(vw, vh);
+        if (!renderTarget) throw new Error(`Cannot create canvas for page ${i}`);
 
-      const srcImageData: ImageData = renderTarget.ctx.getImageData(0, 0, vw, vh);
-      const renderMs = performance.now() - tPhase;
-      freeCanvas(renderTarget.canvas, renderTarget.isOffscreen);
-      page.cleanup();
+        await page.render({
+          canvasContext: renderTarget.ctx as CanvasRenderingContext2D,
+          viewport,
+        }).promise;
+
+        srcImageData = renderTarget.ctx.getImageData(0, 0, vw, vh);
+        renderMs = performance.now() - tPhase;
+      } finally {
+        if (renderTarget) freeCanvas(renderTarget.canvas, renderTarget.isOffscreen);
+        try { page.cleanup(); } catch { /* PDF.js page may already be cleaned up */ }
+      }
+
+      if (!srcImageData) throw new Error(`Could not render PDF page ${i}.`);
 
       if (localSignal.aborted) throw new DOMException('Aborted', 'AbortError');
 
@@ -422,7 +437,6 @@ export class ProcessingEngineV2 implements IProcessingEngine {
 
     flushIdb();
     await idbFlushChain;
-    try { pdfDoc.destroy(); } catch { /* */ }
 
     if (idbPersistErrors.length > 0) {
       throw new Error(
@@ -463,6 +477,16 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       totalPages, pagesPerSecond: Number((totalPages / (totalMs / 1000)).toFixed(2)),
       renderMs: sumRenderMs, analyzeMs: sumAnalyzeMs, processMs: sumProcessMs,
       thumbnailMs: sumThumbMs, persistMs: sumPersistMs });
+
+    // The new page list is complete and persisted. Retire the old thumbnails
+    // only now, so failed/aborted runs can continue displaying the last good set.
+    settleThumbnailSession(
+      this.activeThumbnailUrls,
+      previousThumbnailUrls,
+      true,
+      (url) => memoryManager.revokeBlobUrl(url),
+    );
+
     return {
       processedPages,
       docProfile,
@@ -474,6 +498,20 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         pagesPerSecond: Number((totalPages / (totalMs / 1000)).toFixed(2)),
       },
     };
+    } catch (error) {
+      // Newly generated partial-page URLs may already have been sent to the
+      // progressive-preview callback. Revoke them on failure and preserve only
+      // the URLs that still belong to the last successful result.
+      settleThumbnailSession(
+        this.activeThumbnailUrls,
+        previousThumbnailUrls,
+        false,
+        (url) => memoryManager.revokeBlobUrl(url),
+      );
+      throw error;
+    } finally {
+      try { await pdfDoc.destroy(); } catch { /* PDF.js document may already be destroyed */ }
+    }
   }
 
   private async generateThumbnail(imageData: ImageData): Promise<string> {

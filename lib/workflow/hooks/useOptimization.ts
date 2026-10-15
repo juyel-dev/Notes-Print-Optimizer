@@ -103,6 +103,9 @@ export function useOptimization({
         actions.setProcessedPages(pages);
         actions.setPhase(2);
       }, 'Processing failed due to browser memory limits.', null);
+      // Failed/aborted runs may have reported progressive URLs that the engine
+      // has now revoked. The old ProcessedPage thumbnails remain authoritative.
+      clearProgressiveThumbnails();
       if (abortRef.current === abortController) abortRef.current = null;
     },
     [mergedPdfBytes, masterParams, processingToggles, actions, withProcessing, abortRef, setProgressiveThumbnails, clearProgressiveThumbnails],
@@ -134,6 +137,8 @@ export function useOptimization({
     let optimizedImageData: ImageData | null = null;
     let thumbCanvas: HTMLCanvasElement | null = null;
     let tmpCanvas: HTMLCanvasElement | null = null;
+    let pendingThumbUrl: string | null = null;
+    let renderedPdfPage: { cleanup: () => void } | null = null;
 
     try {
       const effectiveParams = buildEffectiveParams(masterParams, processingToggles);
@@ -157,6 +162,7 @@ export function useOptimization({
         previewPdfDocRef.current = { bytes: mergedPdfBytes, doc: pdfDoc };
       }
       const pdfPage = await pdfDoc.getPage(pageIndex + 1);
+      renderedPdfPage = pdfPage;
 
       const viewport = pdfPage.getViewport({ scale: 1.0 });
       const TARGET_DPI = 250;
@@ -214,12 +220,8 @@ export function useOptimization({
       memoryManager.releaseCanvas(tmpCanvas);
       tmpCanvas = null;
 
-      // Revoke previous preview blob URL before creating a new one
-      if (previewBlobUrlRef.current) {
-        memoryManager.revokeBlobUrl(previewBlobUrlRef.current);
-        previewBlobUrlRef.current = null;
-      }
-
+      // Preserve the currently displayed preview until the replacement has
+      // encoded AND its optimized pixels have been persisted successfully.
       const thumbBlob = await new Promise<Blob>((resolve, reject) => {
         thumbCanvas!.toBlob(
           (blob) => {
@@ -234,7 +236,7 @@ export function useOptimization({
       thumbCanvas = null;
 
       const thumbUrl = memoryManager.createTrackedBlobUrl(thumbBlob);
-      previewBlobUrlRef.current = thumbUrl;
+      pendingThumbUrl = thumbUrl;
 
       // Store optimized result in IndexedDB
       const optBlob = await memoryManager.imageDataToBlob(
@@ -247,8 +249,7 @@ export function useOptimization({
       } catch (error) {
         // Never publish a ProcessedPage whose storage key does not exist; the
         // print exporter reads the final pixels from IndexedDB, not this RAM buffer.
-        memoryManager.revokeBlobUrl(thumbUrl);
-        if (previewBlobUrlRef.current === thumbUrl) previewBlobUrlRef.current = null;
+        // Keep the last good preview alive; the pending URL is revoked in finally.
         console.warn('[PreviewReprocess] Failed to persist page preview:', error);
         throw new Error('Could not save preview page to browser storage.');
       }
@@ -272,7 +273,13 @@ export function useOptimization({
         // Including the page suffix here would make getPage append it twice.
         storageKey: previewPdfId,
       };
+      const previousPreviewUrl = previewBlobUrlRef.current;
+      previewBlobUrlRef.current = thumbUrl;
+      pendingThumbUrl = null;
       actions.updateSingleProcessedPage(pageIndex, updatedPage);
+      if (previousPreviewUrl && previousPreviewUrl !== thumbUrl) {
+        memoryManager.revokeBlobUrl(previousPreviewUrl);
+      }
     } catch (err: unknown) {
       if ((err as { name?: string })?.name !== 'AbortError') {
         console.error('[PreviewReprocess] Failed:', err);
@@ -287,6 +294,8 @@ export function useOptimization({
       if (rawCanvas) memoryManager.releaseCanvas(rawCanvas);
       if (thumbCanvas) memoryManager.releaseCanvas(thumbCanvas);
       if (tmpCanvas) memoryManager.releaseCanvas(tmpCanvas);
+      if (pendingThumbUrl) memoryManager.revokeBlobUrl(pendingThumbUrl);
+      try { renderedPdfPage?.cleanup(); } catch { /* PDF.js page may already be cleaned up */ }
       originalImageData = null;
       optimizedImageData = null;
       previewInFlightRef.current = false;
@@ -319,11 +328,8 @@ export function useOptimization({
     const pdfId = `pw_reprocess_${Date.now()}`;
     clearProgressiveThumbnails();
 
-    if (previewBlobUrlRef.current) {
-      memoryManager.revokeBlobUrl(previewBlobUrlRef.current);
-      previewBlobUrlRef.current = null;
-    }
-
+    // Keep the previous single-page preview alive while a full-document
+    // reprocess is in flight; the old page list remains visible if it fails.
     await withProcessing(async () => {
       const signal = abortController.signal;
       const service = new OptimizationService();
@@ -363,8 +369,16 @@ export function useOptimization({
       actions.setDocProfile(dProf);
       actions.setPageProfiles(dProf.pages);
       actions.setProcessedPages(pages);
+      if (previewBlobUrlRef.current) {
+        const previousPreviewUrl = previewBlobUrlRef.current;
+        previewBlobUrlRef.current = null;
+        memoryManager.revokeBlobUrl(previousPreviewUrl);
+      }
       actions.setExcludedPages(new Set());
     }, 'Re-processing failed. Try reducing settings values.', null);
+    // Drop partial progressive URLs on both success and failure; successful
+    // results are now available through ProcessedPage.thumbnailDataUrl.
+    clearProgressiveThumbnails();
     if (abortRef.current === abortController) abortRef.current = null;
   }, [
     mergedPdfBytes,
