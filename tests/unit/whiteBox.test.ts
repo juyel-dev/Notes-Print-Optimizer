@@ -42,8 +42,21 @@ describe('shouldHealWhiteBoxes (gate)', () => {
   it('skips light pages even when enabled', () => {
     expect(shouldHealWhiteBoxes(HEAL_PARAMS, { classification: 'LIGHT_SLIDE', darkBackgroundRatio: 0.05 })).toBe(false);
   });
-  it('heals sub-threshold MIXED pages via ratio gate', () => {
-    expect(shouldHealWhiteBoxes(HEAL_PARAMS, { classification: 'MIXED', darkBackgroundRatio: 0.5 })).toBe(true);
+  it('heals mixed-class pages when high dark coverage is corroborated by light-on-dark polarity', () => {
+    expect(shouldHealWhiteBoxes(HEAL_PARAMS, {
+      classification: 'MIXED',
+      darkBackgroundRatio: 0.5,
+      darkFrame: false,
+      foregroundPolarity: 'light-on-dark',
+    })).toBe(true);
+  });
+  it('does not infer a dark source from a high ratio alone when polarity is mixed', () => {
+    expect(shouldHealWhiteBoxes(HEAL_PARAMS, {
+      classification: 'MIXED',
+      darkBackgroundRatio: 0.7,
+      darkFrame: false,
+      foregroundPolarity: 'mixed',
+    })).toBe(false);
   });
 });
 
