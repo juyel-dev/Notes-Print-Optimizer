@@ -6,6 +6,8 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ### Fixed
 
+- Storage cache eviction now protects rows being replaced and waits for the eviction transaction to finish, preventing cache-size undercounting and over-budget IndexedDB data during single or batch writes.
+
 - Mixed-polarity pages now use one shared dark-source policy across the processing kernel, white-box detector, and preservation guard, preventing a high dark-pixel ratio alone from forcing dark-slide processing.
 - Reliability fixes: safer Blob URL lifetime for downloads; keep existing queue thumbnails until a valid replacement succeeds; disable downloads of stale merged PDFs during reorder; show preview regeneration errors; release PDF.js/canvas/thumbnail resources after failure; reject failed image encodes; use unique upload IDs; allow retrying invalid files; report Enhance queue overflow; prevent stale manual-region previews; fail exports when page embedding or cached page data is missing; surface IndexedDB write failures rather than completing with missing pages; cancel QR camera starts that resolve after Stop/unmount; single-page preview reprocessing now keeps the previous processed page when its required IndexedDB write fails, fixes the double-appended page index in preview storage keys, and retries IndexedDB open after transient failures without a full page reload.
 
