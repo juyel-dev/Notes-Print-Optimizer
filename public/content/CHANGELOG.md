@@ -4,6 +4,10 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Changed
+
+- Enhance Light PDF Step 3: improved page comparison with a keyboard-accessible slider; fixed scrolling so thumbnails are not covered by sticky panels; added a processing preview skeleton; corrected default output filenames; and hardened preview cancellation and temporary canvas cleanup.
+
 ### Added
 
 - N-up PDF — live top→bottom preview (20 pre-render), auto-merge, 1/2/4/6/9-up, A4/Letter.
