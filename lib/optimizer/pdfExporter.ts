@@ -55,14 +55,11 @@ export class PdfExporter {
     throw new Error(`Failed to load optimized page ${page.pageIndex + 1}`);
   }
 
-  private static async loadPageImageDataOrBlank(page: ProcessedPage): Promise<ImageData> {
-    try {
-      return await this.loadOptimizedImageData(page);
-    } catch (err) {
-      console.warn(`[export] Failed to load optimized page ${page.pageIndex + 1}, using blank:`, err);
-      const w = page.width ?? 612, h = page.height ?? 792;
-      return new ImageData(new Uint8ClampedArray(w * h * 4).fill(255), w, h);
-    }
+  private static async loadPageImageDataOrThrow(page: ProcessedPage): Promise<ImageData> {
+    // Do not silently substitute a blank white page when IndexedDB/cache reads
+    // fail. That would produce a superficially valid PDF with missing content.
+    // Export should fail with the page number so the user can retry processing.
+    return this.loadOptimizedImageData(page);
   }
 
   /**
@@ -107,11 +104,15 @@ export class PdfExporter {
     const vw = Math.floor(viewport.width);
     const vh = Math.floor(viewport.height);
     const canvas = memoryManager.acquireCanvas(vw, vh);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    await pdfPage.render({ canvasContext: ctx, viewport }).promise;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    memoryManager.disposeCanvas(canvas);
-    return imageData;
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error(`Could not initialize the source canvas for page ${pageIndex + 1}.`);
+      await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    } finally {
+      try { pdfPage.cleanup(); } catch { /* PDF.js page may already be cleaned up */ }
+      memoryManager.disposeCanvas(canvas);
+    }
   }
 
   /** Destroys the cached PDF.js document so a newer source can take its place. */
@@ -164,7 +165,7 @@ export class PdfExporter {
            fallback below can still render the sheet. */
         if (owned.size > 0) {
           pageImageDatas = await Promise.all(pageImageDatas.map(async (d, i) =>
-            owned.has(d.data) ? this.loadPageImageDataOrBlank(pages[i]) : d
+            owned.has(d.data) ? this.loadPageImageDataOrThrow(pages[i]) : d
           ));
         }
       }
@@ -216,7 +217,7 @@ export class PdfExporter {
         console.warn(`[export] Original render failed for page ${p.pageIndex + 1}, using processed:`, err);
       }
     }
-    const img = await this.loadPageImageDataOrBlank(p);
+    const img = await this.loadPageImageDataOrThrow(p);
     const userRects = manualRegions?.[p.pageIndex];
     if (userRects && userRects.length > 0 && mergedBytes && !keepOriginal?.has(p.pageIndex)) {
       try {
