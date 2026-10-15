@@ -7,6 +7,9 @@ export type UploadedItem = UploadedPdfItem;
 export const MAX_FILE_SIZE_MB = 100;
 export const MAX_TOTAL_SIZE_MB = 500;
 
+// Keep uploaded item keys unique when users append another batch with repeated filenames.
+let uploadBatchSequence = 0;
+
 /**
  * Sniffs the leading bytes of a File for the PDF magic marker (%PDF-).
  * The PDF spec allows up to 1024 bytes of leading garbage, so scan the
@@ -90,6 +93,7 @@ export async function validatePdfFiles(files: File[], maxFiles = 10): Promise<Pd
 
 export class UploadService {
   static async readFiles(files: File[]): Promise<UploadedItem[]> {
+    const batchId = ++uploadBatchSequence;
     let counter = 0;
     const items: UploadedItem[] = [];
     for (const file of files) {
@@ -99,7 +103,7 @@ export class UploadService {
       }
       const buffer = await file.arrayBuffer();
       items.push({
-        id: `file-${counter}-${file.name.replace(/[^a-zA-Z0-9]/g, '')}`,
+        id: `file-${batchId}-${counter}-${file.name.replace(/[^a-zA-Z0-9]/g, '')}`,
         file, name: file.name,
         sizeMB: (file.size / (1024 * 1024)).toFixed(2),
         arrayBuffer: buffer,
@@ -116,21 +120,54 @@ export class UploadService {
     const { pdfBytes, pdfBlob } = await PdfExporter.mergePdfBuffers(buffers);
     const pdfjsLib = await PdfExporter.initPdfJs();
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBytes) });
-    const pdfDoc = await loadingTask.promise;
-    const totalPages = pdfDoc.numPages;
-    const renderCount = Math.min(totalPages, 12);
+    type LoadedPdf = Awaited<typeof loadingTask.promise>;
+
+    let pdfDoc: LoadedPdf | null = null;
+    let canvas: HTMLCanvasElement | null = null;
     const thumbnails: string[] = [];
-    for (let i = 1; i <= renderCount; i++) {
-      const page = await pdfDoc.getPage(i);
-      const viewport = page.getViewport({ scale: 0.3 });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d')!;
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      const blob = await new Promise<Blob>(res => canvas.toBlob(b => res(b || new Blob()), 'image/jpeg', 0.6));
-      thumbnails.push(memoryManager.createTrackedBlobUrl(blob));
+
+    try {
+      pdfDoc = await loadingTask.promise;
+      const renderCount = Math.min(pdfDoc.numPages, 12);
+      for (let i = 1; i <= renderCount; i++) {
+        const page = await pdfDoc.getPage(i);
+        try {
+          const viewport = page.getViewport({ scale: 0.3 });
+          canvas = document.createElement('canvas');
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Could not initialize a PDF preview canvas.');
+
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas!.toBlob((encoded) => {
+              if (encoded && encoded.size > 0) resolve(encoded);
+              else reject(new Error('Could not encode a PDF preview thumbnail.'));
+            }, 'image/jpeg', 0.6);
+          });
+          thumbnails.push(memoryManager.createTrackedBlobUrl(blob));
+        } finally {
+          try { page.cleanup(); } catch { /* page may already be cleaned up */ }
+          if (canvas) {
+            canvas.width = 0;
+            canvas.height = 0;
+            canvas = null;
+          }
+        }
+      }
+      return { pdfBlob, pdfBytes, thumbnails };
+    } catch (error) {
+      thumbnails.forEach((url) => memoryManager.revokeBlobUrl(url));
+      throw error;
+    } finally {
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+      if (pdfDoc) {
+        try { await pdfDoc.destroy(); } catch { /* best-effort PDF.js cleanup */ }
+      }
     }
-    return { pdfBlob, pdfBytes, thumbnails };
   }
 }
