@@ -75,6 +75,15 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
   });
 
+  it('stops before preparing pages when cancellation was already requested', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      PdfExporter.flattenActivePagesToPdf([makeProcessedPage(0)], undefined, undefined, controller.signal),
+    ).rejects.toThrow('Page preparation cancelled.');
+  });
+
   it('never produces an unopenable 0-page PDF for an empty page list', async () => {
     // pdf-lib itself inserts a blank page on save() if the document would
     // otherwise have zero pages (a 0-page PDF isn't valid per spec) —
