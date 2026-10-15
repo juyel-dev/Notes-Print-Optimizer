@@ -76,23 +76,49 @@ export function useEnhanceWorkflow() {
       });
       return;
     }
-    const pdfs = files.slice(0, remainingSlots);
-    const skippedCount = files.length - pdfs.length;
     try {
-      for (const f of pdfs) {
-        if (!(await isLikelyPdfFile(f))) {
-          dispatch({ type: 'PROCESS_ERROR', error: `"${f.name}" is not a PDF file.` });
-          return;
+      // Validate the whole selection before filling remaining queue slots.
+      // A bad file near the start must not hide a valid PDF selected after it.
+      const validFiles: File[] = [];
+      const invalidNames: string[] = [];
+      let overLimitPdfCount = 0;
+
+      for (const file of files) {
+        if (!(await isLikelyPdfFile(file))) {
+          invalidNames.push(file.name);
+          continue;
         }
+        if (validFiles.length >= remainingSlots) {
+          overLimitPdfCount++;
+          continue;
+        }
+        validFiles.push(file);
       }
-      const items = await UploadService.readFiles(pdfs);
+
+      if (validFiles.length === 0) {
+        const error = invalidNames.length > 0
+          ? `No valid PDFs were added. Not PDF files: ${invalidNames.join(', ')}.`
+          : `You can arrange up to ${MAX_ENHANCE_FILES} PDFs. Remove a file before adding another.`;
+        dispatch({ type: 'PROCESS_ERROR', error });
+        return;
+      }
+
+      const items = await UploadService.readFiles(validFiles);
       // Adding from the arrange stage appends; uploading fresh replaces.
       const merged = [...existing, ...items];
       dispatch({ type: 'SET_FILES', files: merged, step: 'arrange' });
-      if (skippedCount > 0) {
+
+      const notes: string[] = [];
+      if (invalidNames.length > 0) {
+        notes.push(`ignored non-PDF file(s): ${invalidNames.join(', ')}`);
+      }
+      if (overLimitPdfCount > 0) {
+        notes.push(`${overLimitPdfCount} PDF(s) skipped because the limit is ${MAX_ENHANCE_FILES}`);
+      }
+      if (notes.length > 0) {
         dispatch({
           type: 'PROCESS_ERROR',
-          error: `Added ${items.length} PDF(s); ${skippedCount} extra file(s) were skipped because the limit is ${MAX_ENHANCE_FILES}.`,
+          error: `Added ${items.length} PDF(s); ${notes.join('; ')}.`,
         });
       }
     } catch {
