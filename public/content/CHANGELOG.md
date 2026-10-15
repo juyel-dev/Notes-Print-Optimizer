@@ -7,6 +7,7 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 ### Fixed
 
 - Batch cache writes now calculate required eviction space from net size growth, so a smaller page in the same batch offsets a larger one instead of unnecessarily evicting unrelated cached pages.
+- Best-effort visual screenshots in CI now have a 180-second cap, keeping a slow screenshot flow from holding the required CI check indefinitely while still uploading any captures already completed.
 
 - Processing cancellation is now isolated per run: aborting an earlier request cannot cancel a newer document job, and external abort listeners are removed after completion.
 
