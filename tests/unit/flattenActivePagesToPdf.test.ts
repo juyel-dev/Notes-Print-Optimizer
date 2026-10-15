@@ -31,6 +31,17 @@ function fakeJpegBytes(): Uint8Array {
   return out;
 }
 
+function createTonalImageData(width: number, height: number): ImageData {
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 128;
+    data[i + 1] = 128;
+    data[i + 2] = 128;
+    data[i + 3] = 255;
+  }
+  return new ImageData(data, width, height);
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -46,6 +57,7 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue(fakeCanvas);
     vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
     vi.spyOn(memoryManager, 'yieldToUI').mockResolvedValue(undefined);
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(createTonalImageData(40, 30));
 
     const pages = [makeProcessedPage(0), makeProcessedPage(1), makeProcessedPage(2)];
     const { bytes, pageCount } = await PdfExporter.flattenActivePagesToPdf(pages);
@@ -89,6 +101,7 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue(fakeCanvas);
     vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
     vi.spyOn(memoryManager, 'yieldToUI').mockResolvedValue(undefined);
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(createTonalImageData(10, 10));
 
     const onProgress = vi.fn();
     await PdfExporter.flattenActivePagesToPdf([makeProcessedPage(0), makeProcessedPage(1)], undefined, onProgress);
