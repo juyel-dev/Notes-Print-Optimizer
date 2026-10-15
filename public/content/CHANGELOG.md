@@ -7,6 +7,7 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 ### Fixed
 
 - Mixed-polarity pages now use one shared dark-source policy across the processing kernel, white-box detector, and preservation guard, preventing a high dark-pixel ratio alone from forcing dark-slide processing.
+- Reliability fixes: browser-safe download URL lifetime, stale merged-preview protection, PDF.js/canvas/thumbnail cleanup on errors, explicit JPEG encoding failures, unique IDs across upload batches, retryable file validation, and clear feedback when the Enhance queue is full.
 
 - Dark Notes → Print layout preparation now shows PDF-engine/page progress, keeps a Back action available while waiting, and offers retry if preparation fails.
 - Dark Notes → Print now recovers dim handwriting when a sparse dark slide would otherwise become blank, and the preservation guard detects this specific foreground-loss case.
