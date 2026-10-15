@@ -123,22 +123,18 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
 });
 
 describe('PdfExporter.resolveFinalPageImage', () => {
-  it('falls back to a blank page at the recorded dimensions when no image data is available', async () => {
+  it('fails visibly if the optimized page is missing instead of exporting a blank page', async () => {
     const page = makeProcessedPage(0, { width: 20, height: 15 });
-    const img = await PdfExporter.resolveFinalPageImage(page);
-    expect(img.width).toBe(20);
-    expect(img.height).toBe(15);
-    // Blank fallback is solid white — every RGBA byte should be 255.
-    expect(Array.from(img.data.slice(0, 16)).every((b) => b === 255)).toBe(true);
+    await expect(PdfExporter.resolveFinalPageImage(page)).rejects.toThrow(
+      'Failed to load optimized page 1',
+    );
   });
 
-  it('does not attempt a kept-original swap when mergedPdfBytes is not provided', async () => {
+  it('does not attempt a kept-original swap without source bytes and reports missing optimized data', async () => {
     const page = makeProcessedPage(0);
     const keepOriginalPages = new Set([0]);
-    // No mergedPdfBytes → must not throw trying to render from it, and
-    // must still return a valid blank-fallback image.
-    const img = await PdfExporter.resolveFinalPageImage(page, { keepOriginalPages });
-    expect(img.width).toBe(page.width);
-    expect(img.height).toBe(page.height);
+    await expect(
+      PdfExporter.resolveFinalPageImage(page, { keepOriginalPages }),
+    ).rejects.toThrow('Failed to load optimized page 1');
   });
 });
