@@ -6,6 +6,8 @@
 
 ### Changed
 
+- **Enhance Light PDF — Step 3 UX and hidden-bug fixes.** Replaced hold-to-compare with an accessible drag/keyboard divider; removed the sticky preview that covered page thumbnails and added clearance above the sticky export bar. A CSS-only shimmer skeleton keeps the preview area stable during processing, controls lock while a run is active, the default filename updates after the true source name is known without overwriting manual edits, stale live previews are discarded, preview encoding is asynchronous, and temporary render canvases are released on failures/cancellation.
+
 - **Enhance Light PDF — UI/UX polish.** Real 3-step progress indicator (done / current / next) replaces the header pill; each new step scrolls to the top and moves focus to the title (screen readers announce the change). Upload screen gains a 3-step "how it works" strip and capture tips, and now shows read errors that were previously invisible there. Arrange shows file count and total size. Workbench: a focused full-screen progress state on the first run (percent + Cancel), errors moved to the top with **Try again / Change files**, sliders tucked into a **Fine-tune** section (presets stay one tap away; it opens when you tweak, with **Reset to Balanced** for custom mixes), download button confirms with **Download again** and "Saved as …", and an `aria-live` "Enhancement complete" announcement. Sub-12px text in the tool raised to the 12px floor.
 
 ### Changed
