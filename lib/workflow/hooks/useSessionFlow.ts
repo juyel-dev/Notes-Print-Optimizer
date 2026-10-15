@@ -67,10 +67,10 @@ export function useSessionFlow({
   }, [actions, abortRef, revokePreviewAssets, clearProgressiveThumbnails]);
 
   /**
-   * Enhance tool -> LAYOUT phase handoff. Reset clears the whole page cache,
-   * so ordering matters: reset FIRST, then persist the enhanced JPEGs and
-   * publish the manifest. No optimizer pass — enhance output is already the
-   * final processed imagery and N-Up is pure geometry.
+   * Enhance tool -> LAYOUT phase handoff. Reset clears only the cache
+   * namespaces owned by this tab, then the enhanced JPEGs are persisted and
+   * published. No optimizer pass — enhance output is already final imagery
+   * and N-Up is pure geometry.
    */
   const handleEnhanceLayoutHandoff = useCallback(async (pages: HandoffPageInput[]) => {
     if (pages.length === 0) return;
