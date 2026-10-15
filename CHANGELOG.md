@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- **An old processing request could cancel a newer run.** Link each external AbortSignal to that run's local controller, remove listeners when the run settles, and test that an earlier request's cancellation cannot abort a later processing run.
+
 - **Storage cache eviction could evict the row currently being replaced.** Protect single-page and batch-write keys while evicting unrelated old records, wait for the eviction transaction to settle before the write starts, and add regression tests that force the cache above its eviction threshold.
 - **Failed reprocessing could blank the last successful thumbnails.** Preserve previous page-preview URLs until a full document is processed and persisted; revoke only partial URLs when cancelled or failed; clean up PDF.js pages/canvas resources on render errors; clear stale progressive-thumbnail overlays; and keep the existing single-page preview until its replacement is both encoded and saved.
 
