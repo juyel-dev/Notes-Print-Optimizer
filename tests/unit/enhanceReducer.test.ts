@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { enhanceReducer, buildEnhanceFileName } from '@/lib/enhance/enhanceReducer';
+import { enhanceReducer, buildEnhanceFileName, defaultEnhanceBaseName } from '@/lib/enhance/enhanceReducer';
 import { INITIAL_ENHANCE_STATE } from '@/lib/enhance/types';
 import type { EnhancePageResult, EnhanceSettings } from '@/lib/enhance/types';
 import type { UploadedPdfItem } from '@/lib/workflow/types';
@@ -43,6 +43,15 @@ describe('buildEnhanceFileName', () => {
 
   it('multiple sources use the generic name', () => {
     expect(buildEnhanceFileName([{ name: 'a.pdf' }, { name: 'b.pdf' }])).toBe('enhanced-print.pdf');
+  });
+});
+
+describe('defaultEnhanceBaseName', () => {
+  it('derives a readable name from single-file and exported filenames', () => {
+    expect(defaultEnhanceBaseName('Physics Notes-enhanced.pdf')).toBe('Physics Notes');
+    expect(defaultEnhanceBaseName('Physics Notes-PrintReady.pdf')).toBe('Physics Notes');
+    expect(defaultEnhanceBaseName('enhanced-print.pdf')).toBe('Enhanced');
+    expect(defaultEnhanceBaseName('lecture.PDF')).toBe('lecture');
   });
 });
 
