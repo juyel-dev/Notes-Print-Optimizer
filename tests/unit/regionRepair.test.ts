@@ -34,6 +34,34 @@ const SMART = {
 };
 const px = (out: Uint8ClampedArray, x: number, y: number): number => out[(y * W + x) * 4];
 
+describe('dim dark-source ink recovery', () => {
+  it('keeps dim gold handwriting when the normal foreground mask would be empty', () => {
+    const d = makePage(W, H, [5, 5, 5]);
+    rect(d, W, 100, 180, 300, 182, [42, 22, 8]);
+
+    const profile = {
+      classification: 'DARK_SLIDE',
+      darkBackgroundRatio: 0.99,
+      darkFrame: true,
+      averageBrightness: 6,
+      foregroundCoverage: 0.005,
+      foregroundPolarity: 'light-on-dark' as const,
+      density: 'sparse' as const,
+      thinStrokeRisk: true,
+    };
+    const out = new Uint8ClampedArray(processPage(d, W, H, {
+      ...SMART,
+      backgroundWhiteningThreshold: 255,
+      contrastEnhancement: 0,
+    }, profile).buffer);
+
+    // This ink is below the WASM classifier's HSV-value cutoff of 70.
+    // It must become printable ink while the dark board becomes white paper.
+    expect(px(out, 150, 180)).toBe(0);
+    expect(px(out, 500, 250)).toBe(255);
+  });
+});
+
 describe('dark-source polarity (resolveEffectiveInvertMode)', () => {
   it('keeps smart for a dark slide mislabelled DIAGRAM_EQUATION (dark frame)', () => {
     expect(resolveEffectiveInvertMode('smart', 'DIAGRAM_EQUATION', { darkFrame: true })).toBe('smart');
