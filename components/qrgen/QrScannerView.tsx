@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { filterPersistableScanHistory, parsePersistedScanHistory } from '@/lib/qr/scanHistory';
 import {
   Camera,
   Check,
@@ -86,14 +87,11 @@ function parseWifi(text: string): WifiInfo | null {
 
 function loadHistory(): string[] {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw) as unknown;
-    if (Array.isArray(arr)) return arr.filter((x): x is string => typeof x === 'string').slice(0, MAX_HISTORY);
+    return parsePersistedScanHistory(localStorage.getItem(HISTORY_KEY)).slice(0, MAX_HISTORY);
   } catch {
     /* storage unavailable */
+    return [];
   }
-  return [];
 }
 
 type QrScannerInstance = InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']>;
@@ -142,7 +140,10 @@ export const QrScannerView: React.FC = () => {
   useEffect(() => {
     if (!historyReady) return;
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      // Keep Wi-Fi QR payloads (which contain plaintext passwords) only in
+      // current-session React state, never in persistent browser storage.
+      // Filtering on load also removes credentials written by older versions.
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(filterPersistableScanHistory(history)));
     } catch {
       /* storage full / blocked */
     }
@@ -578,7 +579,9 @@ export const QrScannerView: React.FC = () => {
                 );
               })}
             </ul>
-            <p className="mt-2 text-xs text-ink-faint">Kept in this browser only. Tap a row to reopen it.</p>
+            <p className="mt-2 text-xs text-ink-faint">
+              Non-Wi-Fi scans are kept in this browser. Wi-Fi scans stay available only until you leave or refresh this page, so network passwords are not saved in history.
+            </p>
           </>
         )}
       </section>
