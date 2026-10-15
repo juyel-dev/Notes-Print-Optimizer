@@ -164,6 +164,43 @@ describe('preservation guard', () => {
     expect(assessment.likelyDamaged).toBe(true);
   });
 
+  it('detects the loss of dim handwriting on a sparse dark slide', () => {
+    const w = 160, h = 120;
+    const source = rgbaPage(w, h, 5);
+    for (let y = 58; y < 62; y++) {
+      for (let x = 24; x < 136; x++) {
+        const i = (y * w + x) * 4;
+        source[i] = 42;
+        source[i + 1] = 22;
+        source[i + 2] = 8;
+      }
+    }
+    const erased = rgbaPage(w, h, 255);
+
+    const assessment = assessPreservation(
+      source,
+      w,
+      h,
+      erased,
+      w,
+      h,
+      {
+        classification: 'DARK_SLIDE',
+        darkBackgroundRatio: 0.99,
+        darkFrame: true,
+        averageBrightness: 6,
+        foregroundCoverage: 0.005,
+        foregroundPolarity: 'light-on-dark',
+        density: 'sparse',
+        thinStrokeRisk: true,
+      },
+    );
+
+    expect(assessment.likelyDamaged).toBe(true);
+    expect(assessment.coverageRatio).toBe(0);
+    expect(assessment.edgeRatio).toBe(0);
+  });
+
   it('softens high-impact print controls without changing page polarity', () => {
     const params = {
       preset: 'LIGHT_HANDWRITTEN' as const,
