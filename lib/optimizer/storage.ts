@@ -16,6 +16,9 @@ class PWOptimizerStorage {
   /** In-memory mirror of the total cache size (avoids getAll() per write batch). */
   private cachedSizeBytes: number | null = null;
 
+  /** Cache namespaces written by this tab; cleanup must never delete another tab's rows. */
+  private readonly ownedPdfIds = new Set<string>();
+
   private getDB(): Promise<IDBDatabase> {
     if (typeof window === 'undefined') return Promise.reject(new Error('No IndexedDB on server'));
     if (!this.dbPromise) {
@@ -67,7 +70,11 @@ class PWOptimizerStorage {
       };
       store.put(record);
       return new Promise((resolve, reject) => {
-        tx.oncomplete = () => { this.adjustCachedSize(sizeDelta); resolve(); };
+        tx.oncomplete = () => {
+          this.ownedPdfIds.add(pdfId);
+          this.adjustCachedSize(sizeDelta);
+          resolve();
+        };
         tx.onerror = () => reject(tx.error);
       });
     } catch (e) {
@@ -108,6 +115,7 @@ class PWOptimizerStorage {
       for (const r of records) store.put(r);
       return new Promise((resolve, reject) => {
         tx.oncomplete = () => {
+          records.forEach((record) => this.ownedPdfIds.add(record.pdfId));
           this.adjustCachedSize(sizeDelta);
           resolve();
         };
@@ -241,18 +249,58 @@ class PWOptimizerStorage {
     }
   }
 
-  public async clearCache(pdfId?: string): Promise<void> {
-    try { const db = await this.getDB();
+  /**
+   * Clear all rows (explicit privacy action) or one PDF namespace. Resolves
+   * false on failure so callers never announce success while cached data may
+   * remain on disk.
+   */
+  public async clearCache(pdfId?: string): Promise<boolean> {
+    try {
+      const db = await this.getDB();
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      if (!pdfId) store.clear();
-      else { const idx = store.index('pdfId'); const req = idx.getAllKeys(pdfId);
-        req.onsuccess = () => { req.result.forEach((k) => store.delete(k)); }; }
-      return new Promise((resolve) => {
-        tx.oncomplete = () => { this.cachedSizeBytes = pdfId ? null : 0; resolve(); };
-        tx.onerror = () => resolve();
+      if (!pdfId) {
+        store.clear();
+      } else {
+        const idx = store.index('pdfId');
+        const req = idx.getAllKeys(pdfId);
+        req.onsuccess = () => { req.result.forEach((key) => store.delete(key)); };
+      }
+
+      return await new Promise<boolean>((resolve) => {
+        let settled = false;
+        const settle = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          resolve(ok);
+        };
+        tx.oncomplete = () => {
+          this.cachedSizeBytes = pdfId ? null : 0;
+          if (pdfId) this.ownedPdfIds.delete(pdfId);
+          else this.ownedPdfIds.clear();
+          settle(true);
+        };
+        tx.onerror = () => settle(false);
+        tx.onabort = () => settle(false);
       });
-    } catch { /* */ }
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Clear only pages written by this JavaScript session/tab. IndexedDB is
+   * shared by all same-origin tabs, so a workflow reset/pagehide must not call
+   * clearCache() without a PDF ID and destroy another tab's in-progress work.
+   */
+  public async clearOwnedCache(): Promise<boolean> {
+    const pdfIds = Array.from(this.ownedPdfIds);
+    let allCleared = true;
+    for (const pdfId of pdfIds) {
+      const cleared = await this.clearCache(pdfId);
+      if (!cleared) allCleared = false;
+    }
+    return allCleared;
   }
 
   public async evictStaleEntries(maxAgeMs: number = 24 * 60 * 60 * 1000): Promise<void> {
