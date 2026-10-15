@@ -176,10 +176,18 @@ export const QrScannerView: React.FC = () => {
 
   const start = useCallback(async () => {
     setError(null);
-    if (html5Ref.current) await stop();
+    // Claim this generation immediately: the most recent Start/Stop action
+    // wins, even if we are still disposing an older scanner instance.
     const requestId = ++scanSessionRef.current;
-    let inst: QrScannerInstance | null = null;
+    setScanning(false);
+    setTorchOn(false);
+    setTorchSupported(false);
+    const previous = html5Ref.current;
+    html5Ref.current = null;
+    if (previous) await disposeQrScannerInstance(previous);
+    if (requestId !== scanSessionRef.current) return;
 
+    let inst: QrScannerInstance | null = null;
     try {
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
       if (requestId !== scanSessionRef.current) return;
