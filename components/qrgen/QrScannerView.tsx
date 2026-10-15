@@ -7,6 +7,8 @@ import {
   ClipboardPaste,
   Copy,
   ExternalLink,
+  Eye,
+  EyeOff,
   History,
   Image as ImageIcon,
   Scan,
@@ -18,17 +20,68 @@ import {
 
 const HISTORY_KEY = 'qr-scan-history-v1';
 const MAX_HISTORY = 20;
+const READER_ID = 'qr-reader';
+const FILE_TMP_ID = 'qr-file-tmp';
+
+const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft';
+const CARD = 'rounded-2xl border border-surface-2 bg-surface/90 shadow-lg';
+const PRIMARY_BTN = `inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary-strong px-4 text-sm font-extrabold text-white shadow-md shadow-primary/25 transition hover:bg-primary-deep active:scale-[0.98] ${FOCUS}`;
+const SECONDARY_BTN = `inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-elevated bg-surface px-4 text-sm font-bold text-ink transition hover:bg-surface-2 active:scale-[0.98] ${FOCUS}`;
 
 type CameraInfo = { id: string; label: string };
+type Kind = 'wifi' | 'link' | 'email' | 'phone' | 'text';
 
-function detectKind(text: string): { label: string; action?: string } {
+interface WifiInfo {
+  ssid: string;
+  auth: string;
+  password: string;
+  hidden: boolean;
+}
+
+const KIND_LABEL: Record<Kind, string> = { wifi: 'Wi-Fi', link: 'Link', email: 'Email', phone: 'Phone', text: 'Text' };
+const KIND_BADGE: Record<Kind, string> = {
+  wifi: 'bg-accent-soft text-bg',
+  link: 'bg-primary-soft text-bg',
+  email: 'bg-primary-soft text-bg',
+  phone: 'bg-success-soft text-bg',
+  text: 'bg-elevated text-ink',
+};
+
+function detectKind(text: string): Kind {
   const t = text.trim();
-  if (/^WIFI:/.test(t)) return { label: 'Wi-Fi', action: 'Wi-Fi config' };
-  if (/^https?:\/\//i.test(t)) return { label: 'Link', action: 'Open' };
-  if (/^mailto:/i.test(t)) return { label: 'Email', action: 'Email' };
-  if (/^tel:/i.test(t)) return { label: 'Phone', action: 'Call' };
-  if (/^\d{7,}$/.test(t.replace(/[^\d]/g, '')) && t.length < 20) return { label: 'Phone?' };
-  return { label: 'Text', action: 'Copy' };
+  if (/^WIFI:/i.test(t)) return 'wifi';
+  if (/^https?:\/\//i.test(t)) return 'link';
+  if (/^mailto:/i.test(t)) return 'email';
+  if (/^tel:/i.test(t)) return 'phone';
+  return 'text';
+}
+
+/** Parse `WIFI:T:WPA;S:name;P:pass;H:true;;` with `\;` `\,` `\:` `\\` `\"` escapes. */
+function parseWifi(text: string): WifiInfo | null {
+  const body = text.trim().replace(/^WIFI:/i, '');
+  const fields: Record<string, string> = {};
+  let key = '';
+  let val = '';
+  let inKey = true;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === '\\' && i + 1 < body.length) {
+      val += body[++i];
+    } else if (inKey && ch === ':') {
+      inKey = false;
+    } else if (!inKey && ch === ';') {
+      fields[key.toUpperCase()] = val;
+      key = '';
+      val = '';
+      inKey = true;
+    } else if (inKey) {
+      if (ch !== ';') key += ch;
+    } else {
+      val += ch;
+    }
+  }
+  if (!fields.S) return null;
+  return { ssid: fields.S, auth: fields.T || 'nopass', password: fields.P ?? '', hidden: /^true$/i.test(fields.H ?? '') };
 }
 
 function loadHistory(): string[] {
@@ -36,17 +89,18 @@ function loadHistory(): string[] {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw) as unknown;
-    if (Array.isArray(arr)) return arr.filter((x) => typeof x === 'string').slice(0, MAX_HISTORY);
-  } catch {}
+    if (Array.isArray(arr)) return arr.filter((x): x is string => typeof x === 'string').slice(0, MAX_HISTORY);
+  } catch {
+    /* storage unavailable */
+  }
   return [];
 }
 
 /**
- * QR Scanner — camera (html5-qrcode lazy) + file/paste + torch + history.
- * 100% on-device, lazy-loaded so Generate stays light.
+ * QR Scanner — camera (html5-qrcode lazy, native BarcodeDetector when present) +
+ * file/paste + torch + history. 100% on-device, lazy-loaded so Generate stays light.
  */
 export const QrScannerView: React.FC = () => {
-  const mountRef = useRef<HTMLDivElement>(null);
   const html5Ref = useRef<InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']> | null>(null);
   const [cameras, setCameras] = useState<CameraInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -56,160 +110,145 @@ export const QrScannerView: React.FC = () => {
   const [current, setCurrent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [historyReady, setHistoryReady] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [showSecret, setShowSecret] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // load history once
+  // load history once, then persist on change (no side effects inside state updaters)
   useEffect(() => {
     setHistory(loadHistory());
+    setHistoryReady(true);
   }, []);
-
-  const persistHistory = useCallback((next: string[]) => {
-    setHistory(next);
+  useEffect(() => {
+    if (!historyReady) return;
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-    } catch {}
-  }, []);
-
-  const onDecoded = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed) return;
-      setCurrent(trimmed);
-      setError(null);
-      // haptics
-      try {
-        if ('vibrate' in navigator) navigator.vibrate(60);
-      } catch {}
-      // history dedup: newest first
-      setHistory((prev) => {
-        const dedup = [trimmed, ...prev.filter((x) => x !== trimmed)].slice(0, MAX_HISTORY);
-        try {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(dedup));
-        } catch {}
-        return dedup;
-      });
-    },
-    []
-  );
-
-  const enumerateCameras = useCallback(async (Html5QrcodeCtor: typeof import('html5-qrcode').Html5Qrcode) => {
-    try {
-      const cams = await Html5QrcodeCtor.getCameras();
-      const mapped: CameraInfo[] = cams.map((c) => ({ id: c.id, label: c.label || c.id }));
-      setCameras(mapped);
-      if (mapped.length && !selectedId) setSelectedId(mapped[0].id);
-      return mapped;
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     } catch {
-      setCameras([]);
-      return [];
+      /* storage full / blocked */
     }
-  }, [selectedId]);
+  }, [history, historyReady]);
+
+  const onDecoded = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setCurrent(trimmed);
+    setShowSecret(false);
+    setError(null);
+    try {
+      if ('vibrate' in navigator) navigator.vibrate(60);
+    } catch {
+      /* haptics unavailable */
+    }
+    setHistory((prev) => [trimmed, ...prev.filter((x) => x !== trimmed)].slice(0, MAX_HISTORY));
+  }, []);
 
   const stop = useCallback(async () => {
     setScanning(false);
     setTorchOn(false);
     setTorchSupported(false);
-    if (html5Ref.current) {
-      try {
-        const state = html5Ref.current.getState();
-        // 2 = SCANNING
-        if (state === 2) await html5Ref.current.stop();
-      } catch {}
-      try {
-        html5Ref.current.clear();
-      } catch {}
+    const inst = html5Ref.current;
+    html5Ref.current = null;
+    if (!inst) return;
+    try {
+      // 2 = SCANNING
+      if (inst.getState() === 2) await inst.stop();
+    } catch {
+      /* already stopped */
+    }
+    try {
+      inst.clear();
+    } catch {
+      /* nothing to clear */
     }
   }, []);
 
   const start = useCallback(async () => {
     setError(null);
-    if (!mountRef.current) return;
     try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      // init container
-      const id = 'qr-reader';
-      // ensure container exists
-      if (!document.getElementById(id)) {
-        // mountRef holds the container; Html5Qrcode needs id string
-      }
-      const inst = new Html5Qrcode(id);
+      if (html5Ref.current) await stop();
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+      const inst = new Html5Qrcode(READER_ID, {
+        verbose: false,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        useBarCodeDetectorIfSupported: true,
+      });
       html5Ref.current = inst as unknown as InstanceType<(typeof import('html5-qrcode'))['Html5Qrcode']>;
-      const cams = await enumerateCameras(Html5Qrcode);
-      const camId = selectedId || cams[0]?.id;
-      if (!camId) {
-        setError('No camera found. Use image upload below — nothing leaves your device.');
-        return;
-      }
+      // Prefer the rear camera on phones; fall back to a specific device if the user picked one.
+      const source: string | MediaTrackConstraints = selectedId || { facingMode: 'environment' };
       await inst.start(
-        camId,
-        { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1 },
+        source,
+        { fps: 10, qrbox: (w: number, h: number) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; }, aspectRatio: 1 },
         (decoded) => onDecoded(decoded),
         () => {}
       );
       setScanning(true);
-      // torch detection: inspect track capabilities
+      // camera list (labels are only available once permission is granted)
       try {
-        // Html5Qrcode exposes getRunningTrackCapabilities but not in types for all versions
-        const caps = (inst as unknown as { getRunningTrackCapabilities?: () => MediaTrackCapabilities }).getRunningTrackCapabilities?.();
+        const cams = await Html5Qrcode.getCameras();
+        setCameras(cams.map((c) => ({ id: c.id, label: c.label || c.id })));
+      } catch {
+        /* selector is optional */
+      }
+      // torch detection
+      try {
+        const video = document.querySelector(`#${READER_ID} video`) as HTMLVideoElement | null;
+        const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+        const caps = track?.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined;
         if (caps && 'torch' in caps) setTorchSupported(true);
-        else {
-          // fallback: query video element's stream
-          const video = document.querySelector(`#${id} video`) as HTMLVideoElement | null;
-          const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
-          const tc = track?.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean } | undefined;
-          if (tc && 'torch' in tc) setTorchSupported(true);
-        }
-      } catch {}
+      } catch {
+        /* torch unsupported */
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/NotAllowedError|Permission denied/i.test(msg)) setError('Camera blocked — allow access in your browser, or scan an image below.');
-      else if (/NotFoundError|No camera/i.test(msg)) setError('No camera detected. Use image upload below.');
-      else setError(`Couldn\u2019t start camera — ${msg.slice(0, 120)}`);
-      setScanning(false);
+      else if (/NotFoundError|No camera|Requested device not found/i.test(msg)) setError('No camera detected. Use image upload below.');
+      else setError(`Couldn’t start the camera — ${msg.slice(0, 120)}`);
+      await stop();
     }
-  }, [selectedId, enumerateCameras, onDecoded]);
+  }, [selectedId, onDecoded, stop]);
 
   const toggleTorch = useCallback(async () => {
-    if (!torchSupported || !html5Ref.current) return;
+    if (!torchSupported) return;
     try {
-      const inst = html5Ref.current as unknown as {
-        getRunningTrackSettings?: () => MediaTrackSettings;
-        applyVideoConstraints?: (c: MediaTrackConstraints) => Promise<void>;
-      };
-      // html5-qrcode helper; fallback to track applyConstraints
-      if (inst.applyVideoConstraints) {
-        await inst.applyVideoConstraints({ advanced: [{ torch: !torchOn } as unknown as MediaTrackConstraintSet] });
-      } else {
-        const video = document.querySelector('#qr-reader video') as HTMLVideoElement | null;
-        const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
-        await track?.applyConstraints({ advanced: [{ torch: !torchOn } as unknown as MediaTrackConstraintSet] });
-      }
+      const video = document.querySelector(`#${READER_ID} video`) as HTMLVideoElement | null;
+      const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+      await track?.applyConstraints({ advanced: [{ torch: !torchOn } as unknown as MediaTrackConstraintSet] });
       setTorchOn((v) => !v);
     } catch {
-      setError('Torch not supported on this camera.');
+      setError('Torch is not supported on this camera.');
     }
   }, [torchOn, torchSupported]);
 
-  // scan file via html5-qrcode
   const scanFile = useCallback(
     async (file: File) => {
       setError(null);
+      if (!file.type.startsWith('image/')) {
+        setError('That file is not an image — choose a photo or screenshot containing a QR code.');
+        return;
+      }
       try {
         const { Html5Qrcode } = await import('html5-qrcode');
-        // use a temporary instance with dummy id
-        const inst = new Html5Qrcode('qr-file-tmp');
-        const decoded = await inst.scanFile(file, true);
-        onDecoded(decoded);
+        const inst = new Html5Qrcode(FILE_TMP_ID, false);
+        try {
+          const decoded = await inst.scanFile(file, false);
+          onDecoded(decoded);
+        } finally {
+          try {
+            inst.clear();
+          } catch {
+            /* nothing to clear */
+          }
+        }
       } catch {
-        setError('Couldn\u2019t read a QR from that image — try a clearer, uncropped photo.');
+        setError('Couldn’t read a QR from that image — try a clearer, uncropped photo.');
       }
     },
     [onDecoded]
   );
 
-  // paste handler
+  // paste an image anywhere on the page
   useEffect(() => {
     const onPaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -229,107 +268,105 @@ export const QrScannerView: React.FC = () => {
     return () => window.removeEventListener('paste', onPaste as unknown as EventListener);
   }, [scanFile]);
 
-  // cleanup on unmount
+  // release the camera when leaving the Scan tab
   useEffect(() => () => void stop(), [stop]);
 
-  const copy = async (v: string) => {
+  const copy = async (v: string, tag: string) => {
     try {
       await navigator.clipboard.writeText(v);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {}
+      setCopied(tag);
+      window.setTimeout(() => setCopied((c) => (c === tag ? null : c)), 1500);
+    } catch {
+      setError('Couldn’t copy — your browser blocked clipboard access.');
+    }
   };
 
-  const kind = current ? detectKind(current) : null;
+  const kind: Kind | null = current ? detectKind(current) : null;
+  const wifi = current && kind === 'wifi' ? parseWifi(current) : null;
+  const canShare = typeof navigator !== 'undefined' && 'share' in navigator;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Camera region */}
-      <section aria-label="Scan from camera" className="rounded-2xl border border-surface-2 bg-surface/90 p-3.5 shadow-lg sm:p-4">
+      {/* Camera */}
+      <section aria-label="Scan from camera" className={`${CARD} p-4 sm:p-5`}>
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ink">
-            <Camera className="h-4 w-4 text-primary-soft" aria-hidden="true" /> Camera
-          </span>
-          <span className="flex items-center gap-1.5">
-            {torchSupported && scanning && (
-              <button
-                type="button"
-                onClick={toggleTorch}
-                aria-pressed={torchOn}
-                className={`inline-flex h-8 items-center gap-1 rounded-full border px-2.5 text-xs font-bold transition ${
-                  torchOn ? 'border-warning/40 bg-warning/15 text-warning' : 'border-elevated bg-surface-2/60 text-ink-muted hover:bg-elevated'
-                }`}
-              >
-                {torchOn ? <Zap className="h-3.5 w-3.5" aria-hidden="true" /> : <ZapOff className="h-3.5 w-3.5" aria-hidden="true" />}
-                {torchOn ? 'Torch on' : 'Torch'}
-              </button>
-            )}
-            {scanning ? (
-              <button
-                type="button"
-                onClick={stop}
-                className="h-8 rounded-full border border-elevated bg-surface px-3 text-xs font-bold text-ink-muted hover:bg-surface-2"
-              >
-                Stop
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={start}
-                className="inline-flex h-8 items-center gap-1 rounded-full bg-primary-strong px-3 text-xs font-bold text-white shadow-sm hover:bg-primary"
-              >
-                <Scan className="h-3.5 w-3.5" aria-hidden="true" /> Start
-              </button>
-            )}
-          </span>
+          <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink">
+            <Camera className="h-[18px] w-[18px] text-primary-soft" aria-hidden="true" /> Camera
+          </h2>
+          {torchSupported && scanning && (
+            <button
+              type="button"
+              onClick={toggleTorch}
+              aria-pressed={torchOn}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${FOCUS} ${torchOn ? 'border-warning/40 bg-warning/15 text-warning' : 'border-elevated bg-surface-2/60 text-ink-muted hover:bg-elevated'}`}
+            >
+              {torchOn ? <Zap className="h-3.5 w-3.5" aria-hidden="true" /> : <ZapOff className="h-3.5 w-3.5" aria-hidden="true" />}
+              {torchOn ? 'Torch on' : 'Torch'}
+            </button>
+          )}
         </div>
 
+        <div className={`relative mt-3 overflow-hidden rounded-2xl border bg-black ${scanning ? 'border-primary/40' : 'border-elevated/60'}`} style={{ minHeight: 300 }}>
+          {/* html5-qrcode owns this node — React renders nothing inside it */}
+          <div id={READER_ID} className="w-full" aria-live="polite" />
+          {!scanning && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+              <span className="relative flex h-24 w-24 items-center justify-center" aria-hidden="true">
+                <span className="absolute left-0 top-0 h-6 w-6 rounded-tl-xl border-l-[3px] border-t-[3px] border-primary-soft" />
+                <span className="absolute right-0 top-0 h-6 w-6 rounded-tr-xl border-r-[3px] border-t-[3px] border-primary-soft" />
+                <span className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-xl border-b-[3px] border-l-[3px] border-primary-soft" />
+                <span className="absolute bottom-0 right-0 h-6 w-6 rounded-br-xl border-b-[3px] border-r-[3px] border-primary-soft" />
+                <Scan className="h-7 w-7 text-white/70" />
+              </span>
+              <p className="text-sm font-bold text-white/85">Camera is off</p>
+              <p className="max-w-[30ch] text-xs leading-relaxed text-white/65">Tap Start scanning and allow camera access once. Everything is decoded on this device.</p>
+            </div>
+          )}
+        </div>
+        <div id={FILE_TMP_ID} className="hidden" aria-hidden="true" />
+
         {cameras.length > 1 && (
-          <label className="mt-3 block">
-            <span className="text-xs font-semibold text-ink-muted">Camera</span>
+          <div className="mt-3">
+            <label htmlFor="qr-camera" className="block text-xs font-semibold text-ink-muted">
+              Camera
+            </label>
             <select
+              id="qr-camera"
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
               disabled={scanning}
-              className="mt-1 w-full rounded-xl border border-elevated bg-surface-2/60 px-3 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+              className="mt-1 h-11 w-full rounded-xl border border-elevated bg-surface-2/60 px-3 text-sm font-semibold text-ink disabled:opacity-60"
             >
+              <option value="">Back camera (auto)</option>
               {cameras.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         )}
 
-        <div
-          ref={mountRef}
-          id="qr-reader"
-          className={`relative mt-3 overflow-hidden rounded-2xl border bg-black ${scanning ? 'border-primary/30' : 'border-elevated/60'}`}
-          style={{ minHeight: scanning ? 280 : 0 }}
-          aria-live="polite"
-        >
-          {!scanning && (
-            <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5">
-                <Scan className="h-6 w-6 text-white/70" aria-hidden="true" />
-              </span>
-              <p className="text-sm font-bold text-white/80">Camera is off</p>
-              <p className="max-w-[28ch] text-xs leading-relaxed text-white/60">Tap Start — grant camera access once, everything decodes on-device.</p>
-            </div>
+        <div className="mt-3">
+          {scanning ? (
+            <button type="button" onClick={() => void stop()} className={`${SECONDARY_BTN} w-full`}>
+              Stop scanning
+            </button>
+          ) : (
+            <button type="button" onClick={() => void start()} className={`${PRIMARY_BTN} h-[52px] w-full text-[15px]`}>
+              <Scan className="h-[18px] w-[18px]" aria-hidden="true" /> Start scanning
+            </button>
           )}
         </div>
-        {/* hidden helper for file scan */}
-        <div id="qr-file-tmp" className="hidden" aria-hidden="true" />
 
         {error && (
-          <p role="alert" className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning">
+          <p role="alert" className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs font-semibold text-warning">
             {error}
           </p>
         )}
       </section>
 
-      {/* File / drag / paste */}
+      {/* Image: file / drag / paste */}
       <section
         aria-label="Scan from image"
         onDragOver={(e) => {
@@ -343,18 +380,17 @@ export const QrScannerView: React.FC = () => {
           const f = e.dataTransfer.files?.[0];
           if (f) await scanFile(f);
         }}
-        className={`rounded-2xl border bg-surface/90 p-3.5 shadow-lg sm:p-4 ${dragOver ? 'border-primary/40 bg-primary/5' : 'border-surface-2'}`}
+        className={`${CARD} p-4 sm:p-5 ${dragOver ? 'border-primary/50 bg-primary/5' : ''}`}
       >
-        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ink">
-          <ImageIcon className="h-4 w-4 text-primary-soft" aria-hidden="true" /> Image
-        </span>
-        <p className="mt-1 text-xs text-ink-muted">Upload, drag & drop, or paste (Ctrl+V) a photo/screenshot containing a QR code.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary-strong px-4 text-sm font-bold text-white shadow-sm hover:bg-primary"
-          >
+        <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink">
+          <ImageIcon className="h-[18px] w-[18px] text-primary-soft" aria-hidden="true" /> From an image
+        </h2>
+        <div className={`mt-3 flex flex-col items-center gap-1 rounded-2xl border-[1.5px] border-dashed px-4 py-5 text-center transition ${dragOver ? 'border-primary bg-primary/10' : 'border-elevated bg-surface-2/40'}`}>
+          <p className="text-sm font-bold text-ink">Drop a photo or screenshot here</p>
+          <p className="text-xs text-ink-muted">or paste it with Ctrl+V. It never leaves this device.</p>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => fileRef.current?.click()} className={SECONDARY_BTN}>
             <ImageIcon className="h-4 w-4" aria-hidden="true" /> Choose image
           </button>
           <button
@@ -363,9 +399,11 @@ export const QrScannerView: React.FC = () => {
               try {
                 const t = await navigator.clipboard.readText();
                 if (t) onDecoded(t);
-              } catch {}
+              } catch {
+                setError('Couldn’t read the clipboard — allow access, or press Ctrl+V on this page.');
+              }
             }}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-elevated bg-surface px-4 text-sm font-bold text-ink-muted hover:bg-surface-2"
+            className={`${SECONDARY_BTN} text-ink-muted`}
           >
             <ClipboardPaste className="h-4 w-4" aria-hidden="true" /> Paste text
           </button>
@@ -375,102 +413,160 @@ export const QrScannerView: React.FC = () => {
           type="file"
           accept="image/*"
           className="hidden"
+          aria-label="Choose an image containing a QR code"
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (f) await scanFile(f);
             e.target.value = '';
           }}
         />
-        <p className="mt-2 text-[11px] text-ink-faint">On-device only — images never leave your browser.</p>
       </section>
 
       {/* Result */}
-      {current && (
-        <section aria-label="Scan result" className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5 shadow-lg sm:p-4">
+      {current && kind && (
+        <section aria-label="Scan result" className="rounded-2xl border border-primary/40 bg-primary/5 p-4 shadow-lg sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-strong px-2.5 py-1 text-xs font-bold text-white">
-              <Check className="h-3.5 w-3.5" aria-hidden="true" /> Decoded
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-strong px-3 py-1.5 text-xs font-extrabold text-white">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+              {kind === 'wifi' ? 'Wi-Fi network found' : `${KIND_LABEL[kind]} decoded`}
             </span>
-            <span className="rounded-full border border-elevated bg-surface px-2 py-0.5 text-xs font-bold text-ink-muted">{kind?.label}</span>
-          </div>
-          <output className="mt-2 block break-words rounded-xl border border-elevated/60 bg-surface px-3 py-3 font-mono text-sm text-ink select-all">
-            {current}
-          </output>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => copy(current)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary-strong px-4 text-sm font-bold text-white shadow-sm hover:bg-primary"
-            >
-              {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
-              {copied ? 'Copied' : 'Copy'}
+            <button type="button" onClick={() => setCurrent(null)} className={`h-10 rounded-full px-3 text-sm font-bold text-ink-muted hover:text-ink ${FOCUS}`}>
+              Dismiss
             </button>
-            {kind?.label === 'Link' && (
+          </div>
+
+          {wifi ? (
+            <div className="mt-3 flex flex-col gap-2">
+              <ResultField label="Network name" value={wifi.ssid} onCopy={() => copy(wifi.ssid, 'ssid')} copied={copied === 'ssid'} />
+              <ResultField label="Security" value={wifi.auth === 'nopass' ? 'Open (no password)' : wifi.auth} mono={false} />
+              {wifi.auth !== 'nopass' && (
+                <ResultField
+                  label="Password"
+                  value={showSecret ? wifi.password || '(empty)' : '••••••••••'}
+                  onCopy={() => copy(wifi.password, 'pass')}
+                  copied={copied === 'pass'}
+                  extra={
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret((v) => !v)}
+                      aria-label={showSecret ? 'Hide password' : 'Show password'}
+                      aria-pressed={showSecret}
+                      className={`flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:text-ink ${FOCUS}`}
+                    >
+                      {showSecret ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                    </button>
+                  }
+                />
+              )}
+            </div>
+          ) : (
+            <output className="mt-3 block select-all break-words rounded-xl border border-elevated/60 bg-surface px-3 py-3 font-mono text-sm text-ink">{current}</output>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {wifi && wifi.auth !== 'nopass' ? (
+              <button type="button" onClick={() => copy(wifi.password, 'pass')} className={`${PRIMARY_BTN} flex-1`}>
+                {copied === 'pass' ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                {copied === 'pass' ? 'Copied' : 'Copy password'}
+              </button>
+            ) : (
+              <button type="button" onClick={() => copy(current, 'raw')} className={`${PRIMARY_BTN} flex-1`}>
+                {copied === 'raw' ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                {copied === 'raw' ? 'Copied' : 'Copy'}
+              </button>
+            )}
+            {(kind === 'link' || kind === 'email' || kind === 'phone') && (
               <a
                 href={current}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-elevated bg-surface px-4 text-sm font-bold text-ink hover:bg-surface-2"
+                {...(kind === 'link' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className={SECONDARY_BTN}
               >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" /> Open
+                <ExternalLink className="h-4 w-4" aria-hidden="true" /> {kind === 'link' ? 'Open link' : kind === 'email' ? 'Write email' : 'Call'}
               </a>
             )}
-            {typeof navigator !== 'undefined' && 'share' in navigator && (
+            {wifi && (
+              <button type="button" onClick={() => copy(current, 'raw')} className={SECONDARY_BTN}>
+                {copied === 'raw' ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
+                {copied === 'raw' ? 'Copied' : 'Copy raw'}
+              </button>
+            )}
+            {canShare && !wifi && (
               <button
                 type="button"
                 onClick={() => (navigator as unknown as { share: (d: { text: string }) => Promise<void> }).share({ text: current }).catch(() => {})}
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-elevated bg-surface px-4 text-sm font-bold text-ink hover:bg-surface-2"
+                className={SECONDARY_BTN}
               >
                 <Share2 className="h-4 w-4" aria-hidden="true" /> Share
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setCurrent(null)}
-              className="ml-auto h-10 rounded-full border border-elevated bg-surface px-4 text-sm font-bold text-ink-muted hover:bg-surface-2"
-            >
-              Dismiss
-            </button>
           </div>
         </section>
       )}
 
       {/* History */}
-      <section aria-label="Scan history" className="rounded-2xl border border-surface-2 bg-surface/90 p-3.5 shadow-lg sm:p-4">
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ink">
-            <History className="h-4 w-4 text-primary-soft" aria-hidden="true" /> History
-          </span>
+      <section aria-label="Scan history" className={`${CARD} p-4 sm:p-5`}>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="inline-flex items-center gap-2 text-sm font-bold text-ink">
+            <History className="h-[18px] w-[18px] text-primary-soft" aria-hidden="true" /> Recent scans
+            {history.length > 0 && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-bold text-ink-muted">{history.length}</span>}
+          </h2>
           {history.length > 0 && (
-            <button
-              type="button"
-              onClick={() => persistHistory([])}
-              className="inline-flex items-center gap-1 rounded-full border border-elevated bg-surface px-2.5 py-1 text-xs font-bold text-ink-muted hover:bg-surface-2"
-            >
+            <button type="button" onClick={() => setHistory([])} className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-ink-muted hover:text-ink ${FOCUS}`}>
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Clear
             </button>
           )}
         </div>
         {history.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-muted">No scans yet — results appear here for quick re-copy.</p>
+          <p className="mt-2 text-sm text-ink-muted">No scans yet. Results appear here so you can re-open or copy them.</p>
         ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {history.map((h) => (
-              <li key={h} className="flex items-center gap-2 rounded-xl border border-elevated/60 bg-surface-2/40 px-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate font-mono text-sm text-ink">{h}</span>
-                <button
-                  type="button"
-                  onClick={() => copy(h)}
-                  aria-label={`Copy ${h.slice(0, 24)}`}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-elevated bg-surface text-ink-muted hover:bg-elevated hover:text-ink"
-                >
-                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="mt-2 flex flex-col gap-2">
+              {history.map((h) => {
+                const k = detectKind(h);
+                return (
+                  <li key={h} className="flex items-center gap-1 rounded-xl border border-elevated/60 bg-bg/50 pl-3">
+                    <button type="button" onClick={() => setCurrent(h)} aria-label={`Open scan: ${h.slice(0, 40)}`} className={`flex min-h-[48px] min-w-0 flex-1 items-center gap-2.5 text-left ${FOCUS}`}>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-extrabold ${KIND_BADGE[k]}`}>{KIND_LABEL[k]}</span>
+                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-ink">{k === 'wifi' ? (parseWifi(h)?.ssid ?? h) : h}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copy(h, `h:${h}`)}
+                      aria-label={`Copy ${h.slice(0, 24)}`}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-ink-muted hover:text-ink ${FOCUS}`}
+                    >
+                      {copied === `h:${h}` ? <Check className="h-4 w-4 text-success" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-2 text-xs text-ink-faint">Kept in this browser only. Tap a row to reopen it.</p>
+          </>
         )}
       </section>
     </div>
   );
 };
+
+function ResultField(props: { label: string; value: string; mono?: boolean; onCopy?: () => void; copied?: boolean; extra?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-elevated/60 bg-surface py-1 pl-3">
+      <div className="flex min-w-0 flex-1 flex-col py-1">
+        <span className="text-2xs font-bold uppercase tracking-wide text-ink-faint">{props.label}</span>
+        <span className={`break-all text-sm text-ink ${props.mono === false ? '' : 'font-mono'}`}>{props.value}</span>
+      </div>
+      {props.extra}
+      {props.onCopy && (
+        <button
+          type="button"
+          onClick={props.onCopy}
+          aria-label={`Copy ${props.label.toLowerCase()}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-ink ${FOCUS}`}
+        >
+          {props.copied ? <Check className="h-4 w-4 text-success" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+        </button>
+      )}
+    </div>
+  );
+}
