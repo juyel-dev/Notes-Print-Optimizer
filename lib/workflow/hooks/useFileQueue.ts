@@ -40,26 +40,25 @@ export function useFileQueue({
     async (items: UploadedItem[]) => {
       const requestId = ++previewRequestIdRef.current;
 
-      // Revoke previous thumbnails to prevent orphaned blob URLs.
-      mergedPageDataUrls.forEach((url: string) => {
-        try {
-          memoryManager.revokeBlobUrl(url);
-        } catch {}
-      });
-
       if (items.length === 0) {
         if (requestId !== previewRequestIdRef.current) return;
+        mergedPageDataUrls.forEach((url) => memoryManager.revokeBlobUrl(url));
         actions.setMergeResult(null, null, []);
         clearProgressiveThumbnails();
         return;
       }
 
+      // Keep currently visible thumbnails during regeneration, but invalidate
+      // the old downloadable PDF immediately so it cannot be mistaken for the
+      // new queue order while its replacement is still being built.
+      actions.setMergeResult(null, null, mergedPageDataUrls);
+
       let result: Awaited<ReturnType<typeof UploadService.mergeAndPreview>>;
       try {
         result = await UploadService.mergeAndPreview(items);
       } catch (error) {
-        // Ignore errors from older reorder/remove requests; only the latest
-        // requested queue order should report an error.
+        // The old thumbnails remain usable; an older failure must not affect
+        // a newer reorder/upload request.
         if (requestId !== previewRequestIdRef.current) return;
         throw error;
       }
@@ -70,6 +69,8 @@ export function useFileQueue({
         return;
       }
 
+      // Revoke the visible previews only after a valid replacement is ready.
+      mergedPageDataUrls.forEach((url) => memoryManager.revokeBlobUrl(url));
       actions.setMergeResult(result.pdfBlob, result.pdfBytes, result.thumbnails);
     },
     [actions, mergedPageDataUrls, clearProgressiveThumbnails],
