@@ -172,11 +172,24 @@ export class PdfExporter {
     const sheetCanvas = LayoutEngine.composeSheet(pageImageDatas, sheetIndex, totalSheets, config);
     const width = sheetCanvas.width;
     const height = sheetCanvas.height;
-    const blob = await new Promise<Blob>((res) => sheetCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.85));
-    sheetCanvas.width = 0;
-    sheetCanvas.height = 0;
-    const jpegBuffer = await blob.arrayBuffer();
-    return { jpegBuffer, width, height };
+    try {
+      const jpegBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        sheetCanvas.toBlob((blob) => {
+          if (!blob || blob.size === 0) {
+            reject(new Error(`Could not encode print sheet ${sheetIndex + 1} as JPEG.`));
+            return;
+          }
+          blob.arrayBuffer().then(resolve, reject);
+        }, 'image/jpeg', 0.85);
+      });
+      if (jpegBuffer.byteLength === 0) {
+        throw new Error(`Could not encode print sheet ${sheetIndex + 1} as JPEG.`);
+      }
+      return { jpegBuffer, width, height };
+    } finally {
+      sheetCanvas.width = 0;
+      sheetCanvas.height = 0;
+    }
   }
 
   /**
@@ -317,7 +330,15 @@ export class PdfExporter {
       assertNotAborted();
       const imageData = await this.resolveFinalPageImage(activePages[i], opts);
       assertNotAborted();
-      await this.embedFinalPage(pdfDoc, imageData, sourceWidths[activePages[i].pageIndex], 0.9);
+      const embedded = await this.embedFinalPage(
+        pdfDoc,
+        imageData,
+        sourceWidths[activePages[i].pageIndex],
+        0.9,
+      );
+      if (!embedded) {
+        throw new Error(`Could not encode page ${activePages[i].pageIndex + 1} for print layout.`);
+      }
       // Progress means fully embedded pages, not merely the page currently starting.
       if (onProgress) onProgress(i + 1, activePages.length);
       await memoryManager.yieldToUI();
@@ -432,7 +453,15 @@ export class PdfExporter {
     for (let i = 0; i < processedPages.length; i++) {
       if (onProgress) onProgress(i + 1, processedPages.length);
       const optData = await this.loadOptimizedImageData(processedPages[i]);
-      await this.embedFinalPage(pdfDoc, optData, sourceWidthsPt?.[processedPages[i].pageIndex], quality);
+      const embedded = await this.embedFinalPage(
+        pdfDoc,
+        optData,
+        sourceWidthsPt?.[processedPages[i].pageIndex],
+        quality,
+      );
+      if (!embedded) {
+        throw new Error(`Could not encode page ${processedPages[i].pageIndex + 1} for PDF export.`);
+      }
       await memoryManager.yieldToUI();
     }
     return new Blob([(await pdfDoc.save()).buffer as ArrayBuffer], { type: 'application/pdf' });
