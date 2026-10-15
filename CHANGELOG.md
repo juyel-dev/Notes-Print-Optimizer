@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dark Notes → Print — Choose Layout looked stuck at “Preparing pages for layout…”**. Expose PDF-engine loading and per-page preparation progress, provide Back while preparation is running, add retry on preparation errors, and cancel stale page-preparation runs when leaving or retrying.
+
 ### Changed
 
 - **Enhance Light PDF — Step 3 UX and hidden-bug fixes.** Replaced hold-to-compare with an accessible drag/keyboard divider; removed the sticky preview that covered page thumbnails and added clearance above the sticky export bar. A CSS-only shimmer skeleton keeps the preview area stable during processing, controls lock while a run is active, the default filename updates after the true source name is known without overwriting manual edits, stale live previews are discarded, preview encoding is asynchronous, and temporary render canvases are released on failures/cancellation.
