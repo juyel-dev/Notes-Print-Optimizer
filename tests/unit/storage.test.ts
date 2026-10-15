@@ -4,6 +4,7 @@ import { pwOptimizerStorage } from '../../lib/optimizer/storage';
 type StorageInternals = {
   dbPromise: Promise<IDBDatabase> | null;
   cachedSizeBytes: number | null;
+  ownedPdfIds: Set<string>;
   getDB: () => Promise<IDBDatabase>;
 };
 
@@ -48,6 +49,7 @@ describe('PWOptimizerStorage', () => {
     const storage = pwOptimizerStorage as unknown as StorageInternals;
     storage.dbPromise = null;
     storage.cachedSizeBytes = null;
+    storage.ownedPdfIds.clear();
   });
 
   afterEach(async () => {
@@ -62,7 +64,8 @@ describe('PWOptimizerStorage', () => {
       storage.dbPromise = null;
     }
     storage.cachedSizeBytes = null;
-    
+    storage.ownedPdfIds.clear();
+
     const req = indexedDB.deleteDatabase('pw_optimizer_cache_db');
     await new Promise((resolve) => {
       req.onsuccess = resolve;
@@ -185,6 +188,33 @@ describe('PWOptimizerStorage', () => {
     expect(await pwOptimizerStorage.getPage('shrink-page', 0)).not.toBeNull();
     expect(await pwOptimizerStorage.getPage('grow-page', 0)).not.toBeNull();
     expect(await pwOptimizerStorage.getPage('unrelated-page', 0)).not.toBeNull();
+  });
+
+  it('clears only cache namespaces written by this tab, not another tab', async () => {
+    await pwOptimizerStorage.storePage(
+      'owned-by-this-tab',
+      0,
+      null,
+      new Blob(['my page']),
+    );
+    await seedCacheRecords([
+      seededRecord('owned-by-another-tab', 0, Date.now(), 8),
+    ]);
+
+    expect(await pwOptimizerStorage.clearOwnedCache()).toBe(true);
+    expect(await pwOptimizerStorage.getPage('owned-by-this-tab', 0)).toBeNull();
+    expect(await pwOptimizerStorage.getPage('owned-by-another-tab', 0)).not.toBeNull();
+  });
+
+  it('reports a failed cache clear instead of claiming it completed', async () => {
+    const storage = pwOptimizerStorage as unknown as StorageInternals;
+    const getDB = vi.spyOn(storage, 'getDB').mockRejectedValue(new Error('IndexedDB unavailable'));
+
+    try {
+      await expect(pwOptimizerStorage.clearCache()).resolves.toBe(false);
+    } finally {
+      getDB.mockRestore();
+    }
   });
 
   it('should return null for non-existent page', async () => {
