@@ -6,6 +6,8 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ### Fixed
 
+- QR Scanner no longer saves Wi-Fi QR payloads (which contain network passwords) in persistent browser history. Wi-Fi results remain available in the current session; older saved Wi-Fi entries are filtered when history loads.
+
 - Batch cache writes now calculate required eviction space from net size growth, so a smaller page in the same batch offsets a larger one instead of unnecessarily evicting unrelated cached pages.
 - Best-effort visual screenshots in CI now have a 180-second cap, keeping a slow screenshot flow from holding the required CI check indefinitely while still uploading any captures already completed.
 
