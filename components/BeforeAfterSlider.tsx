@@ -25,6 +25,8 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
     let isCancelled = false;
 
     const loadImages = async () => {
+      let origCanvas: HTMLCanvasElement | null = null;
+      let optCanvas: HTMLCanvasElement | null = null;
       try {
         const { PdfExporter } = await import('@/lib/optimizer/pdfExporter');
         const optimizedImageData = await PdfExporter.loadOptimizedImageData(page);
@@ -53,21 +55,37 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
           console.warn(`[slider] dimension mismatch page ${page.pageIndex + 1}: orig ${originalImageData.width}x${originalImageData.height} vs opt ${optimizedImageData.width}x${optimizedImageData.height}`);
         }
 
-        const origCanvas = document.createElement('canvas');
+        origCanvas = document.createElement('canvas');
         origCanvas.width = originalImageData.width;
         origCanvas.height = originalImageData.height;
         const origCtx = origCanvas.getContext('2d');
-        if (origCtx) origCtx.putImageData(originalImageData, 0, 0);
+        if (!origCtx) throw new Error('Could not initialize the original comparison canvas.');
+        origCtx.putImageData(originalImageData, 0, 0);
 
-        const optCanvas = document.createElement('canvas');
+        optCanvas = document.createElement('canvas');
         optCanvas.width = optimizedImageData.width;
         optCanvas.height = optimizedImageData.height;
         const optCtx = optCanvas.getContext('2d');
-        if (optCtx) optCtx.putImageData(optimizedImageData, 0, 0);
+        if (!optCtx) throw new Error('Could not initialize the optimized comparison canvas.');
+        optCtx.putImageData(optimizedImageData, 0, 0);
 
         if (!isCancelled) {
-          const origBlob = await new Promise<Blob>((res) => origCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
-          const optBlob = await new Promise<Blob>((res) => optCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
+          const [origBlob, optBlob] = await Promise.all([
+            new Promise<Blob>((resolve, reject) => {
+              origCanvas!.toBlob((blob) => {
+                if (blob && blob.size > 0) resolve(blob);
+                else reject(new Error('Could not encode the original comparison image.'));
+              }, 'image/jpeg', 0.6);
+            }),
+            new Promise<Blob>((resolve, reject) => {
+              optCanvas!.toBlob((blob) => {
+                if (blob && blob.size > 0) resolve(blob);
+                else reject(new Error('Could not encode the optimized comparison image.'));
+              }, 'image/jpeg', 0.6);
+            }),
+          ]);
+          if (isCancelled) return;
+
           // Commit the new URLs first, then revoke the previous page's URLs -
           // revoking before state commits would blank the still-displayed image.
           const nextUrls = [URL.createObjectURL(origBlob), URL.createObjectURL(optBlob)];
@@ -76,15 +94,15 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
           createdUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
           createdUrlsRef.current = nextUrls;
         }
-
-        memoryManager.disposeCanvas(origCanvas);
-        memoryManager.disposeCanvas(optCanvas);
       } catch (err) {
         console.error('Failed to load page inspection images:', err);
         if (!isCancelled) {
           setOrigUrl(page.thumbnailDataUrl);
           setOptUrl(page.thumbnailDataUrl);
         }
+      } finally {
+        if (origCanvas) memoryManager.disposeCanvas(origCanvas);
+        if (optCanvas) memoryManager.disposeCanvas(optCanvas);
       }
     };
 
