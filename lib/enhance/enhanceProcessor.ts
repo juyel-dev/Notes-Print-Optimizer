@@ -170,7 +170,8 @@ export class EnhanceProcessor {
             dataUrl,
             originalDataUrl,
           });
-          done++;          await memoryManager.yieldToUI();
+          done++;
+          await memoryManager.yieldToUI();
         }
         await doc.destroy();
       }
