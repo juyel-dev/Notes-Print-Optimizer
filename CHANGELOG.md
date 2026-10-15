@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- **Workflow cache cleanup could break another open tab.** IndexedDB is origin-shared, but mount/reset/pagehide used to delete every cached PDF; cleanup is now scoped to cache namespaces written by the current tab, PDF IDs are collision-resistant across simultaneous runs, and the explicit Clear Cache action waits for IndexedDB and reports partial failure.
+
 - **QR scan history could persist Wi-Fi passwords in plaintext.** Keep Wi-Fi QR payloads in memory only for the current session, filter them from persistent history on save and load (including entries from older versions), and add regression coverage.
 
 - **Batch cache writes could evict too much when page sizes changed in opposite directions.** Base eviction space on the net change across the whole batch, and add coverage proving a 50 MiB shrink offsets a 50 MiB growth without evicting an unrelated page.
