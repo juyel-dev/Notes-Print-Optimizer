@@ -217,6 +217,8 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
   const [cornerDot, setCornerDot] = useState<CornerType>('dot');
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoName, setLogoName] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [gradient, setGradient] = useState(false);
   const [gradientEnd, setGradientEnd] = useState(DEFAULT_GRADIENT_END);
 
@@ -361,8 +363,11 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
             : { type: dotType, color: dark },
           cornersSquareOptions: { type: cornerSquare, color: dark },
           cornersDotOptions: { type: cornerDot, color: dark },
-          image: logoDataUrl || undefined,
-          imageOptions: logoDataUrl ? { crossOrigin: 'anonymous' as const, margin: 6, imageSize: 0.28, hideBackgroundDots: true } : undefined,
+          // '' (not undefined) so removing the logo really clears it — the library ignores undefined when merging.
+          image: logoDataUrl ?? '',
+          // saveAsBlob:false is REQUIRED: the default re-reads the logo with XMLHttpRequest(data:), which our
+          // CSP (connect-src, no data:) blocks silently — the render promise then never resolves (blank preview, hung download).
+          imageOptions: { crossOrigin: 'anonymous' as const, margin: 6, imageSize: 0.28, hideBackgroundDots: true, saveAsBlob: false },
         };
         if (!styledInstanceRef.current) {
           styledRef.current.innerHTML = '';
@@ -483,6 +488,7 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
     setLogoError(null);
     if (!f) {
       setLogoDataUrl(null);
+      setLogoName('');
       return;
     }
     if (!f.type.startsWith('image/')) {
@@ -494,7 +500,21 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setLogoDataUrl(reader.result as string);
+    reader.onload = () => {
+      const url = reader.result as string;
+      // Make sure the browser can decode it (and it has a size) before handing it to the renderer.
+      const probe = new window.Image();
+      probe.onload = () => {
+        if (!probe.naturalWidth || !probe.naturalHeight) {
+          setLogoError('That image has no size (common with some SVGs) — use a PNG or JPG logo instead.');
+          return;
+        }
+        setLogoDataUrl(url);
+        setLogoName(f.name);
+      };
+      probe.onerror = () => setLogoError('That image could not be decoded — try a PNG or JPG logo.');
+      probe.src = url;
+    };
     reader.onerror = () => setLogoError('Could not read that image.');
     reader.readAsDataURL(f);
   };
@@ -975,11 +995,10 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
                 </label>
                 {gradient && <ColorField id="qr-grad-end" label="Gradient end" value={gradientEnd} onChange={setGradientEnd} />}
                 <div>
-                  <label htmlFor="qr-logo" className="text-xs font-bold text-ink">
-                    Logo (centre)
-                  </label>
+                  <span className="text-xs font-bold text-ink">Logo (centre)</span>
                   <div className="mt-2 flex items-center gap-2">
                     <input
+                      ref={logoInputRef}
                       id="qr-logo"
                       type="file"
                       accept="image/*"
@@ -987,10 +1006,20 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
                         onLogoFile(e.target.files?.[0] ?? null);
                         e.target.value = '';
                       }}
-                      className="block min-w-0 flex-1 text-xs file:mr-2 file:h-10 file:rounded-full file:border file:border-elevated file:bg-surface file:px-4 file:text-xs file:font-bold hover:file:bg-surface-2"
+                      className="sr-only"
                     />
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-elevated bg-surface px-4 text-xs font-bold text-ink hover:bg-surface-2 ${FOCUS}`}
+                    >
+                      {logoDataUrl ? 'Change logo' : 'Choose logo'}
+                    </button>
+                    <span className="min-w-0 flex-1 truncate text-xs text-ink-muted" aria-live="polite">
+                      {logoDataUrl ? logoName || 'Logo added' : 'PNG, JPG, SVG or WebP · max 2 MB'}
+                    </span>
                     {logoDataUrl && (
-                      <button type="button" onClick={() => onLogoFile(null)} className={`h-10 rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted hover:bg-surface-2 ${FOCUS}`}>
+                      <button type="button" onClick={() => onLogoFile(null)} className={`h-11 shrink-0 rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted hover:bg-surface-2 ${FOCUS}`}>
                         Remove
                       </button>
                     )}
