@@ -13,7 +13,7 @@
  */
 import { getLuminance } from './luminance';
 import { rgbToHsv, fastMinChannel } from './hsv';
-import { DARK_BG_RATIO_THRESHOLD } from './constants';
+import { isDarkSourceProfile } from './darkSource';
 import { applyMaskDilation, setDilationHook } from './maskOps';
 import { applyUnsharpMask, applyUnsharpMaskBW, setUnsharpHook, setUnsharpBwHook } from './sharpen';
 import { ensureCC, getCCLabels, getCCQueue, getCCMinX, getCCMinY, getCCMaxX, getCCMaxY, getCCArea, getCCDrop } from './connectedComponents';
@@ -322,9 +322,7 @@ export function processPage(
   /* Same threshold as the analyzer (analysis.ts) so a page classified MIXED
      is never silently binarized by the kernel's own darker opinion. */
   const isDark =
-    profile.classification === 'DARK_SLIDE' ||
-    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD ||
-    profile.darkFrame === true ||
+    isDarkSourceProfile(profile) ||
     (params.invertMode === 'smart' && hasDarkFrame(srcData, sw, sh));
   const useDarkColorClassifier = params.invertMode === 'smart' && isDark;
   const useLightColorMapping = params.smartColorMapping === true && !isDark;

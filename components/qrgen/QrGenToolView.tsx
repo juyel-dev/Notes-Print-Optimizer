@@ -28,6 +28,7 @@ import {
   Wifi,
 } from 'lucide-react';
 import { QrScannerView } from './QrScannerView';
+import { ExportService } from '@/lib/services/ExportService';
 
 /**
  * Lazy qrcode loader — the lib (~30KB) is only imported on first actual
@@ -431,9 +432,10 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
       return;
     }
     if (!svg) return;
-    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
-    saveBlobUrl(url, `${fileBase}.svg`);
-    URL.revokeObjectURL(url);
+    ExportService.downloadBlob(
+      new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }),
+      `${fileBase}.svg`,
+    );
     showFlash('svg');
   };
 

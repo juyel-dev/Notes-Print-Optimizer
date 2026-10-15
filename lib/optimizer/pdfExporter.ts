@@ -55,14 +55,11 @@ export class PdfExporter {
     throw new Error(`Failed to load optimized page ${page.pageIndex + 1}`);
   }
 
-  private static async loadPageImageDataOrBlank(page: ProcessedPage): Promise<ImageData> {
-    try {
-      return await this.loadOptimizedImageData(page);
-    } catch (err) {
-      console.warn(`[export] Failed to load optimized page ${page.pageIndex + 1}, using blank:`, err);
-      const w = page.width ?? 612, h = page.height ?? 792;
-      return new ImageData(new Uint8ClampedArray(w * h * 4).fill(255), w, h);
-    }
+  private static async loadPageImageDataOrThrow(page: ProcessedPage): Promise<ImageData> {
+    // Do not silently substitute a blank white page when IndexedDB/cache reads
+    // fail. That would produce a superficially valid PDF with missing content.
+    // Export should fail with the page number so the user can retry processing.
+    return this.loadOptimizedImageData(page);
   }
 
   /**
@@ -107,11 +104,15 @@ export class PdfExporter {
     const vw = Math.floor(viewport.width);
     const vh = Math.floor(viewport.height);
     const canvas = memoryManager.acquireCanvas(vw, vh);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    await pdfPage.render({ canvasContext: ctx, viewport }).promise;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    memoryManager.disposeCanvas(canvas);
-    return imageData;
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error(`Could not initialize the source canvas for page ${pageIndex + 1}.`);
+      await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    } finally {
+      try { pdfPage.cleanup(); } catch { /* PDF.js page may already be cleaned up */ }
+      memoryManager.disposeCanvas(canvas);
+    }
   }
 
   /** Destroys the cached PDF.js document so a newer source can take its place. */
@@ -164,7 +165,7 @@ export class PdfExporter {
            fallback below can still render the sheet. */
         if (owned.size > 0) {
           pageImageDatas = await Promise.all(pageImageDatas.map(async (d, i) =>
-            owned.has(d.data) ? this.loadPageImageDataOrBlank(pages[i]) : d
+            owned.has(d.data) ? this.loadPageImageDataOrThrow(pages[i]) : d
           ));
         }
       }
@@ -172,11 +173,24 @@ export class PdfExporter {
     const sheetCanvas = LayoutEngine.composeSheet(pageImageDatas, sheetIndex, totalSheets, config);
     const width = sheetCanvas.width;
     const height = sheetCanvas.height;
-    const blob = await new Promise<Blob>((res) => sheetCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.85));
-    sheetCanvas.width = 0;
-    sheetCanvas.height = 0;
-    const jpegBuffer = await blob.arrayBuffer();
-    return { jpegBuffer, width, height };
+    try {
+      const jpegBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        sheetCanvas.toBlob((blob) => {
+          if (!blob || blob.size === 0) {
+            reject(new Error(`Could not encode print sheet ${sheetIndex + 1} as JPEG.`));
+            return;
+          }
+          blob.arrayBuffer().then(resolve, reject);
+        }, 'image/jpeg', 0.85);
+      });
+      if (jpegBuffer.byteLength === 0) {
+        throw new Error(`Could not encode print sheet ${sheetIndex + 1} as JPEG.`);
+      }
+      return { jpegBuffer, width, height };
+    } finally {
+      sheetCanvas.width = 0;
+      sheetCanvas.height = 0;
+    }
   }
 
   /**
@@ -203,7 +217,7 @@ export class PdfExporter {
         console.warn(`[export] Original render failed for page ${p.pageIndex + 1}, using processed:`, err);
       }
     }
-    const img = await this.loadPageImageDataOrBlank(p);
+    const img = await this.loadPageImageDataOrThrow(p);
     const userRects = manualRegions?.[p.pageIndex];
     if (userRects && userRects.length > 0 && mergedBytes && !keepOriginal?.has(p.pageIndex)) {
       try {
@@ -317,7 +331,15 @@ export class PdfExporter {
       assertNotAborted();
       const imageData = await this.resolveFinalPageImage(activePages[i], opts);
       assertNotAborted();
-      await this.embedFinalPage(pdfDoc, imageData, sourceWidths[activePages[i].pageIndex], 0.9);
+      const embedded = await this.embedFinalPage(
+        pdfDoc,
+        imageData,
+        sourceWidths[activePages[i].pageIndex],
+        0.9,
+      );
+      if (!embedded) {
+        throw new Error(`Could not encode page ${activePages[i].pageIndex + 1} for print layout.`);
+      }
       // Progress means fully embedded pages, not merely the page currently starting.
       if (onProgress) onProgress(i + 1, activePages.length);
       await memoryManager.yieldToUI();
@@ -359,17 +381,31 @@ export class PdfExporter {
 
       const tw = Math.min(500, Math.round(width / 3)), th = Math.min(750, Math.round(height / 3));
       const tc = memoryManager.acquireCanvas(tw, th);
+      let previewBitmap: ImageBitmap | null = null;
+      let previewBlob: Blob | null = null;
       try {
-        const previewBlob = new Blob([jpegBuffer], { type: 'image/jpeg' });
-        const bmp = await createImageBitmap(previewBlob, { resizeWidth: tw, resizeHeight: th, resizeQuality: 'medium' });
+        const previewSource = new Blob([jpegBuffer], { type: 'image/jpeg' });
+        previewBitmap = await createImageBitmap(previewSource, {
+          resizeWidth: tw,
+          resizeHeight: th,
+          resizeQuality: 'medium',
+        });
         const tCtx = tc.getContext('2d');
-        if (tCtx) { tCtx.drawImage(bmp, 0, 0); bmp.close(); }
-      } catch {
-        console.warn('[export] Preview generation failed for sheet', si + 1);
+        if (!tCtx) throw new Error('Could not initialize the sheet-preview canvas.');
+        tCtx.drawImage(previewBitmap, 0, 0);
+        previewBlob = await new Promise<Blob>((resolve, reject) => {
+          tc.toBlob((encoded) => {
+            if (encoded && encoded.size > 0) resolve(encoded);
+            else reject(new Error('Could not encode the sheet preview.'));
+          }, 'image/jpeg', 0.6);
+        });
+      } catch (error) {
+        console.warn('[export] Preview generation failed for sheet', si + 1, error);
+      } finally {
+        try { previewBitmap?.close(); } catch { /* bitmap may already be closed */ }
+        memoryManager.disposeCanvas(tc);
       }
-      const previewBlob = await new Promise<Blob>((res) => tc.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
-      memoryManager.disposeCanvas(tc);
-      if (previewBlob.size > 0) sheetPreviews.push(memoryManager.createTrackedBlobUrl(previewBlob, 'sheet-preview'));
+      if (previewBlob) sheetPreviews.push(memoryManager.createTrackedBlobUrl(previewBlob, 'sheet-preview'));
 
       const embedded = await pdfDoc.embedJpg(jpegBuffer);
       const pdfPage = pdfDoc.addPage([width, height]);
@@ -432,7 +468,15 @@ export class PdfExporter {
     for (let i = 0; i < processedPages.length; i++) {
       if (onProgress) onProgress(i + 1, processedPages.length);
       const optData = await this.loadOptimizedImageData(processedPages[i]);
-      await this.embedFinalPage(pdfDoc, optData, sourceWidthsPt?.[processedPages[i].pageIndex], quality);
+      const embedded = await this.embedFinalPage(
+        pdfDoc,
+        optData,
+        sourceWidthsPt?.[processedPages[i].pageIndex],
+        quality,
+      );
+      if (!embedded) {
+        throw new Error(`Could not encode page ${processedPages[i].pageIndex + 1} for PDF export.`);
+      }
       await memoryManager.yieldToUI();
     }
     return new Blob([(await pdfDoc.save()).buffer as ArrayBuffer], { type: 'application/pdf' });

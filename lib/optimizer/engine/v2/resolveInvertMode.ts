@@ -17,7 +17,7 @@
  * became solid black ink. Both sides must agree on what "dark" means.
  */
 import type { PageClassification, PageProfile, ProcessingParameters } from '../../types';
-import { DARK_BG_RATIO_THRESHOLD } from '../../../kernels/constants';
+import { isDarkSourceProfile } from '../../../kernels/darkSource';
 
 export type InvertMode = ProcessingParameters['invertMode'];
 
@@ -28,13 +28,7 @@ export function isDarkSourcePage(
   classification: PageClassification,
   profile?: Partial<DarkSourceSignals>,
 ): boolean {
-  if (classification === 'DARK_SLIDE') return true;
-  if (!profile) return false;
-  if (profile.darkFrame === true) return true;
-  return (
-    (profile.darkBackgroundRatio ?? 0) > DARK_BG_RATIO_THRESHOLD &&
-    profile.foregroundPolarity === 'light-on-dark'
-  );
+  return isDarkSourceProfile({ classification, ...profile });
 }
 
 export function resolveEffectiveInvertMode(

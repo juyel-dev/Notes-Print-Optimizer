@@ -34,6 +34,30 @@ const SMART = {
 };
 const px = (out: Uint8ClampedArray, x: number, y: number): number => out[(y * W + x) * 4];
 
+describe('kernel and engine agree on mixed-page polarity', () => {
+  it('preserves a high-dark-ratio mixed page when neither frame nor polarity confirms a dark source', () => {
+    const source = makePage(W, H, [245, 245, 245]);
+    rect(source, W, 32, 32, W - 32, H - 32, [25, 25, 25]);
+    rect(source, W, 90, 100, 260, 104, [238, 218, 100]);
+
+    const profile = {
+      classification: 'MIXED',
+      darkBackgroundRatio: 0.74,
+      darkFrame: false,
+      foregroundPolarity: 'mixed' as const,
+    };
+    const out = processPage(source, W, H, {
+      ...SMART,
+      invertMode: 'none',
+      backgroundWhiteningThreshold: 255,
+      contrastEnhancement: 0,
+    }, profile);
+
+    // A dark ratio by itself must not make the kernel whiten this mixed source.
+    expect(Buffer.from(out.buffer).equals(Buffer.from(source))).toBe(true);
+  });
+});
+
 describe('dim dark-source ink recovery', () => {
   it('keeps dim gold handwriting when the normal foreground mask would be empty', () => {
     const d = makePage(W, H, [5, 5, 5]);

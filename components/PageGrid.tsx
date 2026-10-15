@@ -56,26 +56,44 @@ const LazyPageCard: React.FC<{
     if (!isKeptOriginal || !mergedPdfBytes || !isVisible) return;
     if (originalThumb) return;
     let cancelled = false;
+    let srcCanvas: HTMLCanvasElement | null = null;
+    let thumbCanvas: HTMLCanvasElement | null = null;
     (async () => {
       try {
         const { PdfExporter } = await import('@/lib/optimizer/pdfExporter');
         const orig = await PdfExporter.loadOriginalImageData(page, mergedPdfBytes, page.width);
-        // Downscale to same thumbnail size as whitened (1/5)
+        // Downscale to same thumbnail size as whitened (1/5).
         const tw = Math.max(1, Math.round(orig.width / 5));
         const th = Math.max(1, Math.round(orig.height / 5));
-        const srcCanvas = document.createElement('canvas');
+        srcCanvas = document.createElement('canvas');
         srcCanvas.width = orig.width;
         srcCanvas.height = orig.height;
-        srcCanvas.getContext('2d')!.putImageData(orig, 0, 0);
-        const thumbCanvas = document.createElement('canvas');
+        const srcCtx = srcCanvas.getContext('2d');
+        if (!srcCtx) throw new Error('Could not initialize original thumbnail canvas.');
+        srcCtx.putImageData(orig, 0, 0);
+
+        thumbCanvas = document.createElement('canvas');
         thumbCanvas.width = tw;
         thumbCanvas.height = th;
-        thumbCanvas.getContext('2d')!.drawImage(srcCanvas, 0, 0, tw, th);
-        const blob = await new Promise<Blob>((res) => thumbCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
+        const thumbCtx = thumbCanvas.getContext('2d');
+        if (!thumbCtx) throw new Error('Could not initialize downscaled thumbnail canvas.');
+        thumbCtx.drawImage(srcCanvas, 0, 0, tw, th);
+
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          thumbCanvas!.toBlob((encoded) => {
+            if (encoded && encoded.size > 0) resolve(encoded);
+            else reject(new Error('Could not encode original page thumbnail.'));
+          }, 'image/jpeg', 0.6);
+        });
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
         setOriginalThumb(url);
-      } catch {}
+      } catch {
+        // Keep the processed thumbnail if original-preview generation fails.
+      } finally {
+        if (srcCanvas) { srcCanvas.width = 0; srcCanvas.height = 0; }
+        if (thumbCanvas) { thumbCanvas.width = 0; thumbCanvas.height = 0; }
+      }
     })();
     return () => { cancelled = true; };
   }, [isKeptOriginal, isVisible, mergedPdfBytes, page, originalThumb]);

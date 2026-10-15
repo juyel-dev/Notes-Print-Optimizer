@@ -31,6 +31,17 @@ function fakeJpegBytes(): Uint8Array {
   return out;
 }
 
+function createTonalImageData(width: number, height: number): ImageData {
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 128;
+    data[i + 1] = 128;
+    data[i + 2] = 128;
+    data[i + 3] = 255;
+  }
+  return new ImageData(data, width, height);
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -46,6 +57,7 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue(fakeCanvas);
     vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
     vi.spyOn(memoryManager, 'yieldToUI').mockResolvedValue(undefined);
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(createTonalImageData(40, 30));
 
     const pages = [makeProcessedPage(0), makeProcessedPage(1), makeProcessedPage(2)];
     const { bytes, pageCount } = await PdfExporter.flattenActivePagesToPdf(pages);
@@ -57,6 +69,29 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     expect(loaded.getPageCount()).toBe(3);
   });
 
+  it('fails explicitly if a page cannot be encoded instead of silently omitting it from the PDF', async () => {
+    const tonal = new Uint8ClampedArray(40 * 30 * 4);
+    for (let i = 0; i < tonal.length; i += 4) {
+      tonal[i] = 128;
+      tonal[i + 1] = 128;
+      tonal[i + 2] = 128;
+      tonal[i + 3] = 255;
+    }
+
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(new ImageData(tonal, 40, 30));
+    vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue({
+      width: 40,
+      height: 30,
+      getContext: () => ({ putImageData: () => {} }),
+      toBlob: (callback: BlobCallback) => callback(null),
+    } as unknown as HTMLCanvasElement);
+    vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
+
+    await expect(
+      PdfExporter.flattenActivePagesToPdf([makeProcessedPage(0)]),
+    ).rejects.toThrow('Could not encode page 1 for print layout.');
+  });
+
   it('reports progress once per page', async () => {
     const fakeCanvas = {
       width: 10, height: 10,
@@ -66,6 +101,7 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
     vi.spyOn(memoryManager, 'acquireCanvas').mockReturnValue(fakeCanvas);
     vi.spyOn(memoryManager, 'disposeCanvas').mockImplementation(() => {});
     vi.spyOn(memoryManager, 'yieldToUI').mockResolvedValue(undefined);
+    vi.spyOn(PdfExporter, 'resolveFinalPageImage').mockResolvedValue(createTonalImageData(10, 10));
 
     const onProgress = vi.fn();
     await PdfExporter.flattenActivePagesToPdf([makeProcessedPage(0), makeProcessedPage(1)], undefined, onProgress);
@@ -100,22 +136,18 @@ describe('PdfExporter.flattenActivePagesToPdf', () => {
 });
 
 describe('PdfExporter.resolveFinalPageImage', () => {
-  it('falls back to a blank page at the recorded dimensions when no image data is available', async () => {
+  it('fails visibly if the optimized page is missing instead of exporting a blank page', async () => {
     const page = makeProcessedPage(0, { width: 20, height: 15 });
-    const img = await PdfExporter.resolveFinalPageImage(page);
-    expect(img.width).toBe(20);
-    expect(img.height).toBe(15);
-    // Blank fallback is solid white — every RGBA byte should be 255.
-    expect(Array.from(img.data.slice(0, 16)).every((b) => b === 255)).toBe(true);
+    await expect(PdfExporter.resolveFinalPageImage(page)).rejects.toThrow(
+      'Failed to load optimized page 1',
+    );
   });
 
-  it('does not attempt a kept-original swap when mergedPdfBytes is not provided', async () => {
+  it('does not attempt a kept-original swap without source bytes and reports missing optimized data', async () => {
     const page = makeProcessedPage(0);
     const keepOriginalPages = new Set([0]);
-    // No mergedPdfBytes → must not throw trying to render from it, and
-    // must still return a valid blank-fallback image.
-    const img = await PdfExporter.resolveFinalPageImage(page, { keepOriginalPages });
-    expect(img.width).toBe(page.width);
-    expect(img.height).toBe(page.height);
+    await expect(
+      PdfExporter.resolveFinalPageImage(page, { keepOriginalPages }),
+    ).rejects.toThrow('Failed to load optimized page 1');
   });
 });

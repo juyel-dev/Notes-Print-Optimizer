@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { UploadService, type UploadedItem } from '../../services/UploadService';
 import { planSmartOrder } from '../../rearrange';
 import { ExportService } from '../../services/ExportService';
@@ -29,23 +29,48 @@ export function useFileQueue({
   withProcessing,
   clearProgressiveThumbnails,
 }: FileQueueParams) {
+  const previewRequestIdRef = useRef(0);
+
+  // Invalidate outstanding PDF/thumbnail generation when the hook unmounts.
+  useEffect(() => () => {
+    previewRequestIdRef.current += 1;
+  }, []);
+
   const generateMergedPreview = useCallback(
     async (items: UploadedItem[]) => {
-      // Revoke previous thumbnails to prevent orphaned blob URLs
-      if (mergedPageDataUrls.length > 0) {
-        mergedPageDataUrls.forEach((url: string) => {
-          try {
-            memoryManager.revokeBlobUrl(url);
-          } catch {}
-        });
-      }
+      const requestId = ++previewRequestIdRef.current;
+
+      // Revoke previous thumbnails to prevent orphaned blob URLs.
+      mergedPageDataUrls.forEach((url: string) => {
+        try {
+          memoryManager.revokeBlobUrl(url);
+        } catch {}
+      });
+
       if (items.length === 0) {
+        if (requestId !== previewRequestIdRef.current) return;
         actions.setMergeResult(null, null, []);
         clearProgressiveThumbnails();
         return;
       }
-      const result = await UploadService.mergeAndPreview(items);
-      if (result) actions.setMergeResult(result.pdfBlob, result.pdfBytes, result.thumbnails);
+
+      let result: Awaited<ReturnType<typeof UploadService.mergeAndPreview>>;
+      try {
+        result = await UploadService.mergeAndPreview(items);
+      } catch (error) {
+        // Ignore errors from older reorder/remove requests; only the latest
+        // requested queue order should report an error.
+        if (requestId !== previewRequestIdRef.current) return;
+        throw error;
+      }
+
+      if (!result) return;
+      if (requestId !== previewRequestIdRef.current) {
+        result.thumbnails.forEach((url) => memoryManager.revokeBlobUrl(url));
+        return;
+      }
+
+      actions.setMergeResult(result.pdfBlob, result.pdfBytes, result.thumbnails);
     },
     [actions, mergedPageDataUrls, clearProgressiveThumbnails],
   );

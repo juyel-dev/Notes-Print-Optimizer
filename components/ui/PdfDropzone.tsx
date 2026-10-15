@@ -62,6 +62,9 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
   const processFileList = async (filesList: FileList | File[]) => {
     setUploadError(null);
     const files = Array.from(filesList as FileList);
+    // Files have been copied out of the FileList; clear it before validation so
+    // selecting the same rejected file a second time can trigger onChange again.
+    if (fileInputRef.current) fileInputRef.current.value = '';
     const { validFiles, skipped, error } = await accept.validate(files, maxFiles ?? Number.MAX_SAFE_INTEGER);
 
     if (error) {
@@ -71,7 +74,6 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
 
     if (validFiles.length > 0) {
       onFiles(validFiles);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
 
     const summary = formatSkipped(skipped);
