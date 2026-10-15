@@ -39,7 +39,17 @@ export interface EnhanceSettings {
   cleanBackground: boolean;
   /** Convert to grayscale before sharpening (mono print output). */
   grayscale: boolean;
+  /** Flatten uneven lighting (camera shadows, gradients) before everything else. */
+  evenLighting: boolean;
+  /** Render resolution. Needs a re-run (Apply) to take effect. */
+  detail: EnhanceDetail;
 }
+
+export type EnhanceDetail = 'standard' | 'high' | 'ultra';
+
+/** Render DPI per detail level (72 pt/in PDF space). */
+export const ENHANCE_DETAIL_DPI: Record<EnhanceDetail, number> = { standard: 120, high: 150, ultra: 200 };
+export const ENHANCE_DETAIL_LABEL: Record<EnhanceDetail, string> = { standard: 'Standard', high: 'High', ultra: 'Ultra' };
 
 export const DEFAULT_ENHANCE_SETTINGS: EnhanceSettings = {
   darken: 45,
@@ -47,17 +57,55 @@ export const DEFAULT_ENHANCE_SETTINGS: EnhanceSettings = {
   sharpen: 25,
   cleanBackground: true,
   grayscale: false,
+  evenLighting: true,
+  detail: 'standard',
 };
+
+export interface EnhancePreset {
+  id: string;
+  label: string;
+  hint: string;
+  settings: Omit<EnhanceSettings, 'detail'>;
+}
+
+/** One-tap starting points. Applying a preset keeps the chosen detail level. */
+export const ENHANCE_PRESETS: readonly EnhancePreset[] = [
+  { id: 'balanced', label: 'Balanced', hint: 'Good for most notebook scans', settings: { darken: 45, contrast: 35, sharpen: 25, cleanBackground: true, grayscale: false, evenLighting: true } },
+  { id: 'pencil', label: 'Faint pencil', hint: 'Very light ink — strong, black & white', settings: { darken: 80, contrast: 55, sharpen: 35, cleanBackground: true, grayscale: true, evenLighting: true } },
+  { id: 'photo', label: 'Phone photo', hint: 'Shadows and uneven light', settings: { darken: 50, contrast: 40, sharpen: 30, cleanBackground: true, grayscale: false, evenLighting: true } },
+  { id: 'gentle', label: 'Gentle', hint: 'Keeps colour, light touch', settings: { darken: 20, contrast: 15, sharpen: 15, cleanBackground: true, grayscale: false, evenLighting: false } },
+  { id: 'max', label: 'Max print', hint: 'Darkest output for photocopying', settings: { darken: 100, contrast: 70, sharpen: 40, cleanBackground: true, grayscale: true, evenLighting: true } },
+];
+
+/** Settings that change the pixels of a re-enhanced page (everything except `detail`). */
+export function sameTone(a: EnhanceSettings, b: EnhanceSettings): boolean {
+  return (
+    a.darken === b.darken &&
+    a.contrast === b.contrast &&
+    a.sharpen === b.sharpen &&
+    a.cleanBackground === b.cleanBackground &&
+    a.grayscale === b.grayscale &&
+    a.evenLighting === b.evenLighting
+  );
+}
+
+export function matchPreset(s: EnhanceSettings): EnhancePreset | null {
+  return ENHANCE_PRESETS.find((p) => sameTone({ ...p.settings, detail: s.detail }, s)) ?? null;
+}
 
 export const ENHANCE_SETTING_RANGE = { darken: [0, 100], contrast: [0, 100], sharpen: [0, 100] } as const;
 
 export interface EnhancePageResult {
   index: number;
+  /** Raster size in pixels of `dataUrl`. */
   width: number;
   height: number;
+  /** Original page size in PDF points (72/in). Export uses this so the output keeps the source page size. */
+  pdfWidth?: number;
+  pdfHeight?: number;
   /** JPEG data URL of the enhanced page (used for preview + export). */
   dataUrl: string;
-  /** JPEG data URL of the original page (used for before/after preview). */
+  /** JPEG data URL of the original page, downscaled (before/after + live preview source). */
   originalDataUrl: string;
 }
 
@@ -73,6 +121,8 @@ export interface EnhanceState {
   isProcessing: boolean;
   progress: EnhanceProgress | null;
   settings: EnhanceSettings;
+  /** The exact settings the current `results` were produced with (null until a run completes). */
+  appliedSettings: EnhanceSettings | null;
   results: EnhancePageResult[];
   selectedIndex: number;
   pdfBlob: Blob | null;
@@ -87,6 +137,7 @@ export const INITIAL_ENHANCE_STATE: EnhanceState = {
   isProcessing: false,
   progress: null,
   settings: DEFAULT_ENHANCE_SETTINGS,
+  appliedSettings: null,
   results: [],
   selectedIndex: 0,
   pdfBlob: null,
@@ -113,7 +164,7 @@ export type EnhanceAction =
   | { type: 'BACK_TO_ARRANGE' }
   | { type: 'PROCESS_START' }
   | { type: 'PROCESS_PROGRESS'; progress: EnhanceProgress }
-  | { type: 'PROCESS_COMPLETE'; results: EnhancePageResult[]; fileName: string }
+  | { type: 'PROCESS_COMPLETE'; results: EnhancePageResult[]; fileName: string; settings: EnhanceSettings }
   | { type: 'PROCESS_ERROR'; error: string }
   | { type: 'PROCESS_CANCEL' }
   | { type: 'EXPORT_START' }

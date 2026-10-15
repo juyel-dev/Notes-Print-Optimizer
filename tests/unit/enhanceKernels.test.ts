@@ -39,6 +39,8 @@ const baseSettings: EnhanceSettings = {
   sharpen: 0,
   cleanBackground: true,
   grayscale: false,
+  evenLighting: false,
+  detail: 'standard',
 };
 
 describe('computeLumaStats', () => {

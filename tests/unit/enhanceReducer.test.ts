@@ -9,7 +9,7 @@ import { INITIAL_ENHANCE_STATE } from '@/lib/enhance/types';
 import type { EnhancePageResult, EnhanceSettings } from '@/lib/enhance/types';
 import type { UploadedPdfItem } from '@/lib/workflow/types';
 
-const settings: EnhanceSettings = { darken: 45, contrast: 35, sharpen: 25, cleanBackground: true, grayscale: false };
+const settings: EnhanceSettings = { darken: 45, contrast: 35, sharpen: 25, cleanBackground: true, grayscale: false, evenLighting: false, detail: 'standard' };
 
 const page = (index: number): EnhancePageResult => ({
   index,
@@ -91,13 +91,15 @@ describe('enhanceReducer', () => {
     expect(s.progress?.total).toBe(1);
     s = enhanceReducer(s, { type: 'PROCESS_PROGRESS', progress: { current: 2, total: 3, phase: 'x.pdf · page 2/3' } });
     expect(s.progress?.current).toBe(2);
-    s = enhanceReducer(s, { type: 'PROCESS_COMPLETE', results: [page(0), page(1)], fileName: 'notes-enhanced.pdf' });
+    s = enhanceReducer(s, { type: 'PROCESS_COMPLETE', results: [page(0), page(1)], fileName: 'notes-enhanced.pdf', settings });
     expect(s.isProcessing).toBe(false);
     expect(s.progress).toBeNull();
     expect(s.results).toHaveLength(2);
     expect(s.step).toBe('enhance');
     expect(s.selectedIndex).toBe(0);
     expect(s.fileName).toBe('notes-enhanced.pdf');
+    // the settings the results were produced with are remembered (edits made mid-run must not look "applied")
+    expect(s.appliedSettings).toEqual(settings);
   });
 
   it('PROCESS_ERROR clears busy flags and keeps files', () => {
