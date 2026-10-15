@@ -1,4 +1,4 @@
-const VERSION = 'v37';
+const VERSION = 'v38';
 const CACHE = `npo-${VERSION}`;
 const STATIC_CACHE = `npo-static-${VERSION}`;
 const DYNAMIC_CACHE = `npo-dynamic-${VERSION}`;
@@ -24,6 +24,7 @@ const TOOL_ROUTES = [
   '/tools/word-counter/',
   '/tools/case-converter/',
   '/tools/n-up/',
+  '/tools/compress-pdf/',
 ];
 
 const PRECACHE_URLS = [

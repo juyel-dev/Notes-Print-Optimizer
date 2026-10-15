@@ -46,6 +46,13 @@ This guide covers **every tool**. Tip: use the **search box** at the top — typ
 3. Use the **live preview** (top→bottom) to see grid.
 4. **Export** print-ready N-up PDF.
 
+### 5a) Compress PDF (make a PDF smaller)
+
+1. Optional: pick **where it is going** — `500 KB / 1 MB / 2 MB / 5 MB / 10 MB / 25 MB` or type your own — then choose the PDF.
+2. The app looks inside your file and **recommends a mode**: **Keep text** (shrinks the pictures, words stay selectable) or **Flatten pages** (smallest file, text is no longer selectable).
+3. See the **predicted size at all five strengths** (Gentle → Extreme). With a target set, the gentlest strength that fits is chosen for you; if it cannot be reached, you are told the smallest possible size and what to try.
+4. **Compress**, then drag the slider to **compare original and compressed** pages before you download. Password-protected PDFs must be unlocked first.
+
 ---
 
 ## Image Tools
@@ -123,6 +130,6 @@ Paste text → tap **UPPERCASE / lowercase / Title Case / Sentence case / camelC
 
 ## Offline, privacy & help
 
-- **Offline:** after first load, all 12 tools work offline (PWA, `sw.js v37`). Look for *Install* in the menu for Add to Home Screen.
+- **Offline:** after first load, all 13 tools work offline (PWA, `sw.js v38`). Look for *Install* in the menu for Add to Home Screen.
 - **Privacy:** no upload — see **Privacy Policy**. Clear local data via **Menu → Privacy → Clear Cache**.
 - **Help:** **FAQ** in the menu, or contact [myself.juyel.dev@gmail.com](mailto:myself.juyel.dev@gmail.com) / [Telegram](https://t.me/PrintOptimizer_chat).

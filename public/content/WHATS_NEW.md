@@ -1,8 +1,16 @@
 # What's New
 
-A quick look at the latest — **August 2026** is the big **12-tool** release.
+A quick look at the latest.
 
 ---
+
+## New — Compress PDF (2026-10-15)
+
+**Make any PDF smaller, to the size you need.** Pick a limit (500 KB to 25 MB) or a strength, see the predicted size at all five levels before you commit, keep your text selectable or flatten pages for the smallest file, and compare original vs compressed with a slider. 100% on-device, works offline. Now **13 tools**.
+
+---
+
+## 12-Tool Suite (2026-08-28)
 
 ## New — 12-Tool Suite (2026-08-28)
 
@@ -21,7 +29,7 @@ A quick look at the latest — **August 2026** is the big **12-tool** release.
 - **Case Converter** — 11 formats (UPPER, lower, Title, camel, snake, kebab…), one-tap.
 - **N-up PDF** — 1/2/4/6/9 pages per sheet, A4/Letter, portrait/landscape — auto-merge + live top→bottom preview.
 
-All tools are deep-linkable (`/tools/<slug>/`), offline-cached (`sw.js v37`), and searchable.
+All tools are deep-linkable (`/tools/<slug>/`), offline-cached (`sw.js v38`), and searchable.
 
 ### Premium landing — Emerald
 

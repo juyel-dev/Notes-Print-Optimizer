@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
+import { TOOL_REGISTRY } from '@/lib/tools/registry';
 
 /**
  * Landing hero — one promise, one primary action, and a live demonstration
@@ -131,7 +132,7 @@ export const LandingHero: React.FC = () => (
           href="#tools"
           className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border border-elevated px-5 text-base font-semibold text-ink transition-colors hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
         >
-          Browse all 12 tools
+          Browse all {TOOL_REGISTRY.length} tools
         </a>
       </div>
 

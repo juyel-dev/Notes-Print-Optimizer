@@ -54,7 +54,7 @@ Only **optional feedback** (if you tap *Send Feedback*) is sent — and only wha
 - PDF.js & pdf-lib for rendering and composition
 - Rust → WebAssembly kernels for fast image processing
 - Web Workers for smooth, non-blocking processing
-- Installable PWA with offline caching (`sw.js v37`) — all 12 tools work offline
+- Installable PWA with offline caching (`sw.js v38`) — all 13 tools work offline
 
 ## Contact & community
 

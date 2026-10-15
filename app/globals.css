@@ -301,6 +301,30 @@ html, body {
   animation: enter-soft 0.2s var(--ease-soft) both;
 }
 
+/* Compress PDF — the "press" and skeleton shimmer. Motion is neutralised by the
+   prefers-reduced-motion block below, which targets every animation. */
+@keyframes cp-press-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(14px); }
+}
+@keyframes cp-press-up {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes cp-sheen {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.cp-plate-top { animation: cp-press-down 2.2s ease-in-out infinite; }
+.cp-plate-bottom { animation: cp-press-up 2.2s ease-in-out infinite; }
+.cp-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-ink) 12%, transparent), transparent);
+  animation: cp-sheen 1.4s ease-in-out infinite;
+}
+
 /* ------------------------------------------------------------------ */
 /* Accessibility: visible keyboard focus + skip-to-content link       */
 /* ------------------------------------------------------------------ */

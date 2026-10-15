@@ -14,7 +14,7 @@
 | Change SEO / OG cards / sitemap | **§8 Configuration** + `lib/site.ts:1` |
 | Gate before push | **§4 Verification Gate** |
 
-**Single source of truth:** `lib/tools/registry.ts` → `TOOL_REGISTRY` (12 tools, stable `slug`). Every route, SW entry, sitemap, search index, and card derives from it. Never hardcode a tool elsewhere.
+**Single source of truth:** `lib/tools/registry.ts` → `TOOL_REGISTRY` (13 tools, stable `slug`). Every route, SW entry, sitemap, search index, and card derives from it. Never hardcode a tool elsewhere.
 
 ---
 
@@ -23,7 +23,7 @@
 | Field | Value |
 |---|---|
 | Product | **Print Optimizer — Notes Print Suite** (brand `Print Optimizer`). Formerly documented internally as "PW Notes Print Suite" — renamed 2026-09 to remove an unlicensed reference to a specific commercial coaching brand (PhysicsWallah); see CHANGELOG. |
-| Purpose | 12-tool suite for students: dark-slide whitening, enhance, protect, PDF↔images, merge/split, image→PDF, plus utility/text/QR. Saves ink & paper. |
+| Purpose | 13-tool suite for students: dark-slide whitening, enhance, protect, PDF↔images, merge/split, image→PDF, plus utility/text/QR. Saves ink & paper. |
 | Tagline | *Every PDF, print-perfect — merge, split, protect, whiten & enhance, plus JPG/PNG image conversion* (`app/layout.tsx:18`) |
 | Stack | Next.js 15.5 (App Router, hybrid — see Runtime row), React 19, TS 5.9 strict, Tailwind v4, pdfjs-dist 4.10, pdf-lib 1.17, Rust→WASM (`wasm/src`), `motion`, `lucide-react` |
 | Theme identity | Cobalt Ink → Marigold `#3654D9→#5B7FFF→#F2A93C` + liquid glass. Rebrand 2026-09 retired Emerald/Mint/Teal/Cyan (`#10B981→#6EE7B7→#14B8A6→#06B6D4`) and the earlier violet/indigo (`#243BFF/#4338ca`) — none of those hexes should be reintroduced as primary/accent. |
@@ -85,7 +85,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 
 ## 5. Tool Registry Contract (the most important section)
 
-**File:** `lib/tools/registry.ts:35` — **`TOOL_REGISTRY: ToolDefinition[]` is the single source of truth.** 12 entries at 2026-08-28:
+**File:** `lib/tools/registry.ts:35` — **`TOOL_REGISTRY: ToolDefinition[]` is the single source of truth.** 13 entries at 2026-10-15:
 
 | # | id (`ToolMode`) | slug (stable URL) | title | category | icon | chips |
 |---|---|---|---|---|---|---|
@@ -101,6 +101,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 | 10 | `word-count` | `word-counter` | Word Counter | text | Type | Live stats · Reading time · Top keywords |
 | 11 | `case-convert` | `case-converter` | Case Converter | text | CaseSensitive | 11 formats · One-tap copy · Live |
 | 12 | `nup` | `n-up` | N-up PDF | pdf | LayoutGrid | Auto-merge · 1/2/4/6/9-up · A4/Letter |
+| 13 | `compress` | `compress-pdf` | Compress PDF | pdf | Shrink | Hit a target size · Keeps text · Before / after |
 
 **Types:** `ToolCategory = 'pdf'|'image'|'security'|'text'|'utility'` ordered `['pdf','image','security','utility','text']` via `getToolCategories()` (`registry.ts:242`). Chips use `labelMap` in `components/tools/ToolsBox.tsx:108` — keep in sync.
 
@@ -111,7 +112,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 3. Route already works via `app/(app)/tools/[slug]/page.tsx` (`generateStaticParams` from registry). No extra page needed.
 4. Add `CATEGORY_ORDER` placement if new category — and update `ToolsBox.tsx:labelMap`.
 5. Add OG card `print-optimizer/og/<slug>.png` (1200×630) to `juyel-dev/image` repo.
-6. Bump `VERSION` in `public/sw.js:1` (`v37` at HEAD) so precache invalidates.
+6. Bump `VERSION` in `public/sw.js:1` (`v38` at HEAD) so precache invalidates.
 7. Update human docs: `public/content/ABOUT.md`, `FAQ.md`, `USER_GUIDE.md`, `WHATS_NEW.md`, root `CHANGELOG.md`.
 
 **Never:** rename a `slug` casually (URL contract, sitemap, SW, OG all break), duplicate `seoTitle`/`seoDescription`, reuse alias `password` without scoping (already collides `protect` vs `password-gen` — test aliases), or add a network tool without `SECURITY.md` review.
@@ -121,7 +122,7 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 ## 6. PWA & Service Worker
 
 - **Manifest:** `app/manifest.ts` — `id/start_url/scope = BASE_PATH + /`, `name Print Optimizer`, `theme_color #020617` (dark) / `#f4f6fb` (light via `THEME_INIT_SCRIPT` in `app/layout.tsx:165`), `background #020617`, `display standalone`, icons `icon-192-v2.png / icon-512-v2.png / icon-maskable-v2.svg` (cache-busted `-v2` — never reuse name).
-- **SW:** `public/sw.js` — `VERSION='v37'` → `CACHE='npo-v37'` (renamed 2026-09 from `pw-optimizer-*`, see identity note above) + `STATIC`/`DYNAMIC` variants. `BASE` derived from `self.location.pathname` for subpath deploys. `PRECACHE_URLS = [/, /offline/, ...TOOL_ROUTES, icons, vendor/pdf*.mjs, wasm/npo_wasm.*]`.
+- **SW:** `public/sw.js` — `VERSION='v38'` → `CACHE='npo-v38'` (renamed 2026-09 from `pw-optimizer-*`, see identity note above) + `STATIC`/`DYNAMIC` variants. `BASE` derived from `self.location.pathname` for subpath deploys. `PRECACHE_URLS = [/, /offline/, ...TOOL_ROUTES, icons, vendor/pdf*.mjs, wasm/npo_wasm.*]`.
   - `install`: `skipWaiting` + `Promise.allSettled(precache)` — deliberate for 100% offline (see comment `public/sw.js:1`).
   - `activate`: delete any cache key not in the current version's keep-set (auto-purges old-prefix caches too).
   - `fetch`: navigate `network-first → DYNAMIC_CACHE → /offline/ 503 html`; wasm `network-first → STATIC_CACHE`; static assets (js/css/png/svg/mjs/woff) `cache-first`; else `stale-while-revalidate`; `message SKIP_WAITING`.
@@ -155,9 +156,9 @@ lib/
   nup/                       nupLayout.ts (pure geometry) + nupService.ts (single-parse vector)
   rearrange/                 parser/normalizer/sorter/rule-engine (Smart Arrange)
   content/                   FAQ parser + JSON-LD
-  enhance/ / protect/ / tomerge/ / tosplit/ / toimages/ / img2pdf/
+  enhance/ / protect/ / tomerge/ / tosplit/ / toimages/ / img2pdf/ / compress/
 public/
-  sw.js (v37), icon-*-v2.png, vendor/pdf*.mjs, wasm/npo_wasm.*, content/*.md (8 human docs), fixtures/
+  sw.js (v38), icon-*-v2.png, vendor/pdf*.mjs, wasm/npo_wasm.*, content/*.md (8 human docs), fixtures/
 tests/
   unit/ (26 suites incl. whiteBox, manualWhiteBox, siteContract, toolSearch)  | integration/ | stress/ | smoke/ (Playwright) | benchmarks/ (BASELINE, ENGINEERING_ASSESSMENT) | fixtures/pdf/ (4 PDFs + pdfGoldens.json)
 wasm/                        Rust source (wasm/src) → public/wasm/npo_wasm_bg.wasm (30,606 B)

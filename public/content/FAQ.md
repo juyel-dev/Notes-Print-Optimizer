@@ -3,7 +3,7 @@
 ## General
 
 **Does this app upload my files?**
-No. All 12 tools run **100% on your device** (browser + WASM). Your PDFs and images never leave your device — except optional feedback you choose to send.
+No. All 13 tools run **100% on your device** (browser + WASM). Your PDFs and images never leave your device — except optional feedback you choose to send.
 
 **Do I need an account?**
 No. Free, no sign-up. Open and use.
@@ -12,7 +12,7 @@ No. Free, no sign-up. Open and use.
 PDFs for all PDF tools; JPG/PNG/WebP for `Image to PDF` and `PDF to Images`; text for word/case tools; camera/image for QR scan.
 
 **Does it work offline?**
-Yes. After first load it is a Progressive Web App. All 12 tools work offline (precached `sw.js v37`).
+Yes. After first load it is a Progressive Web App. All 13 tools work offline (precached `sw.js v38`).
 
 ---
 
@@ -32,6 +32,9 @@ Yes. In **Upload**: drag to reorder files / remove a file. In **Optimize**: excl
 
 **What is Smart Arrange?**
 It detects related series like *Calculus 1..13 Class Notes* (numbers, ordinals `2nd`, Roman `I, II`, zero-padding) and orders them naturally — one tap.
+
+**How do I make a PDF smaller, for example under 1 MB?**
+Use **Compress PDF**. Pick a target size (or a strength) and it predicts the result at every level from real samples of your file. **Keep text** shrinks only the pictures so text stays selectable; **Flatten pages** gives the smallest file but turns text into an image. Everything runs on your device.
 
 **What N-up options exist?**
 `1, 2, 4, 6, 9` pages per sheet (A4/Letter, portrait/landscape). `N-up PDF` tool auto-merges multiple PDFs first. For dense formula try 6/9-Up; for diagrams use 2-Up.
@@ -77,10 +80,10 @@ Live **words, characters (with/without spaces), sentences, paragraphs, reading &
 
 ## Privacy, sharing & troubleshooting
 
-**Is my data safe with 12 tools?**
+**Is my data safe with 13 tools?**
 Yes — same guarantee for every tool: no upload, no tracker, no ad. Only **Send Feedback** (optional, opt-in) sends what you type to a Google Apps Script → Telegram relay (rate-limited 15/60s, server-controlled destination). See **Privacy Policy**.
 
-**How do I report a bug for one of 12 tools?**
+**How do I report a bug for one of 13 tools?**
 Use **Menu → Send Feedback** and pick the tool (or open GitHub → Issues → Bug Report). Include: tool name, steps, browser/OS/device, page count, console errors, and a small sample PDF if possible.
 
 **The app feels slow on a 100-page PDF?**
