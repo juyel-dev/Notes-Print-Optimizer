@@ -10,6 +10,7 @@
  */
 
 import { pwOptimizerStorage } from '../optimizer/storage';
+import { createCachePdfId } from '../optimizer/cacheIds';
 import { ParameterGenerator } from '../optimizer/parameterGenerator';
 import type {
   PageClassification,
@@ -28,7 +29,7 @@ export interface HandoffPageInput {
 export class EnhanceHandoffService {
   /** Distinct id namespace so cache entries never collide with optimizer docs. */
   static buildPdfId(): string {
-    return `pw_enh_${Date.now()}`;
+    return createCachePdfId('pw_enh');
   }
 
   /** dataURL -> Blob via pure base64 decode (works in jsdom/unit tests). */
