@@ -19,7 +19,7 @@ class PWOptimizerStorage {
   private getDB(): Promise<IDBDatabase> {
     if (typeof window === 'undefined') return Promise.reject(new Error('No IndexedDB on server'));
     if (!this.dbPromise) {
-      this.dbPromise = new Promise((resolve, reject) => {
+      const opening = new Promise<IDBDatabase>((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
         req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
           const db = (ev.target as IDBOpenDBRequest).result;
@@ -40,6 +40,12 @@ class PWOptimizerStorage {
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
         req.onblocked = () => console.warn('IndexedDB blocked by another tab');
+      });
+      // Do not cache a rejected open forever: transient browser/storage errors
+      // should be retryable without forcing a page reload.
+      this.dbPromise = opening.catch((error: unknown) => {
+        this.dbPromise = null;
+        throw error;
       });
     }
     return this.dbPromise;
