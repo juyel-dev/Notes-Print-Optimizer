@@ -66,14 +66,13 @@ const DEFAULT_POLICY: PreservationPolicy = {
 export type PreservationProfile = Pick<
   PageProfile,
   | 'classification'
-  | 'averageBrightness'
   | 'darkBackgroundRatio'
   | 'darkFrame'
   | 'density'
   | 'foregroundCoverage'
   | 'foregroundPolarity'
   | 'thinStrokeRisk'
->;
+> & Partial<Pick<PageProfile, 'averageBrightness'>>;
 
 /**
  * Resolve conservative guard floors from the analyzer profile.
