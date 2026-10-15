@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { LayoutService } from '../../services/LayoutService';
 import type { LayoutConfig, ProcessedPage } from '../../optimizer/types';
 import type { WhiteBoxRegion } from '../../kernels/whiteBox';
@@ -49,6 +49,14 @@ export function useManualRegions({
   excludeLayoutTimerRef,
   excludeLayoutArgsRef,
 }: ManualRegionsParams) {
+  const thumbnailRequestIdsRef = useRef(new Map<number, number>());
+
+  useEffect(() => () => {
+    thumbnailRequestIdsRef.current.forEach((requestId, pageIndex) => {
+      thumbnailRequestIdsRef.current.set(pageIndex, requestId + 1);
+    });
+  }, []);
+
   const scheduleRelayout = useCallback(
     (nextManual: Record<number, WhiteBoxRegion[]>) => {
       if (!(currentPhase === 3 && processedPages.length > 0)) return;
@@ -73,6 +81,10 @@ export function useManualRegions({
   const regenerateThumbnail = useCallback(async (pageIndex: number, regions: WhiteBoxRegion[]) => {
     const page = processedPages.find((p) => p.pageIndex === pageIndex);
     if (!page) return;
+    const requestId = (thumbnailRequestIdsRef.current.get(pageIndex) ?? 0) + 1;
+    thumbnailRequestIdsRef.current.set(pageIndex, requestId);
+    let srcCanvas: HTMLCanvasElement | null = null;
+    let thumbCanvas: HTMLCanvasElement | null = null;
     try {
       const { PdfExporter } = await import('../../optimizer/pdfExporter');
       const { compositeWhiteBoxRegions } = await import('../../kernels/whiteBox');
@@ -99,22 +111,41 @@ export function useManualRegions({
       // Downscale to thumbnail (same as ProcessingEngineV2.generateThumbnail 1/5)
       const tw = Math.max(1, Math.round(displayData.width / 5));
       const th = Math.max(1, Math.round(displayData.height / 5));
-      const srcCanvas = document.createElement('canvas');
+      srcCanvas = document.createElement('canvas');
       srcCanvas.width = displayData.width;
       srcCanvas.height = displayData.height;
-      srcCanvas.getContext('2d')!.putImageData(displayData, 0, 0);
-      const thumbCanvas = document.createElement('canvas');
+      const srcCtx = srcCanvas.getContext('2d');
+      if (!srcCtx) throw new Error('Could not initialize manual-region source canvas.');
+      srcCtx.putImageData(displayData, 0, 0);
+
+      thumbCanvas = document.createElement('canvas');
       thumbCanvas.width = tw;
       thumbCanvas.height = th;
-      thumbCanvas.getContext('2d')!.drawImage(srcCanvas, 0, 0, tw, th);
-      const blob = await new Promise<Blob>((res) => thumbCanvas.toBlob((b) => res(b || new Blob()), 'image/jpeg', 0.6));
-      // Revoke old thumbnail URL and track new one
-      memoryManager.revokeBlobUrl(page.thumbnailDataUrl);
+      const thumbCtx = thumbCanvas.getContext('2d');
+      if (!thumbCtx) throw new Error('Could not initialize manual-region thumbnail canvas.');
+      thumbCtx.drawImage(srcCanvas, 0, 0, tw, th);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        thumbCanvas!.toBlob((encoded) => {
+          if (encoded && encoded.size > 0) resolve(encoded);
+          else reject(new Error('Could not encode the manual-region thumbnail.'));
+        }, 'image/jpeg', 0.6);
+      });
+
+      // A newer edit may have completed while this page was rendering/encoding.
+      // Never replace the latest thumbnail with an older snapshot.
+      if (thumbnailRequestIdsRef.current.get(pageIndex) !== requestId) return;
+
+      // Revoke the old thumbnail only after a valid replacement is ready.
       const newUrl = memoryManager.createTrackedBlobUrl(blob);
       const updated: ProcessedPage = { ...page, thumbnailDataUrl: newUrl };
+      memoryManager.revokeBlobUrl(page.thumbnailDataUrl);
       actions.updateSingleProcessedPage(pageIndex, updated);
     } catch (e) {
       console.warn('[manualRegions] thumbnail regen failed for page', pageIndex, e);
+    } finally {
+      if (srcCanvas) { srcCanvas.width = 0; srcCanvas.height = 0; }
+      if (thumbCanvas) { thumbCanvas.width = 0; thumbCanvas.height = 0; }
     }
   }, [processedPages, mergedPdfBytes, actions]);
 
