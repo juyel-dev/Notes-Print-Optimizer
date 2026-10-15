@@ -6,6 +6,8 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ### Fixed
 
+- Workflow cache cleanup is now scoped to the current tab, so opening, resetting or closing a workflow no longer deletes another tab’s cached PDF pages. PDF cache IDs are unique across concurrent runs, and Clear Cache waits for IndexedDB and reports if some data could not be removed.
+
 - QR Scanner no longer saves Wi-Fi QR payloads (which contain network passwords) in persistent browser history. Wi-Fi results remain available in the current session; older saved Wi-Fi entries are filtered when history loads.
 
 - Batch cache writes now calculate required eviction space from net size growth, so a smaller page in the same batch offsets a larger one instead of unnecessarily evicting unrelated cached pages.
