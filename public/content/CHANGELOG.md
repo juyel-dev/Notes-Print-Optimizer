@@ -7,8 +7,7 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 ### Fixed
 
 - Mixed-polarity pages now use one shared dark-source policy across the processing kernel, white-box detector, and preservation guard, preventing a high dark-pixel ratio alone from forcing dark-slide processing.
-- Reliability fixes: safer Blob URL lifetime for downloads, stale merged-preview protection, PDF.js/canvas/thumbnail cleanup on errors, visible JPEG encoding failures, unique IDs for repeated upload batches, retryable invalid-file selection, and clear feedback when the Enhance queue is full.
-- Reliability fixes: browser-safe download URL lifetime, stale merged-preview protection, PDF.js/canvas/thumbnail cleanup on errors, explicit JPEG encoding failures, unique IDs across upload batches, retryable file validation, and clear feedback when the Enhance queue is full.
+- Reliability fixes: safer Blob URL lifetime for downloads; stale merged-preview protection; PDF.js page/document, canvas and partial-thumbnail cleanup on errors; explicit JPEG encoding failures rather than empty image URLs; unique IDs across upload batches; retryable invalid-file selection; clear feedback when the Enhance queue is full; and matching thumbnail failure/cleanup handling in PageGrid and single-page reprocess.
 
 - Dark Notes → Print layout preparation now shows PDF-engine/page progress, keeps a Back action available while waiting, and offers retry if preparation fails.
 - Dark Notes → Print now recovers dim handwriting when a sparse dark slide would otherwise become blank, and the preservation guard detects this specific foreground-loss case.
