@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 
 interface EmptyPhaseStateProps {
   title: string;
   message: string;
   onBack: () => void;
   backLabel?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
 }
 
 /** Friendly empty state for phases reached without data (e.g. stepper jump). Premium with undraw illustration. */
@@ -16,6 +18,8 @@ export const EmptyPhaseState: React.FC<EmptyPhaseStateProps> = ({
   message,
   onBack,
   backLabel = 'Go Back',
+  onRetry,
+  retryLabel = 'Try again',
 }) => (
   <div className="flex flex-col items-center gap-4 rounded-2xl border border-surface-2 bg-surface/80 p-6 sm:p-8 text-center shadow-lg">
     {/* Undraw illustration — premium */}
@@ -31,13 +35,25 @@ export const EmptyPhaseState: React.FC<EmptyPhaseStateProps> = ({
       <h3 className="text-sm font-bold text-ink">{title}</h3>
       <p className="max-w-sm text-xs leading-relaxed text-ink-muted">{message}</p>
     </div>
-    <button
-      type="button"
-      onClick={onBack}
-      className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary-strong px-4 text-xs font-bold text-white shadow-md hover:bg-primary transition-colors active:scale-[0.97]"
-    >
-      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-      {backLabel}
-    </button>
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary-strong px-4 text-xs font-bold text-white shadow-md hover:bg-primary transition-colors active:scale-[0.97]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+        {backLabel}
+      </button>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-elevated bg-surface px-4 text-xs font-bold text-ink hover:bg-surface-2 transition-colors active:scale-[0.97]"
+        >
+          <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+          {retryLabel}
+        </button>
+      )}
+    </div>
   </div>
 );
