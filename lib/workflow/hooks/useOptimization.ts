@@ -133,6 +133,7 @@ export function useOptimization({
     let originalImageData: ImageData | null = null;
     let optimizedImageData: ImageData | null = null;
     let thumbCanvas: HTMLCanvasElement | null = null;
+    let tmpCanvas: HTMLCanvasElement | null = null;
 
     try {
       const effectiveParams = buildEffectiveParams(masterParams, processingToggles);
@@ -199,16 +200,19 @@ export function useOptimization({
       const tw = Math.max(1, Math.round(optimizedImageData.width / 4));
       const th = Math.max(1, Math.round(optimizedImageData.height / 4));
       thumbCanvas = memoryManager.acquireCanvas(tw, th);
-      const thumbCtx = thumbCanvas.getContext('2d', { willReadFrequently: true })!;
+      const thumbCtx = thumbCanvas.getContext('2d', { willReadFrequently: true });
+      if (!thumbCtx) throw new Error('Could not initialize the preview thumbnail canvas.');
 
-      const tmpCanvas = memoryManager.acquireCanvas(
+      tmpCanvas = memoryManager.acquireCanvas(
         optimizedImageData.width,
         optimizedImageData.height,
       );
-      const tmpCtx = tmpCanvas.getContext('2d', { willReadFrequently: true })!;
+      const tmpCtx = tmpCanvas.getContext('2d', { willReadFrequently: true });
+      if (!tmpCtx) throw new Error('Could not initialize the full-size preview canvas.');
       tmpCtx.putImageData(optimizedImageData, 0, 0);
       thumbCtx.drawImage(tmpCanvas, 0, 0, tw, th);
       memoryManager.releaseCanvas(tmpCanvas);
+      tmpCanvas = null;
 
       // Revoke previous preview blob URL before creating a new one
       if (previewBlobUrlRef.current) {
@@ -216,9 +220,12 @@ export function useOptimization({
         previewBlobUrlRef.current = null;
       }
 
-      const thumbBlob = await new Promise<Blob>(resolve => {
+      const thumbBlob = await new Promise<Blob>((resolve, reject) => {
         thumbCanvas!.toBlob(
-          b => resolve(b || new Blob([], { type: 'image/jpeg' })),
+          (blob) => {
+            if (blob && blob.size > 0) resolve(blob);
+            else reject(new Error('Could not encode the processed-page thumbnail.'));
+          },
           'image/jpeg',
           0.6,
         );
@@ -268,6 +275,7 @@ export function useOptimization({
       // Guaranteed cleanup - release any remaining resources
       if (rawCanvas) memoryManager.releaseCanvas(rawCanvas);
       if (thumbCanvas) memoryManager.releaseCanvas(thumbCanvas);
+      if (tmpCanvas) memoryManager.releaseCanvas(tmpCanvas);
       originalImageData = null;
       optimizedImageData = null;
       previewInFlightRef.current = false;
