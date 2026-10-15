@@ -7,6 +7,7 @@
 ### Fixed
 
 - **Mixed-polarity pages could disagree across dark-source checks.** The engine, pixel kernel, white-box detector, and preservation guard now share one conservative rule, so a high dark-pixel ratio alone no longer forces an otherwise mixed page through the dark-slide pipeline. Regression tests cover the previously inconsistent case.
+- **Deep reliability audit:** delayed Blob URL revocation for browser downloads; added latest-request-wins protection for merged previews; guaranteed PDF.js, canvas, and partial thumbnail cleanup on preview errors; replaced silent empty-JPEG caching with explicit encode errors; generated unique IDs for repeated upload batches; enabled retrying the same rejected file; and made Enhance queue-cap overflow visible.
 
 - **Dark Notes → Print — Choose Layout looked stuck at “Preparing pages for layout…”**. Expose PDF-engine loading and per-page preparation progress, provide Back while preparation is running, add retry on preparation errors, and cancel stale page-preparation runs when leaving or retrying.
 - **Dark Notes → Print erased dim handwriting on nearly blank dark slides.** Recover low-value foreground from original pixels only for sparse dark pages whose generated mask is nearly empty, pass page-profile signals through the worker, and lower the preservation-guard source threshold for that narrowly gated case. Add regression tests for dim gold ink and destructive blank-page output.
