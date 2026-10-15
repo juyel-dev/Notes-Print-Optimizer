@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Download,
@@ -122,29 +122,77 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
   // Phase 1/2, and vice versa — see PrintLayoutStep.tsx's own doc comment.
   const [flattenedLayoutInput, setFlattenedLayoutInput] = useState<{ bytes: Uint8Array; pageCount: number } | null>(null);
   const [flattenError, setFlattenError] = useState<string | null>(null);
+  const [flattenProgress, setFlattenProgress] = useState<{
+    current: number;
+    total: number;
+    stage: 'loading-engine' | 'preparing-pages';
+  } | null>(null);
+  const flattenRequestIdRef = useRef(0);
+  const flattenAbortRef = useRef<AbortController | null>(null);
   const [layoutResult, setLayoutResult] = useState<{ result: BuildResult; opts: NupOptions } | null>(null);
 
   const handleProceedToLayout = useCallback(async () => {
+    // A retry supersedes the previous attempt. If the user goes back while a
+    // page is being prepared, the AbortSignal stops the next page from starting.
+    const requestId = ++flattenRequestIdRef.current;
+    flattenAbortRef.current?.abort();
+    const controller = new AbortController();
+    flattenAbortRef.current = controller;
+
     setFlattenError(null);
     setFlattenedLayoutInput(null);
+    const activePages = LayoutService.getActivePages(processedPages, excludedPages);
+    setFlattenProgress({ current: 0, total: activePages.length, stage: 'loading-engine' });
     onProceedToPhase3();
+
     try {
-      const activePages = LayoutService.getActivePages(processedPages, excludedPages);
       if (activePages.length === 0) {
         setFlattenError('All pages are excluded — include at least one page to continue.');
         return;
       }
+
+      // In addition to the page progress below, expose the local module-load
+      // stage so the user can distinguish engine loading from page work.
       const { PdfExporter } = await import('@/lib/optimizer/pdfExporter');
-      const { bytes, pageCount } = await PdfExporter.flattenActivePagesToPdf(activePages, {
-        keepOriginalPages,
-        manualWhiteBoxRegions,
-        mergedPdfBytes,
-      });
+      if (requestId !== flattenRequestIdRef.current || controller.signal.aborted) return;
+
+      setFlattenProgress({ current: 0, total: activePages.length, stage: 'preparing-pages' });
+      const { bytes, pageCount } = await PdfExporter.flattenActivePagesToPdf(
+        activePages,
+        { keepOriginalPages, manualWhiteBoxRegions, mergedPdfBytes },
+        (current, total) => {
+          if (requestId === flattenRequestIdRef.current && !controller.signal.aborted) {
+            setFlattenProgress({ current, total, stage: 'preparing-pages' });
+          }
+        },
+        controller.signal,
+      );
+      if (requestId !== flattenRequestIdRef.current || controller.signal.aborted) return;
       setFlattenedLayoutInput({ bytes, pageCount });
     } catch (e: unknown) {
-      setFlattenError(e instanceof Error ? e.message : 'Failed to prepare pages for layout.');
+      if (requestId === flattenRequestIdRef.current && !controller.signal.aborted) {
+        setFlattenError(e instanceof Error ? e.message : 'Failed to prepare pages for layout.');
+      }
+    } finally {
+      if (requestId === flattenRequestIdRef.current) {
+        setFlattenProgress(null);
+        if (flattenAbortRef.current === controller) flattenAbortRef.current = null;
+      }
     }
   }, [onProceedToPhase3, processedPages, excludedPages, keepOriginalPages, manualWhiteBoxRegions, mergedPdfBytes]);
+
+  const handleBackFromLayout = useCallback(() => {
+    // Invalidate pending completions so an older attempt cannot overwrite a retry
+    // or the next visit to Phase 3.
+    flattenRequestIdRef.current += 1;
+    flattenAbortRef.current?.abort();
+    flattenAbortRef.current = null;
+    setFlattenProgress(null);
+    setFlattenError(null);
+    setFlattenedLayoutInput(null);
+    if (enhanceHandoffActive && onBackToEnhance) onBackToEnhance();
+    else setCurrentPhase(2);
+  }, [enhanceHandoffActive, onBackToEnhance, setCurrentPhase]);
 
   const handleLayoutGenerated = useCallback((result: BuildResult, opts: NupOptions) => {
     setLayoutResult({ result, opts });
@@ -375,15 +423,18 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                 <EmptyPhaseState
                   title="Couldn't prepare pages for layout"
                   message={flattenError}
-                  onBack={() => setCurrentPhase(2)}
-                  backLabel="Back to Whiten"
+                  onBack={handleBackFromLayout}
+                  backLabel={enhanceHandoffActive && onBackToEnhance ? 'Back to Enhance' : 'Back to Whiten'}
+                  onRetry={handleProceedToLayout}
+                  retryLabel="Retry preparation"
                 />
               ) : (
                 <PrintLayoutStep
                   flattenedPdfBytes={flattenedLayoutInput?.bytes ?? null}
                   totalPages={flattenedLayoutInput?.pageCount ?? 0}
+                  preparingProgress={flattenProgress}
                   onGenerated={handleLayoutGenerated}
-                  onBack={enhanceHandoffActive && onBackToEnhance ? onBackToEnhance : () => setCurrentPhase(2)}
+                  onBack={handleBackFromLayout}
                   backLabel={enhanceHandoffActive && onBackToEnhance ? 'Back to Enhance' : 'Back to Whiten'}
                 />
               )}

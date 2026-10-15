@@ -305,15 +305,24 @@ export class PdfExporter {
     activePages: ProcessedPage[],
     opts?: { keepOriginalPages?: Set<number>; manualWhiteBoxRegions?: Record<number, import('../kernels/whiteBox').WhiteBoxRegion[]>; mergedPdfBytes?: Uint8Array | null },
     onProgress?: (current: number, total: number) => void,
+    signal?: AbortSignal,
   ): Promise<{ bytes: Uint8Array; pageCount: number }> {
+    const assertNotAborted = () => {
+      if (signal?.aborted) throw new Error('Page preparation cancelled.');
+    };
+    assertNotAborted();
     const pdfDoc = await PDFDocument.create();
     const sourceWidths = await readSourceWidthsPt(opts?.mergedPdfBytes);
     for (let i = 0; i < activePages.length; i++) {
-      if (onProgress) onProgress(i + 1, activePages.length);
+      assertNotAborted();
       const imageData = await this.resolveFinalPageImage(activePages[i], opts);
+      assertNotAborted();
       await this.embedFinalPage(pdfDoc, imageData, sourceWidths[activePages[i].pageIndex], 0.9);
+      // Progress means fully embedded pages, not merely the page currently starting.
+      if (onProgress) onProgress(i + 1, activePages.length);
       await memoryManager.yieldToUI();
     }
+    assertNotAborted();
     return { bytes: await pdfDoc.save(), pageCount: pdfDoc.getPageCount() };
   }
 

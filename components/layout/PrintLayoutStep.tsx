@@ -35,6 +35,11 @@ export interface PrintLayoutStepProps {
    */
   flattenedPdfBytes: Uint8Array | null;
   totalPages: number;
+  preparingProgress?: {
+    current: number;
+    total: number;
+    stage: 'loading-engine' | 'preparing-pages';
+  } | null;
   onGenerated: (result: BuildResult, opts: NupOptions) => void;
   onBack: () => void;
   backLabel?: string;
@@ -52,6 +57,7 @@ export interface PrintLayoutStepProps {
 export const PrintLayoutStep: React.FC<PrintLayoutStepProps> = ({
   flattenedPdfBytes,
   totalPages,
+  preparingProgress = null,
   onGenerated,
   onBack,
   backLabel = 'Back',
@@ -111,10 +117,53 @@ export const PrintLayoutStep: React.FC<PrintLayoutStepProps> = ({
   };
 
   if (!flattenedPdfBytes) {
+    const preparingTotal = preparingProgress?.total ?? 0;
+    const preparedPages = Math.min(preparingTotal, Math.max(0, preparingProgress?.current ?? 0));
+    const percent = preparingTotal > 0 ? Math.round((preparedPages / preparingTotal) * 100) : 0;
+    const label = preparingProgress?.stage === 'loading-engine'
+      ? 'Loading PDF tools…'
+      : preparingTotal > 0 && preparedPages >= preparingTotal
+        ? 'Finalizing prepared PDF…'
+        : preparingTotal > 0 && preparedPages > 0
+          ? `Prepared ${preparedPages} of ${preparingTotal} pages…`
+          : preparingTotal > 0
+            ? `Preparing first page of ${preparingTotal}…`
+            : 'Preparing pages for layout…';
+
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-surface-2 bg-surface/90 p-8 shadow-lg">
+      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-surface-2 bg-surface/90 p-6 text-center shadow-lg sm:p-8">
         <Loader2 className="h-6 w-6 animate-spin text-primary-soft" aria-hidden="true" />
-        <p className="text-sm font-semibold text-ink-muted">Preparing pages for layout…</p>
+        <p className="text-sm font-semibold text-ink-muted" aria-live="polite">{label}</p>
+        {preparingProgress?.stage === 'loading-engine' && (
+          <p className="max-w-sm text-xs leading-relaxed text-ink-faint">
+            Loading the local PDF engine. Your document stays on this device.
+          </p>
+        )}
+        {preparingProgress?.stage === 'preparing-pages' && preparingTotal > 0 && (
+          <div className="w-full max-w-sm">
+            <div
+              role="progressbar"
+              aria-label="Preparing PDF pages"
+              aria-valuemin={0}
+              aria-valuemax={preparingTotal}
+              aria-valuenow={preparedPages}
+              className="h-2 overflow-hidden rounded-full bg-surface-2"
+            >
+              <div
+                className="h-full rounded-full bg-primary-strong transition-[width] duration-200"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-xs tabular-nums text-ink-faint">{percent}% · large PDFs may take longer</p>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onBack}
+          className="mt-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-elevated bg-surface px-4 text-sm font-bold text-ink hover:bg-surface-2"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {backLabel}
+        </button>
       </div>
     );
   }
