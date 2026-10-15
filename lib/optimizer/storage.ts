@@ -57,7 +57,7 @@ class PWOptimizerStorage {
       const sizeBytes = (originalBlob?.size ?? 0) + optimizedBlob.size;
       const [oldSize] = await this.getSizesByKey([id]);
       const sizeDelta = sizeBytes - (oldSize ?? 0);
-      if (sizeDelta > 0) await this.evictIfNeeded(sizeDelta);
+      if (sizeDelta > 0) await this.evictIfNeeded(sizeDelta, new Set([id]));
       const db = await this.getDB();
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
@@ -97,7 +97,7 @@ class PWOptimizerStorage {
       const oldSizes = await this.getSizesByKey(records.map(r => r.id));
       const sizeDelta = records.reduce((s, r, i) => s + r.sizeBytes - (oldSizes[i] ?? 0), 0);
       const neededBytes = records.reduce((s, r, i) => s + Math.max(0, r.sizeBytes - (oldSizes[i] ?? 0)), 0);
-      if (neededBytes > 0) await this.evictIfNeeded(neededBytes);
+      if (neededBytes > 0) await this.evictIfNeeded(neededBytes, new Set(records.map((record) => record.id)));
 
       const db = await this.getDB();
       const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -181,7 +181,10 @@ class PWOptimizerStorage {
     } catch { return 0; }
   }
 
-  private async evictIfNeeded(neededBytes: number): Promise<void> {
+  private async evictIfNeeded(
+    neededBytes: number,
+    protectedIds: ReadonlySet<string> = new Set(),
+  ): Promise<void> {
     try {
       const currentSize = await this.getCacheSize();
       if (currentSize + neededBytes < MAX_CACHE_BUDGET) return;
@@ -191,21 +194,48 @@ class PWOptimizerStorage {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const idx = tx.objectStore(STORE_NAME).index('timestamp');
       const req = idx.openCursor(null, 'next');
-      return new Promise((resolve) => {
-        req.onsuccess = () => {
-          const c = req.result;
-          if (!c || toFree <= 0) { resolve(); return; }
-          const record = c.value as CachedPageRecord;
-          const freed = record.sizeBytes || 0;
-          c.delete();
-          this.cachedSizeBytes = Math.max(0, (this.cachedSizeBytes ?? 0) - freed);
-          toFree -= freed;
-          c.continue();
+
+      await new Promise<void>((resolve) => {
+        // Resolve only when the transaction settles. Resolving when the cursor
+        // reaches its end can let the following write race a still-open eviction
+        // transaction and make the cached-size mirror lag the database.
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          resolve();
         };
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
+
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (!cursor || toFree <= 0) return;
+
+          const record = cursor.value as CachedPageRecord;
+          if (protectedIds.has(record.id)) {
+            // A row about to be replaced must remain in place until the write
+            // commits; evicting it here double-subtracts its old size and can
+            // leave the cache over budget while the in-memory count looks small.
+            cursor.continue();
+            return;
+          }
+
+          const freed = record.sizeBytes || 0;
+          cursor.delete();
+          if (this.cachedSizeBytes !== null) {
+            this.cachedSizeBytes = Math.max(0, this.cachedSizeBytes - freed);
+          }
+          toFree -= freed;
+          cursor.continue();
+        };
+
+        tx.oncomplete = finish;
+        tx.onerror = finish;
+        tx.onabort = finish;
       });
-    } catch { /* */ }
+    } catch {
+      // Eviction is best-effort; the persistence transaction still reports any
+      // write failure to the caller. Protected rows are never removed here.
+    }
   }
 
   public async clearCache(pdfId?: string): Promise<void> {
