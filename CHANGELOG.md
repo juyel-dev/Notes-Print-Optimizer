@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- **QR scan history could persist Wi-Fi passwords in plaintext.** Keep Wi-Fi QR payloads in memory only for the current session, filter them from persistent history on save and load (including entries from older versions), and add regression coverage.
+
 - **Batch cache writes could evict too much when page sizes changed in opposite directions.** Base eviction space on the net change across the whole batch, and add coverage proving a 50 MiB shrink offsets a 50 MiB growth without evicting an unrelated page.
 - **The best-effort visual CI capture could hold the required check for too long.** Cap the screenshot pass at 180 seconds; partial screenshots remain useful and the optional capture can no longer delay code checks indefinitely.
 
