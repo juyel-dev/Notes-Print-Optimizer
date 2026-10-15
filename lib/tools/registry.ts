@@ -5,7 +5,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { CaseSensitive, Combine, Contrast, FileText, ImagePlus, Images, KeyRound, LayoutGrid, QrCode, Scissors, ShieldCheck, Type } from 'lucide-react';
+import { CaseSensitive, Combine, Contrast, FileText, ImagePlus, Images, KeyRound, LayoutGrid, QrCode, Scissors, ShieldCheck, Shrink, Type } from 'lucide-react';
 import type { ToolMode } from '@/lib/enhance/types';
 
 /** Coarse groups used by the shortcut chips (rendered once >1 exists). */
@@ -245,6 +245,23 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     gradient: 'linear-gradient(135deg, #F2A93C 0%, #D89D37 45%, #3654D9 100%)',
     chips: ['Auto-merge', '1/2/4/6/9-up', 'A4/Letter'],
     cta: 'N-up',
+  },
+  {
+    id: 'compress',
+    slug: 'compress-pdf',
+    title: 'Compress PDF',
+    description: 'Shrink a PDF to the size you need — pick a limit like 1 MB or 2 MB, preview the result, keep your text sharp.',
+    seoTitle: 'Compress PDF — Reduce PDF Size to 1 MB, 2 MB or Any Target',
+    seoDescription:
+      'Compress PDFs on-device: choose a target size (500 KB to 25 MB) or a strength, see predicted sizes for every level, keep text selectable or flatten for the smallest file, and compare before and after. No upload.',
+    aliases: ['compress', 'shrink', 'reduce size', 'reduce pdf size', 'pdf compressor', 'smaller pdf', 'under 1mb', 'under 2mb', 'kb', 'mb'],
+    keywords: ['compress', 'shrink', 'size', 'reduce', 'smaller', 'optimize', 'email', 'upload limit', 'scan', 'kb', 'mb'],
+    category: 'pdf',
+    icon: Shrink,
+    gradient: 'linear-gradient(160deg, #3654D9 0%, #F2A93C 70%, #FFC773 100%)',
+    chips: ['Hit a target size', 'Keeps text', 'Before / after'],
+    cta: 'Compress',
+    addedAt: '2026-10-15',
   },
 ];
 

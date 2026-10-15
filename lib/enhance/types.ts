@@ -21,7 +21,8 @@ export type ToolMode =
   | 'qr-gen'
   | 'word-count'
   | 'case-convert'
-  | 'nup';
+  | 'nup'
+  | 'compress';
 
 export type EnhanceStep = 'upload' | 'arrange' | 'enhance';
 

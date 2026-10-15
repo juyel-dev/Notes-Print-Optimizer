@@ -347,7 +347,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
 
           <div className="mt-6 flex flex-col gap-1 border-t border-elevated/50 pt-4 text-[11px] text-ink-faint sm:flex-row sm:items-center sm:justify-between">
             <p>© 2026 Juyel Hossain · JSL v1.0</p>
-            <p>Print Optimizer · Student Notes Suite · v37</p>
+            <p>Print Optimizer · Student Notes Suite · v38</p>
           </div>
         </div>
       </footer>

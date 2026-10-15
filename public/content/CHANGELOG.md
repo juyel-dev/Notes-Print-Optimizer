@@ -4,6 +4,10 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Added
+
+- **Compress PDF** (`compress-pdf`) — a new tool with its own look (marigold "press" hero, live size dial, strength ladder, drag-to-compare). Pick a target size (500 KB–25 MB or custom) or a strength; the tool encodes real samples of your file to **predict the size at all five levels**, then chooses the gentlest level that fits (re-trying one step tighter if the real output misses). **Keep text** mode recompresses embedded JPEG/Flate images in place (8-bit RGB/gray, PNG predictors undone; masks, palettes, CMYK and 16-bit are skipped, never risked) so text and vectors stay untouched; **Flatten pages** renders 150-DPI masters once and re-encodes them for the smallest possible file. The recommended mode is chosen by looking inside the PDF; a result that would be larger than the original is never returned. Password-protected/damaged files get a clear per-file message. Service worker `v38`.
+
 ### Fixed
 
 - QR Scanner no longer saves Wi-Fi QR payloads (which contain network passwords) in persistent browser history. Wi-Fi results remain available in the current session; older saved Wi-Fi entries are filtered when history loads.

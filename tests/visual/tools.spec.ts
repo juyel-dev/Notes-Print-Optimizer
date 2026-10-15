@@ -7,7 +7,7 @@ import { test, type Page } from '@playwright/test';
  */
 const SLUGS = [
   'dark-print', 'enhance-light-pdf', 'protect-pdf', 'pdf-to-images', 'merge-pdf', 'split-pdf',
-  'image-to-pdf', 'password-generator', 'qr-generator', 'word-counter', 'case-converter', 'n-up',
+  'image-to-pdf', 'password-generator', 'qr-generator', 'word-counter', 'case-converter', 'n-up', 'compress-pdf',
 ];
 const MODES = [
   { theme: 'dark', vp: 'desktop', width: 1280, height: 800 },

@@ -30,8 +30,9 @@ describe('searchTools', () => {
       'word-count',
       'case-convert',
       'nup',
+      'compress',
     ]);
-    expect(ids(searchTools(TOOL_REGISTRY, '   '))).toHaveLength(12);
+    expect(ids(searchTools(TOOL_REGISTRY, '   '))).toHaveLength(13);
   });
 
   it('matches by title prefix first', () => {

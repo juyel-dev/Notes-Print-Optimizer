@@ -72,6 +72,7 @@ jobs:
           - "tools/word-counter/"
           - "tools/case-converter/"
           - "tools/n-up/"
+          - "tools/compress-pdf/"
     steps:
       - uses: actions/checkout@v7
 

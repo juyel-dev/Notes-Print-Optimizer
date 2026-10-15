@@ -290,6 +290,28 @@ export const TOOL_FAQS: Record<string, FaqItem[]> = {
       a: 'Fully on-device with pdf-lib, no uploads and no WASM. A 200-page file N-ups in seconds — even offline.',
     },
   ],
+  'compress-pdf': [
+    {
+      q: 'How do I get a PDF under 1 MB or 2 MB?',
+      a: 'Pick a target size on the first screen (500 KB, 1 MB, 2 MB, 5 MB, 10 MB, 25 MB or your own). The tool predicts the size at all five strengths from real samples of your file and chooses the gentlest one that fits. If your target is not reachable it tells you the smallest size it can get.',
+    },
+    {
+      q: 'Will my text still be selectable?',
+      a: 'In Keep text mode, yes — only the pictures inside the PDF are shrunk, so words stay sharp and selectable. Flatten pages turns every page into an image for the smallest possible file, so text can no longer be selected or searched.',
+    },
+    {
+      q: 'Which mode should I choose?',
+      a: 'The tool looks inside your PDF and recommends one. Scans and photo-based notes shrink well in Keep text mode. Use Flatten pages when the size is not mostly pictures, or when Keep text cannot reach your target.',
+    },
+    {
+      q: 'Is the predicted size accurate?',
+      a: 'Usually within a few percent — it encodes a sample of your actual images or pages at every strength rather than guessing. After compressing you can compare the original and compressed page with a slider before you download.',
+    },
+    {
+      q: 'Is my PDF uploaded anywhere?',
+      a: 'No. Compression runs entirely in your browser with pdf-lib and pdf.js, and works offline once the app is loaded. Password-protected PDFs must be unlocked first.',
+    },
+  ],
 };
 
 /** FAQs for a tool slug; empty array for unknown slugs (defensive). */
