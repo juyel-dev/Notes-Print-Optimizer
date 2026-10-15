@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Ban, Check, Columns2, Download, LayoutGrid, Loader2, RotateCcw, Share2, Wand2, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Ban, Check, ChevronDown, Columns2, Download, LayoutGrid, Loader2, RotateCcw, Share2, Wand2, ZoomIn, ZoomOut } from 'lucide-react';
 import {
+  DEFAULT_ENHANCE_SETTINGS,
   ENHANCE_DETAIL_DPI,
   ENHANCE_DETAIL_LABEL,
   ENHANCE_PRESETS,
@@ -47,6 +48,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
   } = workflow;
   const [showBefore, setShowBefore] = useState(false);
   const [zoom, setZoom] = useState(false);
+  const [tuneOpen, setTuneOpen] = useState(false);
   const [live, setLive] = useState<string | null>(null);
   const [liveBusy, setLiveBusy] = useState(false);
   const [outBase, setOutBase] = useState(() => defaultBaseName(state.fileName));
@@ -89,8 +91,11 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
   }, [originalUrl, toneKey, toneDirty, state.isProcessing]);
 
   const updateSetting = <K extends keyof EnhanceSettings>(key: K, value: EnhanceSettings[K]) => {
+    if (key !== 'detail') setTuneOpen(true); // a manual tweak means the user wants the sliders in view
     handleSetSettings({ ...state.settings, [key]: value });
   };
+  const firstRun = state.isProcessing && !hasResults;
+  const pct = state.progress ? Math.min(100, Math.round((state.progress.current / Math.max(1, state.progress.total)) * 100)) : 0;
 
   const outputMb = useMemo(() => {
     const bytes = state.results.reduce((n, r) => n + Math.round(r.dataUrl.length * 0.75), 0);
@@ -108,6 +113,25 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
 
   return (
     <div className="flex flex-col gap-4">
+      <p role="status" aria-live="polite" className="sr-only">
+        {hasResults && !state.isProcessing ? `Enhancement complete. ${state.results.length} page${state.results.length === 1 ? '' : 's'} ready.` : ''}
+      </p>
+
+      {state.error && (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-sm text-danger-soft">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
+            <span>{state.error}</span>
+          </div>
+          {!hasResults && !state.isProcessing && (
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleApplySettings}>Try again</Button>
+              <Button size="sm" variant="ghost" onClick={handleBackToArrange}>Change files</Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Escape hatch back to the arrange stage (invalidates stale results) */}
       {!state.isProcessing && (
         <button
@@ -120,37 +144,41 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
         </button>
       )}
 
-      {/* Processing progress — shown for the first run AND for every re-enhance */}
+      {/* Processing progress — big and focused on the first run, compact for every re-enhance */}
       {state.isProcessing && (
-        <div role="status" className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/80 p-4 animate-enter">
-          <div className="flex items-center gap-2 text-sm font-bold text-ink">
-            <Loader2 className="h-4 w-4 animate-spin text-primary-soft" aria-hidden="true" />
-            {hasResults ? 'Re-enhancing all pages…' : 'Enhancing pages…'}
-          </div>
-          {state.progress && (
+        <div role="status" className={`flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/80 animate-enter ${firstRun ? 'items-center p-8 text-center' : 'p-4'}`}>
+          {firstRun ? (
             <>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-elevated" aria-hidden="true">
-                <div
-                  className="h-full rounded-full transition-all duration-200"
-                  style={{
-                    width: `${Math.max(4, (state.progress.current / Math.max(1, state.progress.total)) * 100)}%`,
-                    background: 'var(--gradient-brand)',
-                  }}
-                />
-              </div>
-              <p className="truncate text-xs tabular-nums text-ink-muted">
-                {state.progress.phase} · {state.progress.current}/{state.progress.total}
-              </p>
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary-faint">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-soft" aria-hidden="true" />
+              </span>
+              <h2 className="text-lg font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>Enhancing your pages</h2>
+              <p className="max-w-xs text-sm text-ink-muted">Everything stays on this device. Keep this tab open — larger notebooks take a little longer.</p>
             </>
+          ) : (
+            <div className="flex items-center gap-2 text-sm font-bold text-ink">
+              <Loader2 className="h-4 w-4 animate-spin text-primary-soft" aria-hidden="true" />
+              Re-enhancing all pages…
+            </div>
           )}
-          <Button variant="danger" fullWidth onClick={handleCancelProcessing}>
+          {state.progress && (
+            <div className="w-full">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-elevated" aria-hidden="true">
+                <div className="h-full rounded-full transition-all duration-200" style={{ width: `${Math.max(4, pct)}%`, background: 'var(--gradient-brand)' }} />
+              </div>
+              <p className={`mt-2 truncate text-xs tabular-nums text-ink-muted ${firstRun ? '' : 'text-left'}`}>
+                {state.progress.phase} · {state.progress.current}/{state.progress.total}{firstRun ? ` · ${pct}%` : ''}
+              </p>
+            </div>
+          )}
+          <Button variant="danger" fullWidth={!firstRun} onClick={handleCancelProcessing}>
             <Ban className="h-4 w-4" />
             Cancel
           </Button>
         </div>
       )}
 
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6">
+      <div className={`flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6 ${firstRun ? 'hidden' : ''}`}>
         {/* ── Preview column ─────────────────────────────────────────── */}
         <div className="flex flex-col gap-3">
           {selected && (
@@ -279,13 +307,37 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
             <p className="mt-1.5 text-xs text-ink-faint">{activePreset ? activePreset.hint : 'Custom mix — fine-tune with the sliders.'}</p>
           </div>
 
+          <div className="rounded-xl border border-surface-2/70">
+            <button
+              type="button"
+              onClick={() => setTuneOpen((o) => !o)}
+              aria-expanded={tuneOpen}
+              aria-controls="enh-tune"
+              className={`flex min-h-[52px] w-full items-center justify-between gap-2 px-3.5 text-left ${FOCUS}`}
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink">Fine-tune</span>
+                <span className="block text-xs text-ink-faint">Darken {state.settings.darken} · Contrast {state.settings.contrast} · Sharpen {state.settings.sharpen}</span>
+              </span>
+              <ChevronDown className={`h-[18px] w-[18px] shrink-0 text-ink-faint transition-transform ${tuneOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+            {tuneOpen && (
+              <div id="enh-tune" className="flex flex-col gap-4 border-t border-surface-2/70 p-3.5">
           <SliderRow label="Darken ink" hint="Push faint pencil/ink toward black" value={state.settings.darken} min={ENHANCE_SETTING_RANGE.darken[0]} max={ENHANCE_SETTING_RANGE.darken[1]} onChange={(v) => updateSetting('darken', v)} />
-          <SliderRow label="Contrast" hint="Remove flat gray from scanned paper" value={state.settings.contrast} min={ENHANCE_SETTING_RANGE.contrast[0]} max={ENHANCE_SETTING_RANGE.contrast[1]} onChange={(v) => updateSetting('contrast', v)} />
-          <SliderRow label="Sharpen" hint="Crisp handwriting edges" value={state.settings.sharpen} min={ENHANCE_SETTING_RANGE.sharpen[0]} max={ENHANCE_SETTING_RANGE.sharpen[1]} onChange={(v) => updateSetting('sharpen', v)} />
-          <div className="flex flex-col divide-y divide-surface-2/70 border-t border-surface-2/70 pt-2">
-            <ToggleRow label="Even out lighting" hint="Remove camera shadows and uneven light across the page" enabled={state.settings.evenLighting} onChange={(v) => updateSetting('evenLighting', v)} />
-            <ToggleRow label="Clean background" hint="Map paper tint to pure white" enabled={state.settings.cleanBackground} onChange={(v) => updateSetting('cleanBackground', v)} />
-            <ToggleRow label="Grayscale" hint="Monochrome output — maximum print contrast" enabled={state.settings.grayscale} onChange={(v) => updateSetting('grayscale', v)} />
+            <SliderRow label="Contrast" hint="Remove flat gray from scanned paper" value={state.settings.contrast} min={ENHANCE_SETTING_RANGE.contrast[0]} max={ENHANCE_SETTING_RANGE.contrast[1]} onChange={(v) => updateSetting('contrast', v)} />
+            <SliderRow label="Sharpen" hint="Crisp handwriting edges" value={state.settings.sharpen} min={ENHANCE_SETTING_RANGE.sharpen[0]} max={ENHANCE_SETTING_RANGE.sharpen[1]} onChange={(v) => updateSetting('sharpen', v)} />
+            <div className="flex flex-col divide-y divide-surface-2/70 border-t border-surface-2/70 pt-2">
+              <ToggleRow label="Even out lighting" hint="Remove camera shadows and uneven light across the page" enabled={state.settings.evenLighting} onChange={(v) => updateSetting('evenLighting', v)} />
+              <ToggleRow label="Clean background" hint="Map paper tint to pure white" enabled={state.settings.cleanBackground} onChange={(v) => updateSetting('cleanBackground', v)} />
+              <ToggleRow label="Grayscale" hint="Monochrome output — maximum print contrast" enabled={state.settings.grayscale} onChange={(v) => updateSetting('grayscale', v)} />
+            </div>
+                {!activePreset && (
+                  <button type="button" onClick={() => handleSetSettings({ ...DEFAULT_ENHANCE_SETTINGS, detail: state.settings.detail })} className={`self-start rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted hover:text-ink h-11 ${FOCUS}`}>
+                    Reset to Balanced
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border-t border-surface-2/70 pt-3">
@@ -322,8 +374,8 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
           </div>
           <div className={`grid gap-2 ${onChooseLayout ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <Button size="lg" loading={state.exportBusy} onClick={() => handleDownloadPrintPdf(outBase)} disabled={toneDirty || detailDirty}>
-              {!state.exportBusy && <Download className="h-4 w-4" />}
-              {state.exportBusy ? 'Building…' : 'Download PDF'}
+              {!state.exportBusy && (state.pdfBlob ? <Check className="h-4 w-4" /> : <Download className="h-4 w-4" />)}
+              {state.exportBusy ? 'Building…' : state.pdfBlob ? 'Download again' : 'Download PDF'}
             </Button>
             {onChooseLayout && (
               <button
@@ -341,7 +393,9 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
           <p className="mt-2 text-center text-xs text-ink-faint">
             {toneDirty || detailDirty
               ? 'Settings changed — apply them first so the download matches the preview.'
-              : `${state.results.length} page${state.results.length === 1 ? '' : 's'} · about ${outputMb < 10 ? outputMb.toFixed(1) : Math.round(outputMb)} MB · original page sizes kept`}
+              : state.pdfBlob
+                ? `Saved as ${state.fileName} · ${state.results.length} page${state.results.length === 1 ? '' : 's'}`
+                : `${state.results.length} page${state.results.length === 1 ? '' : 's'} · about ${outputMb < 10 ? outputMb.toFixed(1) : Math.round(outputMb)} MB · original page sizes kept`}
           </p>
 
           <div className="mt-1 flex items-center justify-center gap-5">
@@ -359,11 +413,6 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
         </div>
       )}
 
-      {state.error && (
-        <div role="alert" className="rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-xs text-danger-soft">
-          {state.error}
-        </div>
-      )}
     </div>
   );
 };

@@ -26,6 +26,7 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
   } = workflow;
   const addMoreRef = useRef<HTMLInputElement>(null);
   const canAddMore = state.files.length < MAX_ENHANCE_FILES;
+  const totalMb = state.files.reduce((n, f) => n + (parseFloat(f.sizeMB) || 0), 0);
 
   const onAddMore = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files ?? []);
@@ -35,6 +36,12 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
 
   return (
     <div className="flex flex-col gap-4">
+      {state.error && (
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-sm text-danger-soft">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
+          <span>{state.error}</span>
+        </div>
+      )}
       <section className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/80 p-4">
         <div className="border-b border-surface-2 pb-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-ink">
@@ -43,6 +50,7 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
           </h3>
           <p className="mt-0.5 text-xs text-ink-muted">
             Arrange files in reading order — then enhance them all at once.
+            <span className="mt-0.5 block text-ink-faint">{state.files.length} file{state.files.length === 1 ? '' : 's'} · {totalMb.toFixed(1)} MB total</span>
           </p>
         </div>
 
@@ -76,7 +84,7 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
             Add More PDFs ({state.files.length}/{MAX_ENHANCE_FILES})
           </button>
         ) : (
-          <p className="text-center text-[11px] font-semibold text-warning-strong">
+          <p className="text-center text-xs font-semibold text-warning-strong">
             Maximum of {MAX_ENHANCE_FILES} files per session.
           </p>
         )}
@@ -96,17 +104,11 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-1.5 pb-2 text-[11px] font-semibold text-success">
+      <div className="flex items-center justify-center gap-1.5 pb-2 text-xs font-semibold text-success">
         <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
         100% Private On-Device Processing
       </div>
 
-      {state.error && (
-        <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger-deep/60 bg-danger-faint px-4 py-3 text-xs text-danger-soft">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
-          <span>{state.error}</span>
-        </div>
-      )}
     </div>
   );
 };
