@@ -96,7 +96,12 @@ export class EnhanceProcessor {
       throw err;
     }
 
-    if (totalPages === 0) throw new Error('No pages found in the selected PDFs.');
+    if (totalPages === 0) {
+      for (const { doc } of docs) {
+        try { await doc.destroy(); } catch { /* noop */ }
+      }
+      throw new Error('No pages found in the selected PDFs.');
+    }
 
     let done = 0;
     try {
@@ -113,40 +118,59 @@ export class EnhanceProcessor {
           const vw = plan.width;
           const vh = plan.height;
           const canvas = memoryManager.acquireCanvas(vw, vh);
-          const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-          await page.render({ canvasContext: ctx, viewport }).promise;
-          throwIfAborted(signal);
+          let small: HTMLCanvasElement | null = null;
+          let outCanvas: HTMLCanvasElement | null = null;
+          let originalDataUrl = '';
+          let dataUrl = '';
 
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const enhanced = enhanceImageData(imageData, settings);
-          throwIfAborted(signal);
+          // Always return temporary canvases to the bounded pool—even when
+          // rendering, pixel processing, encoding, or cancellation throws.
+          try {
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) throw new Error('Could not initialize the page canvas.');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            throwIfAborted(signal);
 
-          // Keep only a downscaled original in memory (before/after + live preview source).
-          const ps = previewSize(vw, vh);
-          let originalDataUrl: string;
-          if (ps.width === vw) {
-            originalDataUrl = await canvasToDataUrl(canvas, PREVIEW_JPEG_QUALITY);
-          } else {
-            const small = memoryManager.acquireCanvas(ps.width, ps.height);
-            const sctx = small.getContext('2d')!;
-            sctx.imageSmoothingQuality = 'high';
-            sctx.drawImage(canvas, 0, 0, ps.width, ps.height);
-            originalDataUrl = await canvasToDataUrl(small, PREVIEW_JPEG_QUALITY);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const enhanced = enhanceImageData(imageData, settings);
+            throwIfAborted(signal);
+
+            // Keep only a downscaled original in memory (before/after + live preview source).
+            const ps = previewSize(vw, vh);
+            if (ps.width === vw) {
+              originalDataUrl = await canvasToDataUrl(canvas, PREVIEW_JPEG_QUALITY);
+            } else {
+              small = memoryManager.acquireCanvas(ps.width, ps.height);
+              const sctx = small.getContext('2d');
+              if (!sctx) throw new Error('Could not initialize the preview canvas.');
+              sctx.imageSmoothingQuality = 'high';
+              sctx.drawImage(canvas, 0, 0, ps.width, ps.height);
+              originalDataUrl = await canvasToDataUrl(small, PREVIEW_JPEG_QUALITY);
+            }
+            throwIfAborted(signal);
+
+            outCanvas = memoryManager.acquireCanvas(vw, vh);
+            const outCtx = outCanvas.getContext('2d');
+            if (!outCtx) throw new Error('Could not initialize the enhanced output canvas.');
+            outCtx.putImageData(enhanced, 0, 0);
+            dataUrl = await canvasToDataUrl(outCanvas);
+            throwIfAborted(signal);
+          } finally {
             memoryManager.disposeCanvas(small);
+            memoryManager.disposeCanvas(outCanvas);
+            memoryManager.disposeCanvas(canvas);
           }
-          throwIfAborted(signal);
-          const outCanvas = memoryManager.acquireCanvas(vw, vh);
-          const outCtx = outCanvas.getContext('2d')!;
-          outCtx.putImageData(enhanced, 0, 0);
-          const dataUrl = await canvasToDataUrl(outCanvas);
-          throwIfAborted(signal);
 
-          memoryManager.disposeCanvas(canvas);
-          memoryManager.disposeCanvas(outCanvas);
-
-          results.push({ index: results.length, width: vw, height: vh, pdfWidth: plan.pdfWidth, pdfHeight: plan.pdfHeight, dataUrl, originalDataUrl });
-          done++;
-          await memoryManager.yieldToUI();
+          results.push({
+            index: results.length,
+            width: vw,
+            height: vh,
+            pdfWidth: plan.pdfWidth,
+            pdfHeight: plan.pdfHeight,
+            dataUrl,
+            originalDataUrl,
+          });
+          done++;          await memoryManager.yieldToUI();
         }
         await doc.destroy();
       }
