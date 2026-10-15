@@ -86,6 +86,21 @@ describe('enhanceReducer', () => {
     expect(back.results).toHaveLength(1);
   });
 
+  it('SET_SELECTED changes only the preview and keeps a valid exported PDF', () => {
+    const blob = new Blob(['%PDF'], { type: 'application/pdf' });
+    const s = enhanceReducer({
+      ...INITIAL_ENHANCE_STATE,
+      step: 'enhance',
+      results: [page(0), page(1)],
+      selectedIndex: 0,
+      pdfBlob: blob,
+      fileName: 'notes-PrintReady.pdf',
+    }, { type: 'SET_SELECTED', index: 1 });
+    expect(s.selectedIndex).toBe(1);
+    expect(s.pdfBlob).toBe(blob);
+    expect(s.fileName).toBe('notes-PrintReady.pdf');
+  });
+
   it('SET_SETTINGS updates settings and invalidates the export', () => {
     const s = enhanceReducer({ ...INITIAL_ENHANCE_STATE, pdfBlob: new Blob() }, {
       type: 'SET_SETTINGS', settings: { ...settings, darken: 80 },
