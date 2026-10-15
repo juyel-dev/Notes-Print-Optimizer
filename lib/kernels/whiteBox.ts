@@ -51,7 +51,7 @@ import {
   type PreservationParameters,
   type PreservationProfile,
 } from './preservationGuard';
-import { DARK_BG_RATIO_THRESHOLD } from './constants';
+import { isDarkSourceProfile } from './darkSource';
 import type { PageProfile, ProcessingParameters } from '../optimizer/types';
 
 /** The parameter subset the heal pipeline actually reads. Accepts full
@@ -173,11 +173,7 @@ export function shouldHealWhiteBoxes(
   profile: PreservationProfile,
 ): boolean {
   if (params.autoWhiteBoxFix === false) return false;
-  return (
-    profile.classification === 'DARK_SLIDE' ||
-    profile.darkBackgroundRatio > DARK_BG_RATIO_THRESHOLD ||
-    profile.darkFrame === true
-  );
+  return isDarkSourceProfile(profile);
 }
 
 /**
