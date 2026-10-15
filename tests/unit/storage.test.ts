@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { pwOptimizerStorage } from '../../lib/optimizer/storage';
 
 type StorageInternals = {
@@ -50,6 +50,40 @@ describe('PWOptimizerStorage', () => {
     if (record!.originalBlob && record!.originalBlob.size !== undefined) {
       expect(record!.originalBlob.size).toBe(13);
       expect(record!.optimizedBlob.size).toBe(14);
+    }
+  });
+
+  it('propagates batch persistence failures so callers cannot report success with missing pages', async () => {
+    const storage = pwOptimizerStorage as unknown as {
+      getDB: () => Promise<IDBDatabase>;
+    };
+    const getDB = vi.spyOn(storage, 'getDB').mockRejectedValue(new Error('IndexedDB unavailable'));
+
+    try {
+      await expect(
+        pwOptimizerStorage.storePagesBatch([
+          { pdfId: 'failed-write', pageIndex: 0, originalBlob: null, optimizedBlob: new Blob(['page']) },
+        ]),
+      ).rejects.toThrow('IndexedDB unavailable');
+    } finally {
+      getDB.mockRestore();
+    }
+  });
+
+  it('retries IndexedDB open after a transient opening error', async () => {
+    const open = vi.spyOn(indexedDB, 'open');
+    open.mockImplementationOnce(() => {
+      throw new Error('Temporary IndexedDB open failure');
+    });
+
+    try {
+      // First read is best-effort and returns the current empty size, but the
+      // failed promise must be cleared so the next write can open the database.
+      expect(await pwOptimizerStorage.getCacheSize()).toBe(0);
+      await pwOptimizerStorage.storePage('retry-db', 0, null, new Blob(['saved']));
+      expect(await pwOptimizerStorage.getPage('retry-db', 0)).not.toBeNull();
+    } finally {
+      open.mockRestore();
     }
   });
 

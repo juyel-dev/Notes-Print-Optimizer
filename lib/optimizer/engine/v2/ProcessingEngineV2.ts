@@ -234,13 +234,21 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     const idbBatch: Array<{ pdfId: string; pageIndex: number; originalBlob: Blob | null; optimizedBlob: Blob }> = [];
     const IDB_BATCH_SIZE = isLowEnd ? 2 : 4;
     let idbFlushChain: Promise<void> = Promise.resolve();
+    const idbPersistErrors: unknown[] = [];
 
     const flushIdb = (): void => {
       if (idbBatch.length === 0) return;
       const batch = idbBatch.splice(0, idbBatch.length);
-      idbFlushChain = idbFlushChain
-        .then(() => pwOptimizerStorage.storePagesBatch(batch))
-        .catch(e => console.warn('[V2] IDB batch write failed:', e));
+      idbFlushChain = idbFlushChain.then(async () => {
+        try {
+          await pwOptimizerStorage.storePagesBatch(batch);
+        } catch (error) {
+          // Keep the chain alive to attempt later batches, but never report
+          // a completed document if any page failed to persist.
+          idbPersistErrors.push(error);
+          console.warn('[V2] IDB batch write failed:', error);
+        }
+      });
     };
 
     /*
@@ -295,6 +303,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         idbBatch.push({ pdfId, pageIndex: p.pageIndex, originalBlob: null, optimizedBlob: optBlob });
         if (idbBatch.length >= IDB_BATCH_SIZE) flushIdb();
       } catch (e) {
+        idbPersistErrors.push(e);
         console.warn(`[V2] Persist failed page ${p.pageIndex + 1}:`, e);
       }
       const persistMs = performance.now() - persistStart;
@@ -414,6 +423,12 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     flushIdb();
     await idbFlushChain;
     try { pdfDoc.destroy(); } catch { /* */ }
+
+    if (idbPersistErrors.length > 0) {
+      throw new Error(
+        'Could not save every processed page to browser storage. Free up storage space and try again.',
+      );
+    }
 
     const darkRatio = totalPages > 0 ? darkCount / totalPages : 0;
     const docProfile: DocumentProfile = {

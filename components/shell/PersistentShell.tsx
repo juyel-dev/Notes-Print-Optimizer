@@ -110,10 +110,15 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
   /** Enhance -> N-Up: land inside the dark-print tool via its route, without
    * its pipeline chrome (stepper/back-to-optimize) — see arrivedViaEnhance. */
   const runEnhanceLayoutHandoff = useCallback(async (pages: HandoffPageInput[]) => {
-    await handleEnhanceLayoutHandoff(pages);
-    setArrivedViaEnhance(true);
-    router.push(toolHref('dark-print'));
-  }, [handleEnhanceLayoutHandoff, router]);
+    try {
+      await handleEnhanceLayoutHandoff(pages);
+      setArrivedViaEnhance(true);
+      router.push(toolHref('dark-print'));
+    } catch (error) {
+      console.error('[Enhance handoff] Failed to persist pages:', error);
+      actions.setError('Could not save enhanced pages to browser storage. Free up browser storage and try again.');
+    }
+  }, [handleEnhanceLayoutHandoff, router, actions]);
 
   /** From the handoff stage, reset exits to the tools box, not tool-1 upload. */
   const handleSessionReset = useCallback(() => {
