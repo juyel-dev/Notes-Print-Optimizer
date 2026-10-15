@@ -18,7 +18,7 @@ describe('ExportService.downloadBlob', () => {
       ExportService.downloadBlob(blob, 'lecture.pdf');
 
       expect(createObjectURL).toHaveBeenCalledWith(blob);
-      expect(click).toHaveBeenCalledOnce();
+      expect(click).toHaveBeenCalledTimes(1);
       expect(document.querySelector('a[download="lecture.pdf"]')).toBeNull();
       expect(revokeObjectURL).not.toHaveBeenCalled();
 
