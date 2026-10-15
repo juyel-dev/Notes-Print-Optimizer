@@ -164,6 +164,29 @@ describe('PWOptimizerStorage', () => {
     expect(await pwOptimizerStorage.getPage('evict-me', 0)).toBeNull();
   });
 
+  it('uses net batch growth for eviction when some updated pages shrink', async () => {
+    await seedCacheRecords([
+      seededRecord('shrink-page', 0, 1, 100 * MB),
+      seededRecord('grow-page', 0, 2, 50 * MB),
+      seededRecord('unrelated-page', 0, 3, 50 * MB),
+    ]);
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(200 * MB);
+
+    // One row shrinks by 50 MiB while another grows by 50 MiB. The batch's
+    // final cache size is unchanged, so no unrelated page should be evicted.
+    await pwOptimizerStorage.storePagesBatch([
+      { pdfId: 'shrink-page', pageIndex: 0, originalBlob: null, optimizedBlob: blobWithReportedSize(50 * MB) },
+      { pdfId: 'grow-page', pageIndex: 0, originalBlob: null, optimizedBlob: blobWithReportedSize(100 * MB) },
+    ]);
+
+    const internals = pwOptimizerStorage as unknown as StorageInternals;
+    internals.cachedSizeBytes = null;
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(200 * MB);
+    expect(await pwOptimizerStorage.getPage('shrink-page', 0)).not.toBeNull();
+    expect(await pwOptimizerStorage.getPage('grow-page', 0)).not.toBeNull();
+    expect(await pwOptimizerStorage.getPage('unrelated-page', 0)).not.toBeNull();
+  });
+
   it('should return null for non-existent page', async () => {
     const record = await pwOptimizerStorage.getPage('non-existent', 0);
     expect(record).toBeNull();
