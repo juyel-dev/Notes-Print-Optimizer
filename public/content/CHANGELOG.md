@@ -7,6 +7,7 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 ### Fixed
 
 - Dark Notes → Print layout preparation now shows PDF-engine/page progress, keeps a Back action available while waiting, and offers retry if preparation fails.
+- Dark Notes → Print now recovers dim handwriting when a sparse dark slide would otherwise become blank, and the preservation guard detects this specific foreground-loss case.
 
 ### Changed
 
