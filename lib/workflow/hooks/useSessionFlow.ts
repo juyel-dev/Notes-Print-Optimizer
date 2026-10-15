@@ -72,6 +72,11 @@ export function useSessionFlow({
   const handleEnhanceLayoutHandoff = useCallback(async (pages: HandoffPageInput[]) => {
     if (pages.length === 0) return;
     handleResetWorkflow();
+    // handleResetWorkflow fires clearCache without awaiting it. Await a clear
+    // here so the reset's wipe is guaranteed to land BEFORE our writes —
+    // otherwise a late wipe could delete the just-persisted handoff pages
+    // and the layout step would fail to load them. Double-clear is harmless.
+    await pwOptimizerStorage.clearCache();
     const pdfId = EnhanceHandoffService.buildPdfId();
     await EnhanceHandoffService.persistPages(pages, pdfId);
     actions.setProcessedPages(EnhanceHandoffService.buildProcessedPages(pages, pdfId));

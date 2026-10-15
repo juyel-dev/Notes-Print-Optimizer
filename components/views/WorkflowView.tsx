@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Download,
@@ -190,9 +190,36 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
     setFlattenProgress(null);
     setFlattenError(null);
     setFlattenedLayoutInput(null);
+    setLayoutResult(null);
     if (enhanceHandoffActive && onBackToEnhance) onBackToEnhance();
     else setCurrentPhase(2);
   }, [enhanceHandoffActive, onBackToEnhance, setCurrentPhase]);
+
+  // Enhance handoff lands directly on Phase 3, bypassing Phase 2's
+  // "Choose Layout" button which normally kicks off page preparation
+  // (handleProceedToLayout above). Without this, the layout step would
+  // spin on "Preparing pages for layout…" forever with nothing ever
+  // preparing them. The normal flow always has flattenProgress set while
+  // preparing, so requiring it (and the error/output) to be empty keeps
+  // this exclusive to fresh handoff arrivals — retries and the normal
+  // flow are untouched.
+  const handoffFlattenStartedRef = useRef(false);
+  useEffect(() => {
+    if (currentPhase !== 3 || !enhanceHandoffActive) {
+      handoffFlattenStartedRef.current = false;
+      return;
+    }
+    if (
+      !handoffFlattenStartedRef.current &&
+      processedPages.length > 0 &&
+      !flattenedLayoutInput &&
+      !flattenProgress &&
+      !flattenError
+    ) {
+      handoffFlattenStartedRef.current = true;
+      void handleProceedToLayout();
+    }
+  }, [currentPhase, enhanceHandoffActive, processedPages.length, flattenedLayoutInput, flattenProgress, flattenError, handleProceedToLayout]);
 
   const handleLayoutGenerated = useCallback((result: BuildResult, opts: NupOptions) => {
     setLayoutResult({ result, opts });

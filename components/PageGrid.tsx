@@ -173,7 +173,7 @@ const LazyPageCard: React.FC<{
         }}
         className="relative h-28 sm:h-32 w-full cursor-pointer overflow-hidden bg-bg flex items-center justify-center p-2"
       >
-        {isVisible ? (
+        {isVisible && (isKeptOriginal && originalThumb ? originalThumb : page.thumbnailDataUrl) ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={isKeptOriginal && originalThumb ? originalThumb : page.thumbnailDataUrl}
@@ -182,8 +182,19 @@ const LazyPageCard: React.FC<{
             draggable={false}
             className="animate-enter max-h-full max-w-full rounded-sm object-contain shadow-sm"
           />
-        ) : (
+        ) : !isVisible ? (
           <div className="h-full w-full bg-surface-2/50 animate-pulse rounded-md" />
+        ) : (
+          // Thumbnail generation failed but the page itself processed and
+          // exported fine — show an honest placeholder, never a broken image.
+          <div
+            className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-md bg-surface-2/50"
+            role="img"
+            aria-label={`Preview unavailable for page ${idx + 1} — export still works`}
+          >
+            <ImageIcon className="h-5 w-5 text-ink-faint" aria-hidden="true" />
+            <span className="px-2 text-center text-[10px] font-semibold text-ink-faint">No preview — export still works</span>
+          </div>
         )}
 
         {/* Hover overlay — subtle */}

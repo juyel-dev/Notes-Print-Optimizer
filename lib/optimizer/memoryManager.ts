@@ -164,8 +164,21 @@ class MemoryManager {
     };
 
     return new Promise((resolve, reject) => {
+      // A stuck encoder (detached/0-size canvas in non-standard browsers)
+      // may never invoke the callback — fail loudly instead of hanging the
+      // whole document run forever. 30s is far beyond a real JPEG encode.
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        releaseOnce();
+        reject(new Error('Timed out while encoding the processed page as JPEG.'));
+      }, 30_000);
       try {
         canvas.toBlob((blob) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
           releaseOnce();
           if (!blob || blob.size === 0) {
             reject(new Error('Could not encode the processed page as JPEG.'));
@@ -174,6 +187,9 @@ class MemoryManager {
           resolve(blob);
         }, 'image/jpeg', quality);
       } catch (error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         releaseOnce();
         reject(error instanceof Error ? error : new Error('Could not encode the processed page as JPEG.'));
       }

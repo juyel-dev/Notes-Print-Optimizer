@@ -53,6 +53,13 @@ describe('defaultEnhanceBaseName', () => {
     expect(defaultEnhanceBaseName('enhanced-print.pdf')).toBe('Enhanced');
     expect(defaultEnhanceBaseName('lecture.PDF')).toBe('lecture');
   });
+
+  it('normalises case variants and repeated export suffixes', () => {
+    expect(defaultEnhanceBaseName('Enhanced-print.PDF')).toBe('Enhanced');
+    expect(defaultEnhanceBaseName('notes-enhanced-enhanced.pdf')).toBe('notes');
+    expect(defaultEnhanceBaseName('notes-ENHANCED.pdf')).toBe('notes');
+    expect(defaultEnhanceBaseName('notes-printready.pdf')).toBe('notes');
+  });
 });
 
 describe('enhanceReducer', () => {

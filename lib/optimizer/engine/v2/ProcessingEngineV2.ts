@@ -241,6 +241,9 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     const IDB_BATCH_SIZE = isLowEnd ? 2 : 4;
     let idbFlushChain: Promise<void> = Promise.resolve();
     const idbPersistErrors: unknown[] = [];
+    // JPEG-encode failures are NOT storage failures — keep them in their
+    // own bucket so the final error tells the user the true cause.
+    const encodeErrors: unknown[] = [];
 
     const flushIdb = (): void => {
       if (idbBatch.length === 0) return;
@@ -296,8 +299,17 @@ export class ProcessingEngineV2 implements IProcessingEngine {
       let thumbUrl = '';
       try {
         thumbUrl = await this.generateThumbnail(optimizedImageData);
-        if (thumbUrl) this.activeThumbnailUrls.add(thumbUrl);
-      } catch { /* non-fatal */ }
+        if (thumbUrl) {
+          this.activeThumbnailUrls.add(thumbUrl);
+        } else {
+          // Preview-only failure: the optimized pixels ARE persisted below,
+          // so export is unaffected — but say so loudly instead of shipping
+          // a silent broken thumbnail.
+          console.warn(`[V2] Thumbnail unavailable for page ${p.pageIndex + 1}: preview shows a placeholder; export is unaffected.`);
+        }
+      } catch (err) {
+        console.warn(`[V2] Thumbnail failed for page ${p.pageIndex + 1}:`, err);
+      }
       const thumbnailMs = performance.now() - thumbStart;
 
       onPageOptimized?.(p.pageIndex, thumbUrl, inkBefore, inkAfter);
@@ -309,8 +321,8 @@ export class ProcessingEngineV2 implements IProcessingEngine {
         idbBatch.push({ pdfId, pageIndex: p.pageIndex, originalBlob: null, optimizedBlob: optBlob });
         if (idbBatch.length >= IDB_BATCH_SIZE) flushIdb();
       } catch (e) {
-        idbPersistErrors.push(e);
-        console.warn(`[V2] Persist failed page ${p.pageIndex + 1}:`, e);
+        encodeErrors.push(e);
+        console.warn(`[V2] Encode failed page ${p.pageIndex + 1}:`, e);
       }
       const persistMs = performance.now() - persistStart;
 
@@ -438,6 +450,11 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     flushIdb();
     await idbFlushChain;
 
+    if (encodeErrors.length > 0) {
+      throw new Error(
+        'Could not encode every processed page as an image. Try again — if it keeps failing, lower the print detail setting.',
+      );
+    }
     if (idbPersistErrors.length > 0) {
       throw new Error(
         'Could not save every processed page to browser storage. Free up storage space and try again.',

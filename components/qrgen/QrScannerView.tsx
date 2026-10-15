@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { filterPersistableScanHistory, parsePersistedScanHistory } from '@/lib/qr/scanHistory';
+import {
+  filterPersistableScanHistory,
+  parsePersistedScanHistory,
+  parseWifiQrPayload,
+  wifiSafeDisplayLabel,
+} from '@/lib/qr/scanHistory';
 import {
   Camera,
   Check,
@@ -32,13 +37,6 @@ const SECONDARY_BTN = `inline-flex h-12 items-center justify-center gap-2 rounde
 type CameraInfo = { id: string; label: string };
 type Kind = 'wifi' | 'link' | 'email' | 'phone' | 'text';
 
-interface WifiInfo {
-  ssid: string;
-  auth: string;
-  password: string;
-  hidden: boolean;
-}
-
 const KIND_LABEL: Record<Kind, string> = { wifi: 'Wi-Fi', link: 'Link', email: 'Email', phone: 'Phone', text: 'Text' };
 const KIND_BADGE: Record<Kind, string> = {
   wifi: 'bg-accent-soft text-bg',
@@ -57,34 +55,7 @@ function detectKind(text: string): Kind {
   return 'text';
 }
 
-/** Parse `WIFI:T:WPA;S:name;P:pass;H:true;;` with `\;` `\,` `\:` `\\` `\"` escapes. */
-function parseWifi(text: string): WifiInfo | null {
-  const body = text.trim().replace(/^WIFI:/i, '');
-  const fields: Record<string, string> = {};
-  let key = '';
-  let val = '';
-  let inKey = true;
-  for (let i = 0; i < body.length; i++) {
-    const ch = body[i];
-    if (ch === '\\' && i + 1 < body.length) {
-      val += body[++i];
-    } else if (inKey && ch === ':') {
-      inKey = false;
-    } else if (!inKey && ch === ';') {
-      fields[key.toUpperCase()] = val;
-      key = '';
-      val = '';
-      inKey = true;
-    } else if (inKey) {
-      if (ch !== ';') key += ch;
-    } else {
-      val += ch;
-    }
-  }
-  if (!fields.S) return null;
-  return { ssid: fields.S, auth: fields.T || 'nopass', password: fields.P ?? '', hidden: /^true$/i.test(fields.H ?? '') };
-}
-
+/** Wi-Fi credential parsing lives in lib/qr/scanHistory (single source, unit-tested). */
 function loadHistory(): string[] {
   try {
     return parsePersistedScanHistory(localStorage.getItem(HISTORY_KEY)).slice(0, MAX_HISTORY);
@@ -320,7 +291,7 @@ export const QrScannerView: React.FC = () => {
   };
 
   const kind: Kind | null = current ? detectKind(current) : null;
-  const wifi = current && kind === 'wifi' ? parseWifi(current) : null;
+  const wifi = current && kind === 'wifi' ? parseWifiQrPayload(current) : null;
   const canShare = typeof navigator !== 'undefined' && 'share' in navigator;
 
   return (
@@ -473,30 +444,36 @@ export const QrScannerView: React.FC = () => {
             </button>
           </div>
 
-          {wifi ? (
-            <div className="mt-3 flex flex-col gap-2">
-              <ResultField label="Network name" value={wifi.ssid} onCopy={() => copy(wifi.ssid, 'ssid')} copied={copied === 'ssid'} />
-              <ResultField label="Security" value={wifi.auth === 'nopass' ? 'Open (no password)' : wifi.auth} mono={false} />
-              {wifi.auth !== 'nopass' && (
-                <ResultField
-                  label="Password"
-                  value={showSecret ? wifi.password || '(empty)' : '••••••••••'}
-                  onCopy={() => copy(wifi.password, 'pass')}
-                  copied={copied === 'pass'}
-                  extra={
-                    <button
-                      type="button"
-                      onClick={() => setShowSecret((v) => !v)}
-                      aria-label={showSecret ? 'Hide password' : 'Show password'}
-                      aria-pressed={showSecret}
-                      className={`flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:text-ink ${FOCUS}`}
-                    >
-                      {showSecret ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-                    </button>
-                  }
-                />
-              )}
-            </div>
+          {kind === 'wifi' ? (
+            wifi ? (
+              <div className="mt-3 flex flex-col gap-2">
+                <ResultField label="Network name" value={wifi.ssid} onCopy={() => copy(wifi.ssid, 'ssid')} copied={copied === 'ssid'} />
+                <ResultField label="Security" value={wifi.auth === 'nopass' ? 'Open (no password)' : wifi.auth} mono={false} />
+                {wifi.auth !== 'nopass' && (
+                  <ResultField
+                    label="Password"
+                    value={showSecret ? wifi.password || '(empty)' : '••••••••••'}
+                    onCopy={() => copy(wifi.password, 'pass')}
+                    copied={copied === 'pass'}
+                    extra={
+                      <button
+                        type="button"
+                        onClick={() => setShowSecret((v) => !v)}
+                        aria-label={showSecret ? 'Hide password' : 'Show password'}
+                        aria-pressed={showSecret}
+                        className={`flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:text-ink ${FOCUS}`}
+                      >
+                        {showSecret ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                      </button>
+                    }
+                  />
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 rounded-xl border border-elevated/60 bg-surface px-3 py-3 text-sm text-ink-muted">
+                Wi-Fi details could not be read — the raw payload is hidden to protect the password.
+              </p>
+            )
           ) : (
             <output className="mt-3 block select-all break-words rounded-xl border border-elevated/60 bg-surface px-3 py-3 font-mono text-sm text-ink">{current}</output>
           )}
@@ -507,7 +484,7 @@ export const QrScannerView: React.FC = () => {
                 {copied === 'pass' ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
                 {copied === 'pass' ? 'Copied' : 'Copy password'}
               </button>
-            ) : (
+            ) : kind === 'wifi' && !wifi ? null : (
               <button type="button" onClick={() => copy(current, 'raw')} className={`${PRIMARY_BTN} flex-1`}>
                 {copied === 'raw' ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
                 {copied === 'raw' ? 'Copied' : 'Copy'}
@@ -528,7 +505,7 @@ export const QrScannerView: React.FC = () => {
                 {copied === 'raw' ? 'Copied' : 'Copy raw'}
               </button>
             )}
-            {canShare && !wifi && (
+            {canShare && !wifi && kind !== 'wifi' && (
               <button
                 type="button"
                 onClick={() => (navigator as unknown as { share: (d: { text: string }) => Promise<void> }).share({ text: current }).catch(() => {})}
@@ -559,18 +536,22 @@ export const QrScannerView: React.FC = () => {
         ) : (
           <>
             <ul className="mt-2 flex flex-col gap-2">
-              {history.map((h) => {
+              {history.map((h, i) => {
                 const k = detectKind(h);
+                // Never expose the raw payload in accessible names: a Wi-Fi
+                // payload embeds the plaintext password, so AT/automation
+                // only ever see the SSID (or a redacted placeholder).
+                const label = wifiSafeDisplayLabel(h);
                 return (
-                  <li key={h} className="flex items-center gap-1 rounded-xl border border-elevated/60 bg-bg/50 pl-3">
-                    <button type="button" onClick={() => setCurrent(h)} aria-label={`Open scan: ${h.slice(0, 40)}`} className={`flex min-h-[48px] min-w-0 flex-1 items-center gap-2.5 text-left ${FOCUS}`}>
+                  <li key={i} className="flex items-center gap-1 rounded-xl border border-elevated/60 bg-bg/50 pl-3">
+                    <button type="button" onClick={() => setCurrent(h)} aria-label={`Open scan: ${label.slice(0, 40)}`} className={`flex min-h-[48px] min-w-0 flex-1 items-center gap-2.5 text-left ${FOCUS}`}>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-extrabold ${KIND_BADGE[k]}`}>{KIND_LABEL[k]}</span>
-                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-ink">{k === 'wifi' ? (parseWifi(h)?.ssid ?? h) : h}</span>
+                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-ink">{label}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => copy(h, `h:${h}`)}
-                      aria-label={`Copy ${h.slice(0, 24)}`}
+                      aria-label={`Copy ${label.slice(0, 24)}`}
                       className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-ink-muted hover:text-ink ${FOCUS}`}
                     >
                       {copied === `h:${h}` ? <Check className="h-4 w-4 text-success" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}

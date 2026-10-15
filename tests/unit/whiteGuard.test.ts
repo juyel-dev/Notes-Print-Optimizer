@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveEffectiveInvertMode } from '../../lib/optimizer/engine/v2/resolveInvertMode';
 import { processPage } from '../../lib/kernels/processPage';
+import { isDarkSourceProfile } from '../../lib/kernels/darkSource';
 import { DARK_BG_RATIO_THRESHOLD } from '../../lib/kernels/constants';
 
 describe('resolveEffectiveInvertMode (white-page guard)', () => {
@@ -26,8 +27,7 @@ describe('resolveEffectiveInvertMode (white-page guard)', () => {
   });
 });
 
-describe('kernel honors unified dark threshold', () => {
-  /* h=16: kernel pads output to a minimum of 10 rows — stay above it. */
+describe('kernel honors unified dark threshold', () => {  /* h=16: kernel pads output to a minimum of 10 rows — stay above it. */
   const w = 4;
   const h = 16;
   /* Mid-gray page: darkBgRatio 0 (no pixel < 60) — below the unified band. */
@@ -83,5 +83,53 @@ describe('kernel honors unified dark threshold', () => {
     const out = new Uint8ClampedArray(buffer);
     expect(out[0]).toBe(0);
     expect(out[3]).toBe(255);
+  });
+});
+
+describe('isDarkSourceProfile policy', () => {
+  const high = DARK_BG_RATIO_THRESHOLD + 0.1;
+  const low = DARK_BG_RATIO_THRESHOLD - 0.1;
+
+  it('explicit DARK_SLIDE is dark regardless of ratio or polarity', () => {
+    expect(isDarkSourceProfile({ classification: 'DARK_SLIDE', darkBackgroundRatio: 0 })).toBe(true);
+    expect(
+      isDarkSourceProfile({ classification: 'DARK_SLIDE', darkBackgroundRatio: high, foregroundPolarity: 'dark-on-light' }),
+    ).toBe(true);
+  });
+
+  it('a detected dark frame is dark regardless of classification', () => {
+    expect(isDarkSourceProfile({ classification: 'MIXED', darkBackgroundRatio: 0, darkFrame: true })).toBe(true);
+  });
+
+  it('high ratio corroborated by light-on-dark polarity is dark', () => {
+    expect(
+      isDarkSourceProfile({ classification: 'MIXED', darkBackgroundRatio: high, foregroundPolarity: 'light-on-dark' }),
+    ).toBe(true);
+  });
+
+  it('high ratio with mixed polarity is NOT dark (mixed pages are never auto-inverted)', () => {
+    expect(
+      isDarkSourceProfile({ classification: 'MIXED', darkBackgroundRatio: high, foregroundPolarity: 'mixed' }),
+    ).toBe(false);
+  });
+
+  it('high ratio with dark-on-light or unknown polarity is NOT dark', () => {
+    expect(
+      isDarkSourceProfile({ classification: 'MIXED', darkBackgroundRatio: high, foregroundPolarity: 'dark-on-light' }),
+    ).toBe(false);
+    expect(isDarkSourceProfile({ classification: 'MIXED', darkBackgroundRatio: high })).toBe(false);
+  });
+
+  it('at-or-below-threshold ratio is NOT dark even with light-on-dark polarity', () => {
+    expect(
+      isDarkSourceProfile({
+        classification: 'MIXED',
+        darkBackgroundRatio: DARK_BG_RATIO_THRESHOLD,
+        foregroundPolarity: 'light-on-dark',
+      }),
+    ).toBe(false);
+    expect(
+      isDarkSourceProfile({ classification: 'LIGHT_SLIDE', darkBackgroundRatio: low, foregroundPolarity: 'light-on-dark' }),
+    ).toBe(false);
   });
 });
