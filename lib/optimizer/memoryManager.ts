@@ -147,10 +147,36 @@ class MemoryManager {
    */
   public async imageDataToBlob(imageData: ImageData, quality: number = 0.85): Promise<Blob> {
     const canvas = this.acquireCanvas(imageData.width, imageData.height);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (ctx) ctx.putImageData(imageData, 0, 0);
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => { this.releaseCanvas(canvas); resolve(blob || new Blob([], { type: 'image/jpeg' })); }, 'image/jpeg', quality);
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error('Could not initialize the image encoding canvas.');
+      ctx.putImageData(imageData, 0, 0);
+    } catch (error) {
+      this.releaseCanvas(canvas);
+      throw error;
+    }
+
+    let released = false;
+    const releaseOnce = () => {
+      if (released) return;
+      released = true;
+      this.releaseCanvas(canvas);
+    };
+
+    return new Promise((resolve, reject) => {
+      try {
+        canvas.toBlob((blob) => {
+          releaseOnce();
+          if (!blob || blob.size === 0) {
+            reject(new Error('Could not encode the processed page as JPEG.'));
+            return;
+          }
+          resolve(blob);
+        }, 'image/jpeg', quality);
+      } catch (error) {
+        releaseOnce();
+        reject(error instanceof Error ? error : new Error('Could not encode the processed page as JPEG.'));
+      }
     });
   }
 
@@ -172,33 +198,33 @@ class MemoryManager {
 
   public async blobToImageData(blob: Blob): Promise<ImageData> {
     if (typeof createImageBitmap !== 'undefined') {
+      let bitmap: ImageBitmap | null = null;
+      let canvas: HTMLCanvasElement | null = null;
       try {
-        const bitmap = await createImageBitmap(blob);
-        const canvas = this.acquireCanvas(bitmap.width, bitmap.height);
-        const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+        bitmap = await createImageBitmap(blob);
+        canvas = this.acquireCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) throw new Error('Failed to get 2D context');
         ctx.drawImage(bitmap, 0, 0);
-        bitmap.close();
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        this.disposeCanvas(canvas);
-        return imgData;
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
       } catch {
-        // Fall through to Image fallback
+        // Fall through to the Image fallback.
+      } finally {
+        try { bitmap?.close(); } catch { /* bitmap may already be closed */ }
+        if (canvas) this.disposeCanvas(canvas);
       }
     }
-    
+
     const img = await this.loadImage(blob);
     const canvas = this.acquireCanvas(img.width, img.height);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
-    if (!ctx) {
+    try {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error('Failed to get 2D context');
+      ctx.drawImage(img, 0, 0);
+      return ctx.getImageData(0, 0, img.width, img.height);
+    } finally {
       this.disposeCanvas(canvas);
-      throw new Error('Failed to get 2D context');
     }
-    
-    ctx.drawImage(img, 0, 0);
-    const imgData = ctx.getImageData(0, 0, img.width, img.height);
-    this.disposeCanvas(canvas);
-    return imgData;
   }
 
   public async checkStorageQuota(): Promise<{ ok: boolean; used: string; quota: string; percentUsed: number } | null> {
