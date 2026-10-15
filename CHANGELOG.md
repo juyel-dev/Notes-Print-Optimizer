@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- **Batch cache writes could evict too much when page sizes changed in opposite directions.** Base eviction space on the net change across the whole batch, and add coverage proving a 50 MiB shrink offsets a 50 MiB growth without evicting an unrelated page.
+
 - **An old processing request could cancel a newer run.** Link each external AbortSignal to that run's local controller, remove listeners when the run settles, and test that an earlier request's cancellation cannot abort a later processing run.
 
 - **Storage cache eviction could evict the row currently being replaced.** Protect single-page and batch-write keys while evicting unrelated old records, wait for the eviction transaction to settle before the write starts, and add regression tests that force the cache above its eviction threshold.
