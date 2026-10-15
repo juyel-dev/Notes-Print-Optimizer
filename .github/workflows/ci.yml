@@ -86,7 +86,9 @@ jobs:
       # mobile) so a PR's UI can be reviewed without running it locally.
       - name: Visual capture (non-blocking)
         continue-on-error: true
-        run: npx playwright test --config=playwright.visual.config.ts
+        # Each visual flow is best-effort; cap the full capture step so it
+        # cannot hold the required CI check for many minutes when a route stalls.
+        run: timeout 180s npx playwright test --config=playwright.visual.config.ts
 
       - name: Upload UI screenshots
         if: always()
