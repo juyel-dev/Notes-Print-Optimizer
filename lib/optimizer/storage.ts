@@ -64,7 +64,10 @@ class PWOptimizerStorage {
         tx.oncomplete = () => { this.adjustCachedSize(sizeDelta); resolve(); };
         tx.onerror = () => reject(tx.error);
       });
-    } catch (e) { console.warn('IDB write failed', e); }
+    } catch (e) {
+      console.warn('IDB write failed', e);
+      throw e;
+    }
   }
 
   public async storePagesBatch(pages: Array<{ pdfId: string; pageIndex: number; originalBlob: Blob | null; optimizedBlob: Blob }>): Promise<void> {
@@ -101,7 +104,10 @@ class PWOptimizerStorage {
         };
         tx.onerror = () => reject(tx.error);
       });
-    } catch (e) { console.warn('IDB batch write failed', e); }
+    } catch (e) {
+      console.warn('IDB batch write failed', e);
+      throw e;
+    }
   }
 
   /** Reads stored sizeBytes for keys via a single readonly transaction. */
