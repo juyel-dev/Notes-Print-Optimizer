@@ -13,6 +13,7 @@
 
 import type { PageProfile, ProcessingParameters } from '../optimizer/types';
 import { getLuminance } from './luminance';
+import { isDarkSourceProfile } from './darkSource';
 
 export interface PreservationAssessment {
   /** 0..1, conservative lower-bound style score. */
@@ -245,9 +246,7 @@ export function assessPreservation(
   cropTopPx = 0,
 ): PreservationAssessment {
   const policy = resolvePreservationPolicy(profile);
-  const isDarkSource =
-    profile.classification === 'DARK_SLIDE' ||
-    profile.darkBackgroundRatio > 0.55;
+  const isDarkSource = isDarkSourceProfile(profile);
 
   const beforeHeight = Math.min(processedHeight, sourceHeight - cropTopPx);
   const compareHeight = Math.max(0, beforeHeight);
