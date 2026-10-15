@@ -4,7 +4,44 @@ import { pwOptimizerStorage } from '../../lib/optimizer/storage';
 type StorageInternals = {
   dbPromise: Promise<IDBDatabase> | null;
   cachedSizeBytes: number | null;
+  getDB: () => Promise<IDBDatabase>;
 };
+
+const MB = 1024 * 1024;
+
+function seededRecord(pdfId: string, pageIndex: number, timestamp: number, sizeBytes: number) {
+  return {
+    id: `${pdfId}_page_${pageIndex}`,
+    pdfId,
+    pageIndex,
+    optimizedBlob: new Blob(['seed']),
+    timestamp,
+    cacheVersion: 2,
+    sizeBytes,
+  };
+}
+
+async function seedCacheRecords(records: ReturnType<typeof seededRecord>[]): Promise<void> {
+  const internals = pwOptimizerStorage as unknown as StorageInternals;
+  const db = await internals.getDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction('pages_cache', 'readwrite');
+    const store = tx.objectStore('pages_cache');
+    records.forEach((record) => store.put(record));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+  internals.cachedSizeBytes = null;
+}
+
+function blobWithReportedSize(sizeBytes: number): Blob {
+  const blob = new Blob(['small test body']);
+  // The cache ledger is seeded with virtual byte sizes so we can exercise the
+  // 200 MiB eviction threshold without allocating hundreds of MiB in a test.
+  Object.defineProperty(blob, 'size', { configurable: true, value: sizeBytes });
+  return blob;
+}
 
 describe('PWOptimizerStorage', () => {
   beforeEach(() => {
@@ -85,6 +122,46 @@ describe('PWOptimizerStorage', () => {
     } finally {
       open.mockRestore();
     }
+  });
+
+  it('does not evict a record that is being replaced during single-page cache eviction', async () => {
+    await seedCacheRecords([
+      seededRecord('target', 0, 1, 100 * MB),
+      seededRecord('evict-me', 0, 2, 100 * MB),
+    ]);
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(200 * MB);
+
+    await pwOptimizerStorage.storePage('target', 0, null, blobWithReportedSize(120 * MB));
+
+    // Force a DB recount instead of trusting the in-memory mirror. Before the
+    // fix the target row could be deleted first, then re-created, leaving both
+    // pages in IndexedDB while the cached-size mirror claimed only 120 MiB.
+    const internals = pwOptimizerStorage as unknown as StorageInternals;
+    internals.cachedSizeBytes = null;
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(120 * MB);
+    expect(await pwOptimizerStorage.getPage('target', 0)).not.toBeNull();
+    expect(await pwOptimizerStorage.getPage('evict-me', 0)).toBeNull();
+  });
+
+  it('protects every row in a batch replacement from the eviction cursor', async () => {
+    await seedCacheRecords([
+      seededRecord('keep-a', 0, 1, 50 * MB),
+      seededRecord('keep-b', 0, 2, 50 * MB),
+      seededRecord('evict-me', 0, 3, 100 * MB),
+    ]);
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(200 * MB);
+
+    await pwOptimizerStorage.storePagesBatch([
+      { pdfId: 'keep-a', pageIndex: 0, originalBlob: null, optimizedBlob: blobWithReportedSize(60 * MB) },
+      { pdfId: 'keep-b', pageIndex: 0, originalBlob: null, optimizedBlob: blobWithReportedSize(60 * MB) },
+    ]);
+
+    const internals = pwOptimizerStorage as unknown as StorageInternals;
+    internals.cachedSizeBytes = null;
+    expect(await pwOptimizerStorage.getCacheSize()).toBe(120 * MB);
+    expect(await pwOptimizerStorage.getPage('keep-a', 0)).not.toBeNull();
+    expect(await pwOptimizerStorage.getPage('keep-b', 0)).not.toBeNull();
+    expect(await pwOptimizerStorage.getPage('evict-me', 0)).toBeNull();
   });
 
   it('should return null for non-existent page', async () => {
