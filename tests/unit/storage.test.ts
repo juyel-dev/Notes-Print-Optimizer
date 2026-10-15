@@ -70,6 +70,23 @@ describe('PWOptimizerStorage', () => {
     }
   });
 
+  it('retries IndexedDB open after a transient opening error', async () => {
+    const open = vi.spyOn(indexedDB, 'open');
+    open.mockImplementationOnce(() => {
+      throw new Error('Temporary IndexedDB open failure');
+    });
+
+    try {
+      // First read is best-effort and returns the current empty size, but the
+      // failed promise must be cleared so the next write can open the database.
+      expect(await pwOptimizerStorage.getCacheSize()).toBe(0);
+      await pwOptimizerStorage.storePage('retry-db', 0, null, new Blob(['saved']));
+      expect(await pwOptimizerStorage.getPage('retry-db', 0)).not.toBeNull();
+    } finally {
+      open.mockRestore();
+    }
+  });
+
   it('should return null for non-existent page', async () => {
     const record = await pwOptimizerStorage.getPage('non-existent', 0);
     expect(record).toBeNull();
