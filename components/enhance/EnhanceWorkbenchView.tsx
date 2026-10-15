@@ -38,7 +38,7 @@ const PreviewSkeleton: React.FC<{ pageNumber: number; totalPages: number }> = ({
       <span className="text-sm font-bold text-ink">Preview</span>
       <span className="text-xs tabular-nums text-ink-muted">Preparing page {pageNumber}{totalPages > 0 ? ` · ${totalPages} total` : ''}</span>
     </div>
-    <div className="enhance-skeleton-shimmer relative mx-auto aspect-[210/297] max-h-[36vh] min-h-[220px] w-full max-w-[420px] rounded-lg border border-elevated/60 bg-surface-2" aria-hidden="true">
+    <div className="enhance-skeleton-shimmer relative mx-auto aspect-[210/297] max-h-[36vh] min-h-[220px] lg:max-h-[72vh] w-full max-w-[420px] rounded-lg border border-elevated/60 bg-surface-2" aria-hidden="true">
       <div className="absolute inset-x-[11%] top-[12%] flex flex-col gap-3">
         <span className="h-2 w-[62%] rounded bg-elevated/70" />
         <span className="h-1.5 w-[84%] rounded bg-elevated/50" />
