@@ -1,17 +1,11 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { AlertCircle, FileUp, ScanText, ShieldCheck, Target } from 'lucide-react';
+import { AlertCircle, FileUp, ShieldCheck } from 'lucide-react';
 import { MAX_FILE_SIZE_MB, PDF_DROPZONE_ACCEPT } from '@/lib/services/UploadService';
 import type { CompressWorkflow } from '@/lib/compress/useCompressWorkflow';
 import { PressIllustration } from './PressIllustration';
 import { TargetPicker } from './TargetPicker';
-
-const POINTS = [
-  { icon: ScanText, title: 'Text stays sharp', text: 'Keep-text mode shrinks only the pictures inside, so words stay selectable.' },
-  { icon: Target, title: 'Hits your size', text: 'Pick a limit like 1 MB and we choose the gentlest strength that fits.' },
-  { icon: ShieldCheck, title: 'Never uploaded', text: 'Your PDF is compressed on this device. Nothing is sent anywhere.' },
-] as const;
 
 /** Compress PDF's own upload screen: a "press" hero, an optional target, then the drop. */
 export const CompressUploadView: React.FC<{ workflow: CompressWorkflow }> = ({ workflow }) => {
@@ -64,11 +58,11 @@ export const CompressUploadView: React.FC<{ workflow: CompressWorkflow }> = ({ w
           Make it <span className="text-accent-soft">smaller.</span>
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink-muted sm:text-base">
-          Shrink a PDF to the size you need — scans, notes, forms — right on your device.
+          Reduce PDF size for sharing, uploading or saving.
         </p>
 
         <div className="mx-auto mt-6 max-w-md text-left">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">Where is it going? <span className="font-medium normal-case tracking-normal">(optional)</span></p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">Target size <span className="font-medium normal-case tracking-normal">(optional)</span></p>
           <TargetPicker target={state.target} onChange={workflow.setTarget} compact />
         </div>
 
@@ -91,22 +85,12 @@ export const CompressUploadView: React.FC<{ workflow: CompressWorkflow }> = ({ w
           <FileUp className="h-5 w-5" aria-hidden="true" />
           Choose a PDF
         </button>
-        <p className="mt-3 text-xs text-ink-faint">or drop it here · up to {MAX_FILE_SIZE_MB} MB · one file at a time</p>
+        <div className="mx-auto mt-3 flex max-w-md items-center justify-center gap-2 text-xs text-ink-faint">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>Private · on this device · PDF up to {MAX_FILE_SIZE_MB} MB · or drop it here</span>
+        </div>
       </section>
 
-      <ul className="grid gap-2.5 sm:grid-cols-3">
-        {POINTS.map((p) => (
-          <li key={p.title} className="flex gap-3 rounded-2xl border border-surface-2 bg-surface/60 p-3.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-soft">
-              <p.icon className="h-[18px] w-[18px]" aria-hidden="true" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold text-ink">{p.title}</span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-ink-muted">{p.text}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 };
