@@ -10,7 +10,7 @@ test('shows Download early on the Compress PDF result screen', async ({ page }) 
   await page.locator('input[type="file"]').first().setInputFiles(PDF);
 
   await expect(page.getByRole('heading', { name: 'Compression mode' })).toBeVisible({ timeout: 90_000 });
-  const compressButton = page.getByRole('button', { name: /^Compress(?: ·|$)/ });
+  const compressButton = page.getByRole('button', { name: /^Compress PDF$/ });
   await expect(compressButton).toBeEnabled({ timeout: 90_000 });
   await compressButton.click();
 
