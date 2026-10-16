@@ -42,7 +42,11 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ onBack }) =>
   }, [state.step]);
 
   return (
-    <div className="flex flex-col gap-5 animate-slide-up">
+    // NOTE: opacity-only entrance. A translate-based animation (e.g.
+    // animate-slide-up) retains a transform, which would make this root a
+    // containing block and break the fixed action bar below lg (it would
+    // scroll with the content and overlap it) — see globals.css enter-soft.
+    <div className="flex flex-col gap-5 animate-enter">
       <header className="sticky top-0 z-30 -mx-4 border-b border-surface-2/70 bg-bg/90 backdrop-blur-md">
         <div className="flex items-center gap-3 px-4 py-3">
           <button

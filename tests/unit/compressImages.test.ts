@@ -15,6 +15,7 @@ import {
   applyImageRecompression,
   collectImageCandidates,
   estimateImageLevels,
+  readSource,
   undoPngPredictor,
 } from '@/lib/compress/imageRecompress';
 import { COMPRESS_LEVELS } from '@/lib/compress/types';
@@ -151,8 +152,20 @@ describe('estimate + apply (Keep text)', () => {
   });
 
   it('converts predictor Flate RGB to JPEG and the pixels survive', async () => {
-    const { bytes } = await pdfWithPredictedFlate(320, 240);
+    const { bytes, raw } = await pdfWithPredictedFlate(320, 240);
     const doc = await PDFDocument.load(bytes);
+    const [cand] = collectImageCandidates(doc, 1);
+    // The decoded pixels must match the original EXACTLY — pdf-lib hands
+    // back still-filtered bytes, so readSource must undo the predictor
+    // exactly once (double-undo would silently corrupt every photo).
+    const src = readSource(cand);
+    expect(src?.kind).toBe('raw');
+    if (src?.kind === 'raw') {
+      expect(src.width).toBe(320);
+      expect(src.height).toBe(240);
+      expect(src.channels).toBe(3);
+      expect(Array.from(src.data)).toEqual(Array.from(raw));
+    }
     const r = await applyImageRecompression(doc, nodeImageCodec, COMPRESS_LEVELS[1].smart);
     expect(r.replaced).toBe(1);
     const out = await doc.save();
