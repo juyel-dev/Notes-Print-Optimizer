@@ -5,7 +5,7 @@ import { TARGET_PRESETS, formatBytes, parseTargetInput } from '@/lib/compress/ty
 export interface TargetPickerProps {
   target: number | null;
   onChange: (t: number | null) => void;
-  /** Smaller on the Studio screen where space is tight. */
+  /** Compact variant for the upload screen; hides preset hints to keep the choices clean. */
   compact?: boolean;
 }
 
@@ -46,7 +46,7 @@ export const TargetPicker: React.FC<TargetPickerProps> = ({ target, onChange, co
               }`}
             >
               <span className={`font-mono text-sm font-bold tabular-nums ${on ? 'text-accent-soft' : 'text-ink'}`}>≤ {t.label}</span>
-              <span className="text-xs text-ink-faint">{t.hint}</span>
+              {!compact && <span className="text-xs text-ink-faint">{t.hint}</span>}
             </button>
           );
         })}
