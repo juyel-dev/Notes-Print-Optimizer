@@ -18,7 +18,7 @@ export const SizeDial: React.FC<SizeDialProps> = ({ original, predicted, busy, b
   const ratio = predicted !== null && original > 0 ? Math.min(1, Math.max(0.02, predicted / original)) : 1;
   const pct = predicted !== null ? savedPercent(original, predicted) : 0;
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[280px]" role="img" aria-label={predicted !== null ? `${label}: ${formatBytes(predicted)}, ${pct} percent smaller` : 'Working out the new size'}>
+    <div className="relative mx-auto aspect-square w-full max-w-[236px] sm:max-w-[280px]" role="img" aria-label={predicted !== null ? `${label}: ${formatBytes(predicted)}, ${pct} percent smaller` : 'Working out the new size'}>
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden="true">
         <circle cx="60" cy="60" r={R} fill="none" stroke="var(--color-surface-2)" strokeWidth="9" />
         {/* the original size, as a faint full ring */}
@@ -45,7 +45,7 @@ export const SizeDial: React.FC<SizeDialProps> = ({ original, predicted, busy, b
         ) : (
           <>
             <span className="text-2xs font-bold uppercase tracking-[0.14em] text-ink-faint">{label}</span>
-            <span className="mt-0.5 font-mono text-[2.6rem] font-semibold leading-none tabular-nums text-ink" style={{ fontFamily: 'var(--font-display)' }}>
+            <span className="mt-0.5 font-mono text-[2.3rem] sm:text-[2.6rem] font-semibold leading-none tabular-nums text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               {formatBytes(predicted)}
             </span>
             <span className="mt-1.5 text-xs tabular-nums text-ink-muted">

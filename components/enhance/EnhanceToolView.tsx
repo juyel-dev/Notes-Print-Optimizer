@@ -62,7 +62,7 @@ export const EnhanceToolView: React.FC<EnhanceToolViewProps> = ({ onBack, onHand
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="flex min-w-0 flex-1 flex-col">
-          <h1 ref={titleRef} tabIndex={-1} className="truncate text-[15px] font-bold text-ink outline-none">Enhance Light PDF</h1>
+          <h1 ref={titleRef} tabIndex={-1} className="truncate text-[15px] font-bold text-ink" style={{ outline: 'none' }}>Enhance Light PDF</h1>
           <p className="truncate text-xs text-ink-faint">Faint scans → clear printouts · 100% on-device</p>
         </div>
       </header>

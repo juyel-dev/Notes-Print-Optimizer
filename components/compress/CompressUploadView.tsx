@@ -95,15 +95,14 @@ export const CompressUploadView: React.FC<{ workflow: CompressWorkflow }> = ({ w
       </section>
 
       <ul className="grid gap-2.5 sm:grid-cols-3">
-        {POINTS.map((p, i) => (
+        {POINTS.map((p) => (
           <li key={p.title} className="flex gap-3 rounded-2xl border border-surface-2 bg-surface/60 p-3.5">
-            <span className="font-mono text-xs font-bold text-accent-soft">0{i + 1}</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-soft">
+              <p.icon className="h-[18px] w-[18px]" aria-hidden="true" />
+            </span>
             <span className="min-w-0">
-              <span className="flex items-center gap-1.5 text-sm font-bold text-ink">
-                <p.icon className="h-4 w-4 text-accent-soft" aria-hidden="true" />
-                {p.title}
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-ink-muted">{p.text}</span>
+              <span className="block text-sm font-bold text-ink">{p.title}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-ink-muted">{p.text}</span>
             </span>
           </li>
         ))}

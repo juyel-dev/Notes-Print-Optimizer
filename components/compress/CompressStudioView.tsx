@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, FileText, Info, Layers, Shrink } from 'lucide-react';
+import { AlertCircle, FileText, Info, Layers, RotateCcw, Shrink } from 'lucide-react';
 import type { CompressWorkflow } from '@/lib/compress/useCompressWorkflow';
 import { COMPRESS_LEVELS, MODE_LABEL, formatBytes, pickLevelForTarget, type CompressMode } from '@/lib/compress/types';
 import { SizeDial } from './SizeDial';
@@ -171,10 +171,16 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
             className={`inline-flex min-h-[56px] flex-1 items-center justify-center gap-2.5 rounded-2xl bg-accent px-5 text-base font-extrabold text-bg shadow-lg shadow-accent/20 transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 ${FOCUS}`}
           >
             <Shrink className="h-5 w-5" aria-hidden="true" />
-            {busy ? 'Reading your PDF…' : predicted !== null ? `Compress to about ${formatBytes(predicted)}` : 'Compress'}
+            {busy ? 'Reading your PDF…' : predicted !== null ? `Compress · ≈ ${formatBytes(predicted)}` : 'Compress'}
           </button>
-          <button type="button" onClick={workflow.handleReset} className={`inline-flex h-14 shrink-0 items-center rounded-2xl border border-elevated bg-surface px-4 text-sm font-bold text-ink-muted hover:text-ink ${FOCUS}`}>
-            Other file
+          <button
+            type="button"
+            onClick={workflow.handleReset}
+            aria-label="Choose a different file"
+            title="Choose a different file"
+            className={`inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-elevated bg-surface text-ink-muted hover:text-ink ${FOCUS}`}
+          >
+            <RotateCcw className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>

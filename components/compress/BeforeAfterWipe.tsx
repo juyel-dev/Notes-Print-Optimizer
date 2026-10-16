@@ -7,13 +7,15 @@ export interface BeforeAfterWipeProps {
   before: string | null;
   after: string | null;
   loading: boolean;
+  /** width / height of the page; defaults to A4 portrait. */
+  aspect?: number;
 }
 
 /**
  * Drag-to-reveal comparison: original on the left of the handle, compressed on the right.
  * Pointer drag + keyboard (←/→/Home/End); vertical touch still scrolls the page.
  */
-export const BeforeAfterWipe: React.FC<BeforeAfterWipeProps> = ({ before, after, loading }) => {
+export const BeforeAfterWipe: React.FC<BeforeAfterWipeProps> = ({ before, after, loading, aspect = 0.707 }) => {
   const [pos, setPos] = useState(50);
   const boxRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -31,7 +33,7 @@ export const BeforeAfterWipe: React.FC<BeforeAfterWipeProps> = ({ before, after,
     <div
       ref={boxRef}
       className="relative w-full select-none overflow-hidden rounded-2xl border border-surface-2 bg-surface"
-      style={{ touchAction: 'pan-y', aspectRatio: '1 / 1.3' }}
+      style={{ touchAction: 'pan-y', aspectRatio: String(aspect) }}
       onPointerDown={(e) => {
         if (!ready) return;
         dragging.current = true;

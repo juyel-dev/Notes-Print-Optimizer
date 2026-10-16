@@ -42,7 +42,7 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ onBack }) =>
   }, [state.step]);
 
   return (
-    <div className="flex flex-col gap-5 animate-slide-up">
+    <div className="flex flex-col gap-5 animate-enter">
       <header className="sticky top-0 z-30 -mx-4 border-b border-surface-2/70 bg-bg/90 backdrop-blur-md">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
@@ -57,7 +57,7 @@ export const CompressToolView: React.FC<CompressToolViewProps> = ({ onBack }) =>
             <Shrink className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 ref={titleRef} tabIndex={-1} className="truncate text-base font-extrabold text-ink outline-none" style={{ fontFamily: 'var(--font-display)' }}>
+            <h1 ref={titleRef} tabIndex={-1} className="truncate text-base font-extrabold text-ink" style={{ fontFamily: 'var(--font-display)', outline: 'none' }}>
               Compress PDF
             </h1>
             <p className="truncate text-xs text-ink-faint">Smaller files · 100% on-device</p>

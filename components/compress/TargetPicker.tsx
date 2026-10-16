@@ -41,15 +41,12 @@ export const TargetPicker: React.FC<TargetPickerProps> = ({ target, onChange, co
                 setBad(false);
                 onChange(on ? null : t.bytes);
               }}
-              className={`relative flex min-h-[56px] flex-col items-start justify-center rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft ${
+              className={`flex min-h-[56px] flex-col items-start justify-center rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft ${
                 on ? 'border-accent bg-accent/15' : 'border-surface-2 bg-surface/70 hover:border-elevated'
               }`}
             >
               <span className={`font-mono text-sm font-bold tabular-nums ${on ? 'text-accent-soft' : 'text-ink'}`}>≤ {t.label}</span>
               <span className="text-xs text-ink-faint">{t.hint}</span>
-              {/* ticket-stub notches */}
-              <span aria-hidden="true" className="absolute -left-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-bg" />
-              <span aria-hidden="true" className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-bg" />
             </button>
           );
         })}
