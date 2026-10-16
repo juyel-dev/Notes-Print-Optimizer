@@ -15,7 +15,7 @@ test.describe('Compress PDF action bar', () => {
     await expect(page.getByRole('heading', { name: 'Compression mode' })).toBeVisible({ timeout: 90_000 });
 
     // Wait until estimates finish so the primary action has its normal label.
-    const compressButton = page.getByRole('button', { name: /^Compress(?: ·|$)/ });
+    const compressButton = page.getByRole('button', { name: /^Compress PDF$/ });
     await expect(compressButton).toBeVisible({ timeout: 90_000 });
     await expect(compressButton).toBeEnabled({ timeout: 90_000 });
 

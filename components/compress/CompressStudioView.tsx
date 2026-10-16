@@ -164,7 +164,7 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
             className={`inline-flex min-h-[56px] flex-1 items-center justify-center gap-2.5 rounded-2xl bg-accent px-5 text-base font-extrabold text-bg shadow-lg shadow-accent/20 transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.98] disabled:opacity-50 ${FOCUS}`}
           >
             <Shrink className="h-5 w-5" aria-hidden="true" />
-            {busy ? 'Reading your PDF…' : predicted !== null ? `Compress · ≈ ${formatBytes(predicted)}` : 'Compress'}
+            {busy ? 'Reading your PDF…' : 'Compress PDF'}
           </button>
           <button
             type="button"
