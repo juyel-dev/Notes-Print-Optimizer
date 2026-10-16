@@ -78,6 +78,18 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
             : `${state.source!.name} is now ${formatBytes(result.size)}.`}
         </p>
 
+        <div className="mt-5 flex flex-col gap-3">
+          <FileNameField baseName={outName} onChange={setOutName} suffix="-compressed.pdf" label="Filename" />
+          <button
+            type="button"
+            onClick={() => workflow.handleDownload(outName)}
+            className={`inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-2xl bg-accent px-5 text-base font-extrabold text-bg shadow-lg shadow-accent/20 transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.98] ${FOCUS}`}
+          >
+            <Download className="h-5 w-5" aria-hidden="true" />
+            Download PDF · {formatBytes(result.size)}
+          </button>
+        </div>
+
         <dl className="mt-6 flex flex-col gap-3">
           <div>
             <dt className="flex justify-between text-xs font-bold text-ink-faint"><span>Before</span><span className="font-mono tabular-nums text-ink-muted">{formatBytes(before)}</span></dt>
@@ -110,6 +122,16 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
             </span>
           </p>
         )}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button type="button" onClick={workflow.backToStudio} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-elevated bg-surface text-sm font-bold text-ink ${FOCUS}`}>
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            Adjust
+          </button>
+          <button type="button" onClick={workflow.handleReset} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-elevated bg-surface text-sm font-bold text-ink ${FOCUS}`}>
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            Another PDF
+          </button>
+        </div>
       </section>
 
       {/* ── Compare ───────────────────────────────────────────── */}
@@ -134,28 +156,6 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
         </section>
       )}
 
-      {/* ── Save ──────────────────────────────────────────────── */}
-      <section aria-label="Save" className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/70 p-4 lg:col-start-1">
-        <FileNameField baseName={outName} onChange={setOutName} suffix="-compressed.pdf" label="Filename" />
-        <button
-          type="button"
-          onClick={() => workflow.handleDownload(outName)}
-          className={`inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-2xl bg-accent px-5 text-base font-extrabold text-bg shadow-lg shadow-accent/20 transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.98] ${FOCUS}`}
-        >
-          <Download className="h-5 w-5" aria-hidden="true" />
-          Download PDF · {formatBytes(result.size)}
-        </button>
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={workflow.backToStudio} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-elevated bg-surface text-sm font-bold text-ink ${FOCUS}`}>
-            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-            Adjust
-          </button>
-          <button type="button" onClick={workflow.handleReset} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-elevated bg-surface text-sm font-bold text-ink ${FOCUS}`}>
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Another PDF
-          </button>
-        </div>
-      </section>
     </div>
   );
 };
