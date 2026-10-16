@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, FileText, Info, Layers, RotateCcw, Shrink } from 'lucide-react';
+import { AlertCircle, FileText, Layers, RotateCcw, Shrink } from 'lucide-react';
 import type { CompressWorkflow } from '@/lib/compress/useCompressWorkflow';
 import { COMPRESS_LEVELS, MODE_LABEL, formatBytes, pickLevelForTarget, type CompressMode } from '@/lib/compress/types';
 import { SizeDial } from './SizeDial';
@@ -11,8 +11,8 @@ import { TargetPicker } from './TargetPicker';
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft';
 
 const MODES: Array<{ key: CompressMode; icon: React.ElementType; title: string; text: string }> = [
-  { key: 'smart', icon: FileText, title: 'Keep text', text: 'Shrinks the pictures inside. Words stay sharp and selectable.' },
-  { key: 'flatten', icon: Layers, title: 'Flatten pages', text: 'Smallest files. Every page becomes an image — text can’t be selected.' },
+  { key: 'smart', icon: FileText, title: 'Keep text', text: 'Shrinks images; text stays selectable.' },
+  { key: 'flatten', icon: Layers, title: 'Flatten pages', text: 'Smaller files; text becomes part of each page image.' },
 ];
 
 const SectionTitle: React.FC<{ n: string; children: React.ReactNode }> = ({ n, children }) => (
@@ -90,10 +90,7 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
           busy={busy}
           busyLabel={state.estimateProgress ? `${state.estimateProgress.done}/${state.estimateProgress.total} sampled` : undefined}
         />
-        <p className="text-center text-xs leading-relaxed text-ink-muted">
-          Prediction from real samples of your file, usually within a few percent.
-        </p>
-      </section>
+              </section>
 
       <div className="flex flex-col gap-7">
         {state.error && (
@@ -105,7 +102,7 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
 
         {/* ── 01 Mode ─────────────────────────────────────────── */}
         <section aria-label="How to shrink">
-          <SectionTitle n="01">How should we shrink it?</SectionTitle>
+          <SectionTitle n="01">Compression mode</SectionTitle>
           <div role="radiogroup" aria-label="Compression mode" className="grid gap-2.5 sm:grid-cols-2">
             {MODES.map((m) => {
               const on = state.mode === m.key;
@@ -129,10 +126,6 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
               );
             })}
           </div>
-          <p className="mt-3 flex gap-2 text-xs leading-relaxed text-ink-muted">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-soft" aria-hidden="true" />
-            <span>{a.reason}</span>
-          </p>
           {nothingToShrink && (
             <p role="status" className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs font-semibold text-warning">
               No pictures we can shrink were found in this file, so Keep text can’t reduce it. Flatten pages can.
@@ -142,7 +135,7 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
 
         {/* ── 02 Target ───────────────────────────────────────── */}
         <section aria-label="Target size">
-          <SectionTitle n="02">Aim for a size <span className="font-medium text-ink-faint">(optional)</span></SectionTitle>
+          <SectionTitle n="02">Target size <span className="font-medium text-ink-faint">(optional)</span></SectionTitle>
           <TargetPicker target={state.target} onChange={setTarget} />
           {targetNote && (
             <p role="status" className="mt-3 rounded-xl border border-accent/25 bg-accent/10 px-3 py-2.5 text-xs leading-relaxed text-ink-muted">
@@ -153,7 +146,7 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
 
         {/* ── 03 Strength ─────────────────────────────────────── */}
         <section aria-label="Strength">
-          <SectionTitle n="03">{state.target !== null ? 'Strength (chosen for your target)' : 'How hard should we squeeze?'}</SectionTitle>
+          <SectionTitle n="03">{state.target !== null ? 'Strength for target' : 'Compression strength'}</SectionTitle>
           <StrengthLadder original={original} sizes={sizes} level={state.level} onChange={setLevel} target={state.target} />
         </section>
       </div>
