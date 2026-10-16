@@ -115,7 +115,7 @@ export async function buildFlatPdf(pages: FlatPage[]): Promise<Uint8Array> {
 }
 
 /** Renders one page to a JPEG data URL for the before/after viewer. */
-export async function renderPageDataUrl(bytes: Uint8Array, pageNumber: number, width = 1000): Promise<{ url: string; pageCount: number }> {
+export async function renderPageDataUrl(bytes: Uint8Array, pageNumber: number, width = 1000): Promise<{ url: string; pageCount: number; aspect: number }> {
   const doc = await openPdfjs(bytes);
   try {
     const n = Math.min(Math.max(1, pageNumber), doc.numPages);
@@ -130,7 +130,7 @@ export async function renderPageDataUrl(bytes: Uint8Array, pageNumber: number, w
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: ctx, viewport }).promise;
-      return { url: canvas.toDataURL('image/jpeg', 0.9), pageCount: doc.numPages };
+      return { url: canvas.toDataURL('image/jpeg', 0.9), pageCount: doc.numPages, aspect: canvas.width / Math.max(1, canvas.height) };
     } finally {
       memoryManager.disposeCanvas(canvas);
       page.cleanup();

@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Compress PDF — visual QA polish** (checked in a real headless Chromium on phone and desktop, light and dark). Cleaner target chips (removed the ticket notches), simpler feature tiles, a single-line **Compress · ≈ size** button with an icon-only "other file", a smaller dial on phones, a two-column result on desktop (receipt and download left, **compare** right instead of a full-width page), and the compare view now uses the page's real aspect ratio.
+
+### Fixed
+
+- **Compress PDF: the bottom action bar was not pinned to the screen** — the tool's entrance animation used a transform, which turns the container into the containing block for `position: fixed`. It now uses the opacity-only entrance.
+- **Compress PDF + Enhance: a visible blue frame around the title after a step change** — the global unlayered `:focus-visible` rule beats Tailwind's layered `outline-none`, so the programmatic title focus now clears the outline inline.
+
 ### Added
 
 - **Compress PDF** (`compress-pdf`) — a new tool with its own look (marigold "press" hero, live size dial, strength ladder, drag-to-compare). Pick a target size (500 KB–25 MB or custom) or a strength; the tool encodes real samples of your file to **predict the size at all five levels**, then chooses the gentlest level that fits (re-trying one step tighter if the real output misses). **Keep text** mode recompresses embedded JPEG/Flate images in place (8-bit RGB/gray, PNG predictors undone; masks, palettes, CMYK and 16-bit are skipped, never risked) so text and vectors stay untouched; **Flatten pages** renders 150-DPI masters once and re-encodes them for the smallest possible file. The recommended mode is chosen by looking inside the PDF; a result that would be larger than the original is never returned. Password-protected/damaged files get a clear per-file message. Service worker `v38`.

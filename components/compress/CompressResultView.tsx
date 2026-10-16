@@ -18,10 +18,10 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
   const pageCount = state.analysis?.pageCount ?? 1;
   const [outName, setOutName] = useState(state.source!.baseName);
   const [page, setPage] = useState(1);
-  const [imgs, setImgs] = useState<{ before: string; after: string } | null>(null);
+  const [imgs, setImgs] = useState<{ before: string; after: string; aspect: number } | null>(null);
   const [loading, setLoading] = useState(!result.unchanged);
   const outBytes = useRef<Uint8Array | null>(null);
-  const cache = useRef(new Map<number, { before: string; after: string }>());
+  const cache = useRef(new Map<number, { before: string; after: string; aspect: number }>());
 
   // Render the same page of both PDFs for the comparison.
   useEffect(() => {
@@ -40,7 +40,7 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
         if (!original) return;
         if (!outBytes.current) outBytes.current = new Uint8Array(await result.blob.arrayBuffer());
         const [b, a] = await Promise.all([renderPageDataUrl(original, page, 900), renderPageDataUrl(outBytes.current, page, 900)]);
-        const pair = { before: b.url, after: a.url };
+        const pair = { before: b.url, after: a.url, aspect: b.aspect };
         cache.current.set(page, pair);
         if (!cancelled) {
           setImgs(pair);
@@ -58,11 +58,11 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
   const missed = result.reachedTarget === false;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-8">
       {/* ── The receipt ───────────────────────────────────────── */}
       <section
         aria-label="Result"
-        className="overflow-hidden rounded-[32px] border border-accent/25 p-6 sm:p-8"
+        className="overflow-hidden rounded-[32px] border border-accent/25 p-6 sm:p-8 lg:col-start-1"
         style={{ background: 'radial-gradient(110% 90% at 0% 0%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 60%), var(--color-surface)' }}
       >
         <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-accent-soft">
@@ -114,7 +114,7 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
 
       {/* ── Compare ───────────────────────────────────────────── */}
       {!result.unchanged && (
-        <section aria-label="Compare quality" className="flex flex-col gap-3">
+        <section aria-label="Compare quality" className="flex flex-col gap-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-[88px]">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-extrabold text-ink">Check the quality</h2>
             {pageCount > 1 && (
@@ -129,13 +129,13 @@ export const CompressResultView: React.FC<{ workflow: CompressWorkflow }> = ({ w
               </div>
             )}
           </div>
-          <BeforeAfterWipe before={imgs?.before ?? null} after={imgs?.after ?? null} loading={loading} />
+          <BeforeAfterWipe before={imgs?.before ?? null} after={imgs?.after ?? null} loading={loading} aspect={imgs?.aspect} />
           <p className="text-xs text-ink-faint">Drag the handle to compare. If it looks too soft, go back and pick a gentler strength.</p>
         </section>
       )}
 
       {/* ── Save ──────────────────────────────────────────────── */}
-      <section aria-label="Save" className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/70 p-4">
+      <section aria-label="Save" className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/70 p-4 lg:col-start-1">
         <FileNameField baseName={outName} onChange={setOutName} suffix="-compressed.pdf" label="Filename" />
         <button
           type="button"
