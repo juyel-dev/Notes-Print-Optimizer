@@ -70,7 +70,8 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
   const nothingToShrink = state.mode === 'smart' && sizes !== undefined && a.eligibleBytes === 0;
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:pb-8">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-5 lg:pb-8">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-8">
       {/* ── The dial ─────────────────────────────────────────────── */}
       <section
         aria-label="Estimated result"
@@ -150,10 +151,11 @@ export const CompressStudioView: React.FC<{ workflow: CompressWorkflow }> = ({ w
           <StrengthLadder original={original} sizes={sizes} level={state.level} onChange={setLevel} target={state.target} />
         </section>
       </div>
+      </div>
 
       {/* ── Action bar ───────────────────────────────────────── */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-2 bg-bg/92 px-4 pt-3 backdrop-blur-md lg:static lg:col-span-2 lg:border-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-2 bg-bg/92 px-4 pt-3 backdrop-blur-md lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:px-0 lg:pt-0 lg:backdrop-blur-none"
         style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
