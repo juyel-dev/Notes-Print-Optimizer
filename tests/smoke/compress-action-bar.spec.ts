@@ -36,6 +36,7 @@ test.describe('Compress PDF action bar', () => {
         `Compress button moved vertically after scrolling to ${scrollY}px`,
       ).toBeLessThanOrEqual(2);
     }
+  });
 
   test('keeps the desktop Compress bar clear of the sticky size dial at the bottom of the page', async ({ page }) => {
     test.setTimeout(120_000);
@@ -65,6 +66,5 @@ test.describe('Compress PDF action bar', () => {
       && buttonBox!.y < dialBox!.y + dialBox!.height
       && buttonBox!.y + buttonBox!.height > dialBox!.y;
     expect(overlaps, 'Compress bar must not cover the sticky Estimated result / size dial card').toBe(false);
-  });
   });
 });
