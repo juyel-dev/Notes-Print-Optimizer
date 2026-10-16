@@ -50,10 +50,7 @@ export const StrengthLadder: React.FC<StrengthLadderProps> = ({ original, sizes,
             }`}
           >
             <span className="flex items-baseline justify-between gap-2">
-              <span className="flex items-baseline gap-2">
-                <span className={`text-sm font-extrabold ${on ? 'text-accent-soft' : 'text-ink'}`}>{spec.label}</span>
-                <span className="text-xs text-ink-faint">{spec.blurb}</span>
-              </span>
+              <span className={`text-sm font-extrabold ${on ? 'text-accent-soft' : 'text-ink'}`}>{spec.label}</span>
               <span className="flex items-baseline gap-2 font-mono tabular-nums">
                 {size !== undefined ? (
                   <>
@@ -78,7 +75,7 @@ export const StrengthLadder: React.FC<StrengthLadderProps> = ({ original, sizes,
       {targetPos !== null && (
         <p className="flex items-center gap-2 text-xs text-ink-faint">
           <span aria-hidden="true" className="inline-block h-3.5 w-0.5 bg-ink/70" />
-          Your target, shown on every bar.
+          Target
         </p>
       )}
     </div>
