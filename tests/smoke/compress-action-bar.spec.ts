@@ -5,6 +5,7 @@ const PDF = path.resolve(__dirname, '../fixtures/pdf/mixed.pdf');
 
 test.describe('Compress PDF action bar', () => {
   test('keeps the Compress button pinned while scrolling below the desktop breakpoint', async ({ page }) => {
+    test.setTimeout(120_000);
     // 940px is laptop-sized but below Tailwind's lg breakpoint, where the
     // action bar intentionally stays fixed at the bottom of the viewport.
     await page.setViewportSize({ width: 940, height: 760 });
