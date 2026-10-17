@@ -46,6 +46,14 @@ This guide covers **every tool**. Tip: use the **search box** at the top — typ
 3. Use the **live preview** (top→bottom) to see grid.
 4. **Export** print-ready N-up PDF.
 
+### 5b) Organize Pages (turn, delete, reorder)
+
+1. **Choose a PDF** — every page appears as a sheet on a light table.
+2. **Tap pages to select** them (or use All / Odd / Even / Invert). The little arrow on a page turns just that page.
+3. Use the **dock** at the bottom to turn, move earlier/later, duplicate, insert a blank page or delete. **Find blank pages** selects nearly empty pages for you.
+4. On a computer you can **drag pages** to reorder them. Everything has **Undo / Redo**.
+5. **Export** all pages, or choose **Save only these** to export just the selection.
+
 ### 5a) Compress PDF (make a PDF smaller)
 
 1. Optional: pick **where it is going** — `500 KB / 1 MB / 2 MB / 5 MB / 10 MB / 25 MB` or type your own — then choose the PDF.
@@ -130,6 +138,6 @@ Paste text → tap **UPPERCASE / lowercase / Title Case / Sentence case / camelC
 
 ## Offline, privacy & help
 
-- **Offline:** after first load, all 13 tools work offline (PWA, `sw.js v38`). Look for *Install* in the menu for Add to Home Screen.
+- **Offline:** after first load, all 14 tools work offline (PWA, `sw.js v39`). Look for *Install* in the menu for Add to Home Screen.
 - **Privacy:** no upload — see **Privacy Policy**. Clear local data via **Menu → Privacy → Clear Cache**.
 - **Help:** **FAQ** in the menu, or contact [myself.juyel.dev@gmail.com](mailto:myself.juyel.dev@gmail.com) / [Telegram](https://t.me/PrintOptimizer_chat).

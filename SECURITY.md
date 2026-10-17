@@ -15,13 +15,13 @@
 - Include: description, repro steps, affected component (`lib/tools/registry.ts:id`), impact, browser/OS.
 - SLA: acknowledge ≤ 48h; fix/mitigation plan ≤ 7 days; credit in `CHANGELOG.md` unless anonymity requested.
 
-## 3. Threat model — static, client-side, 13-tool suite
+## 3. Threat model — static, client-side, 14-tool suite
 
 The app runs **entirely in the browser**. Zero server PDF processing. Static export `out/` → CDN.
 
 | # | Invariant | Detail | Enforced by |
 |---|---|---|---|
-| 1 | No server PDF processing — nothing leaves device | All 13 tools (dark-print, enhance, protect AES-256, pdf-to-images, merge, split, image-to-pdf, password-gen, qr-gen, word-count, case-convert, n-up, compress) run on-device via WASM + Workers + pdf-lib/pdfjs | `lib/optimizer`, `lib/nup`, `lib/protect`, `lib/tools/registry.ts` |
+| 1 | No server PDF processing — nothing leaves device | All 14 tools (dark-print, enhance, protect AES-256, pdf-to-images, merge, split, image-to-pdf, password-gen, qr-gen, word-count, case-convert, n-up, compress, organize) run on-device via WASM + Workers + pdf-lib/pdfjs | `lib/optimizer`, `lib/nup`, `lib/protect`, `lib/tools/registry.ts` |
 | 2 | No upload except **optional** feedback | Feedback is opt-in (checkbox, disabled by default). No telemetry, no analytics, no ads | `lib/feedback/gasClient.ts` |
 | 3 | All processing local | WASM (`public/wasm/npo_wasm_bg.wasm`) + Web Workers + IndexedDB checkpoint — no `fetch` to external for tool logic | `lib/workers/pool.ts`, `wasm/src/` |
 | 4 | SW caches **static assets only** — never user data | `public/sw.js` precaches `TOOL_ROUTES` + icons + vendor + wasm; user PDFs stay in memory/IndexedDB ephemeral | `public/sw.js:PRECACHE_URLS` |
@@ -34,7 +34,7 @@ The app runs **entirely in the browser**. Zero server PDF processing. Static exp
 
 | Tool | Input | Leaves device? | Notes |
 |---|---|---|---|
-| dark-print, enhance, n-up, compress, merge, split, to-images, to-pdf, protect | PDF / images you select | **No** | Rendered via pdfjs in Worker, composed via pdf-lib; `protect` encryption is in-memory |
+| dark-print, enhance, n-up, compress, organize, merge, split, to-images, to-pdf, protect | PDF / images you select | **No** | Rendered via pdfjs in Worker, composed via pdf-lib; `protect` encryption is in-memory |
 | password-gen | length + charset | **No** | `crypto.getRandomValues` — see `tests/unit/protect.test.ts` for entropy |
 | qr-gen (generate) | text/url/wifi/contact | **No** | `qrcode` + `qr-code-styling` local; logo overlay local |
 | qr-gen (scan) | camera frame / image / clipboard | **No** | `html5-qrcode` local decode |
