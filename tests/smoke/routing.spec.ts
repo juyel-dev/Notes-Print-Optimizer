@@ -20,6 +20,7 @@ const TOOLS = [
   { slug: 'case-converter', name: 'Case Converter' },
   { slug: 'n-up', name: 'N-up PDF' },
   { slug: 'compress-pdf', name: 'Compress PDF' },
+  { slug: 'organize-pages', name: 'Organize Pages' },
 ];
 
 test.describe('tool routes — direct navigation', () => {

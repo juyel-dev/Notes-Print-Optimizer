@@ -312,6 +312,28 @@ export const TOOL_FAQS: Record<string, FaqItem[]> = {
       a: 'No. Compression runs entirely in your browser with pdf-lib and pdf.js, and works offline once the app is loaded. Password-protected PDFs must be unlocked first.',
     },
   ],
+  'organize-pages': [
+    {
+      q: 'How do I rotate or delete pages in a PDF?',
+      a: 'Open the PDF, tap the pages you want (or use All, Odd, Even), then use the buttons at the bottom to turn, move, duplicate or delete them. The little arrow on each page turns just that page. Everything can be undone.',
+    },
+    {
+      q: 'Can it find blank pages automatically?',
+      a: 'Yes. Tap Find blank pages and the tool looks at every page, selects the nearly empty ones, and offers to delete them. You can review and un-select any before deleting — a page with only a page number can count as blank.',
+    },
+    {
+      q: 'How do I change the order of pages?',
+      a: 'On a computer, drag pages to a new spot (drag several at once if they are selected). On a phone, select pages and use the Move earlier / Move later buttons. Keyboard: [ and ] move the selection.',
+    },
+    {
+      q: 'Can I save only some pages?',
+      a: 'Yes — select the pages and choose Save only these. You get a new PDF with just those pages in their current order.',
+    },
+    {
+      q: 'Is my PDF uploaded anywhere?',
+      a: 'No. Pages are shown and rebuilt entirely in your browser with pdf.js and pdf-lib, and it works offline once the app is loaded. Password-protected PDFs must be unlocked first.',
+    },
+  ],
 };
 
 /** FAQs for a tool slug; empty array for unknown slugs (defensive). */

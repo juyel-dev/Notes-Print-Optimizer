@@ -57,6 +57,11 @@ const CompressToolView = dynamic(() => import('@/components/compress/CompressToo
   ssr: false,
 });
 
+const OrganizeToolView = dynamic(() => import('@/components/organize/OrganizeToolView').then(m => m.OrganizeToolView), {
+  loading: () => <CardSkeleton />,
+  ssr: false,
+});
+
 const WordCountToolView = dynamic(() => import('@/components/wordcount/WordCountToolView').then(m => m.WordCountToolView), {
   loading: () => <CardSkeleton />,
   ssr: false,
@@ -172,6 +177,14 @@ export const PlatformUIOrchestrator: React.FC<OrchestratorProps> = ({ state, act
     return (
       <div className="flex w-full max-w-full min-w-0 flex-col gap-4 pb-20 md:gap-6 md:pb-12">
         <CaseConvertToolView onBack={() => onToolModeChange?.(null)} />
+      </div>
+    );
+  }
+
+  if (toolMode === 'organize') {
+    return (
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-4 pb-20 md:gap-6 md:pb-12">
+        <OrganizeToolView onBack={() => onToolModeChange?.(null)} />
       </div>
     );
   }

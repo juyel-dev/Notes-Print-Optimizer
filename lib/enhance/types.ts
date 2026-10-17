@@ -22,7 +22,8 @@ export type ToolMode =
   | 'word-count'
   | 'case-convert'
   | 'nup'
-  | 'compress';
+  | 'compress'
+  | 'organize';
 
 export type EnhanceStep = 'upload' | 'arrange' | 'enhance';
 

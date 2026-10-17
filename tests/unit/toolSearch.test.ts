@@ -31,8 +31,9 @@ describe('searchTools', () => {
       'case-convert',
       'nup',
       'compress',
+      'organize',
     ]);
-    expect(ids(searchTools(TOOL_REGISTRY, '   '))).toHaveLength(13);
+    expect(ids(searchTools(TOOL_REGISTRY, '   '))).toHaveLength(14);
   });
 
   it('matches by title prefix first', () => {

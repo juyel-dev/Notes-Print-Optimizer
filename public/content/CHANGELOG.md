@@ -6,6 +6,10 @@ All notable changes to this project. Format: [Keep a Changelog](https://keepacha
 
 ### Added
 
+- **Organize Pages** (`organize-pages`) — a new tool built around a "light table": every page is a paper sheet you can select, **turn** (per page or in bulk), **move** (drag with a mouse, or Move earlier/later buttons on touch), **duplicate**, **delete** or **insert a blank page** after. **Find blank pages** renders every page, measures ink against the paper tone (dark pages are never "blank") and selects the empty ones. Full **undo/redo** (100 steps), Revert all, keyboard shortcuts (R, [ ], Delete, Ctrl+Z/Y/A), and **Save only these** to export just the selection. Export rebuilds the PDF with pdf-lib (text, links and images stay intact; rotation is added on top of each page's own /Rotate; duplicates are independent). Handles up to 500 pages. Service worker `v39`.
+
+### Added
+
 - **Compress PDF** (`compress-pdf`) — a new tool with its own look (marigold "press" hero, live size dial, strength ladder, drag-to-compare). Pick a target size (500 KB–25 MB or custom) or a strength; the tool encodes real samples of your file to **predict the size at all five levels**, then chooses the gentlest level that fits (re-trying one step tighter if the real output misses). **Keep text** mode recompresses embedded JPEG/Flate images in place (8-bit RGB/gray, PNG predictors undone; masks, palettes, CMYK and 16-bit are skipped, never risked) so text and vectors stay untouched; **Flatten pages** renders 150-DPI masters once and re-encodes them for the smallest possible file. The recommended mode is chosen by looking inside the PDF; a result that would be larger than the original is never returned. Password-protected/damaged files get a clear per-file message. Service worker `v38`.
 
 ### Fixed
