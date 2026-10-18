@@ -268,7 +268,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     slug: 'organize-pages',
     title: 'Organize Pages',
     description: 'Turn sideways scans, delete blank pages, reorder, duplicate and extract — see every page, undo anything.',
-    seoTitle: 'Organize PDF Pages — Rotate, Delete, Reorder & Find Blank Pages',
+    seoTitle: 'Organize Pages — Rotate, Delete, Reorder & Find Blank PDF Pages',
     seoDescription:
       'Organize PDF pages on-device: rotate sideways scans, delete or duplicate pages, drag to reorder, insert blank pages, auto-find blank pages, undo/redo, and export all or only the selected pages. No upload.',
     aliases: ['organize', 'rotate', 'reorder', 'rearrange', 'delete pages', 'remove pages', 'extract pages', 'blank pages', 'sort pages', 'page order'],
