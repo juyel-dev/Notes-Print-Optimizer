@@ -4,11 +4,11 @@
 
 ## 1. What you are building
 
-**Print Optimizer — 13-tool, 100% offline, static-export PWA.** No server. All PDFs/images/QR/passwords processed on-device (WASM + Workers + pdf-lib + pdfjs). Deploy: static `out/` → Vercel.
+**Print Optimizer — 14-tool, 100% offline, static-export PWA.** No server. All PDFs/images/QR/passwords processed on-device (WASM + Workers + pdf-lib + pdfjs). Deploy: static `out/` → Vercel.
 
 ## 2. The one rule that matters
 
-**`lib/tools/registry.ts:TOOL_REGISTRY` is the single source of truth.** 13 tools, each with stable `slug` → `/tools/<slug>/`. Never hardcode a tool elsewhere.
+**`lib/tools/registry.ts:TOOL_REGISTRY` is the single source of truth.** 14 tools, each with stable `slug` → `/tools/<slug>/`. Never hardcode a tool elsewhere.
 
 Adding a tool = 7 atomic steps (see `README.md §5`):
 
@@ -17,7 +17,7 @@ Adding a tool = 7 atomic steps (see `README.md §5`):
 3. `generateStaticParams` auto-works — no page needed
 4. `CATEGORY_ORDER` + `ToolsBox.tsx:labelMap` if new category
 5. OG card `juyel-dev/image:print-optimizer/og/<slug>.png`
-6. `public/sw.js:VERSION++` (`v38` at HEAD)
+6. `public/sw.js:VERSION++` (`v39` at HEAD)
 7. Human docs: `public/content/*` + `CHANGELOG.md`
 
 Renaming a `slug` is a **breaking URL change**.
@@ -26,7 +26,7 @@ Renaming a `slug` is a **breaking URL change**.
 
 `ToolCategory = 'pdf'|'image'|'security'|'text'|'utility'` ordered `pdf > image > security > utility > text`.
 
-- `pdf` (6): dark-print, enhance, merge, split, n-up, compress
+- `pdf` (7): dark-print, enhance, merge, split, n-up, compress, organize
 - `image` (2): pdf-to-images, image-to-pdf
 - `security` (2): protect, password-gen
 - `utility` (1): qr-gen
@@ -51,7 +51,7 @@ Suite: Vitest 434 tests / 41 files + Playwright 22. Never hardcode `241` — old
 
 - **Theme:** Cobalt Ink + Marigold `#5B7FFF/#3654D9/#F2A93C` + glass. Rebrand 2026-09 — Emerald/Mint/Teal/Cyan retired (see CHANGELOG). Do NOT reintroduce violet/indigo (`#243BFF`/`#4338ca`) or the old teal/cyan (`#14B8A6`/`#06B6D4`) as primary/accent — those are now retired brand hexes too.
 - **Icons:** `public/icon-master.png` → `scripts/apply-icon-art.mjs` → `icon-*-v2.png` — never reuse name.
-- **SW:** `public/sw.js v38` — precaches `/, /offline/, 13×/tools/<slug>/, icons, vendor/pdf*.mjs, wasm/*`. Bump `VERSION` on precache change.
+- **SW:** `public/sw.js v39` — precaches `/, /offline/, 14×/tools/<slug>/, icons, vendor/pdf*.mjs, wasm/*`. Bump `VERSION` on precache change.
 
 ## 6. What NOT to do
 

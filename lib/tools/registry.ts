@@ -5,7 +5,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { CaseSensitive, Combine, Contrast, FileText, ImagePlus, Images, KeyRound, LayoutGrid, QrCode, Scissors, ShieldCheck, Shrink, Type } from 'lucide-react';
+import { CaseSensitive, Combine, Contrast, FileText, ImagePlus, Images, KeyRound, LayoutGrid, LayoutPanelTop, QrCode, Scissors, ShieldCheck, Shrink, Type } from 'lucide-react';
 import type { ToolMode } from '@/lib/enhance/types';
 
 /** Coarse groups used by the shortcut chips (rendered once >1 exists). */
@@ -262,6 +262,23 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     chips: ['Hit a target size', 'Keeps text', 'Before / after'],
     cta: 'Compress',
     addedAt: '2026-10-15',
+  },
+  {
+    id: 'organize',
+    slug: 'organize-pages',
+    title: 'Organize Pages',
+    description: 'Turn sideways scans, delete blank pages, reorder, duplicate and extract — see every page, undo anything.',
+    seoTitle: 'Organize Pages — Rotate, Delete, Reorder & Find Blank PDF Pages',
+    seoDescription:
+      'Organize PDF pages on-device: rotate sideways scans, delete or duplicate pages, drag to reorder, insert blank pages, auto-find blank pages, undo/redo, and export all or only the selected pages. No upload.',
+    aliases: ['organize', 'rotate', 'reorder', 'rearrange', 'delete pages', 'remove pages', 'extract pages', 'blank pages', 'sort pages', 'page order'],
+    keywords: ['rotate', 'reorder', 'rearrange', 'delete', 'remove', 'extract', 'blank', 'duplicate', 'pages', 'sideways', 'scan'],
+    category: 'pdf',
+    icon: LayoutPanelTop,
+    gradient: 'linear-gradient(140deg, #8FA6FF 0%, #5B7FFF 45%, #28409E 100%)',
+    chips: ['Drag to reorder', 'Find blank pages', 'Undo / redo'],
+    cta: 'Organize',
+    addedAt: '2026-10-16',
   },
 ];
 

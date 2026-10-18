@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Organize Pages** (`organize-pages`) — a new tool built around a "light table": every page is a paper sheet you can select, **turn** (per page or in bulk), **move** (drag with a mouse, or Move earlier/later buttons on touch), **duplicate**, **delete** or **insert a blank page** after. **Find blank pages** renders every page, measures ink against the paper tone (dark pages are never "blank") and selects the empty ones. Full **undo/redo** (100 steps), Revert all, keyboard shortcuts (R, [ ], Delete, Ctrl+Z/Y/A), and **Save only these** to export just the selection. Export rebuilds the PDF with pdf-lib (text, links and images stay intact; rotation is added on top of each page's own /Rotate; duplicates are independent). Handles up to 500 pages. Service worker `v39`.
+
 ### Changed
 
 - **Compress PDF — visual QA polish** (checked in a real headless Chromium on phone and desktop, light and dark). Cleaner target chips (removed the ticket notches), simpler feature tiles, a single-line **Compress · ≈ size** button with an icon-only "other file", a smaller dial on phones, a two-column result on desktop (receipt and download left, **compare** right instead of a full-width page), and the compare view now uses the page's real aspect ratio.

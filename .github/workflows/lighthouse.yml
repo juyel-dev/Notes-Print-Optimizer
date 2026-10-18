@@ -73,6 +73,7 @@ jobs:
           - "tools/case-converter/"
           - "tools/n-up/"
           - "tools/compress-pdf/"
+          - "tools/organize-pages/"
     steps:
       - uses: actions/checkout@v7
 
