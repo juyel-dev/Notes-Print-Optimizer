@@ -66,6 +66,11 @@ class MemoryManager {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
+    // A canvas keeps the attributes of the FIRST getContext('2d') call. Nearly
+    // every consumer reads pixels back (getImageData), so create the context
+    // CPU-backed up front; otherwise a pooled canvas whose first context was
+    // created without the flag triggers the browser's readback warning.
+    canvas.getContext('2d', { willReadFrequently: true });
     return canvas;
   }
 
@@ -74,7 +79,7 @@ class MemoryManager {
     const memSize = canvas.width * canvas.height * 4;
     if (memSize > 0 && this.canvasPool.length < this.canvasPoolMax && this.canvasPoolBytes + memSize <= this.canvasPoolMaxBytes) {
       try {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       } catch { /* noop */ }
       this.canvasPool.push(canvas);
