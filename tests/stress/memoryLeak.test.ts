@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MemoryGuard, memoryGuard } from '../../lib/pipeline/MemoryGuard';
+import { MemoryGuard } from '../../lib/pipeline/MemoryGuard';
 
 describe('Phase 8.5: Memory leak — 10x process-reset cycle', () => {
   it('MemoryGuard.reset clears high-water mark', () => {

@@ -229,6 +229,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
     handleTogglePageNumbers, handleUpdateOuterMargins, handleUpdateInnerMargin,
     handleDownloadFinalPrintPdf, handleProceedToPhase4, handleSendFeedback,
     handleCancelProcessing, compilePhase3PrintLayout,
+    handleToggleKeepOriginalPage, handleSetManualRegions, handleClearManualRegions,
     handleSessionReset,
   ]);
 

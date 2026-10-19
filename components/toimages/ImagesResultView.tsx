@@ -49,6 +49,7 @@ export const ImagesResultView: React.FC<{ workflow: ImagesWorkflow }> = ({ workf
                 title={`Download ${page.name}`}
                 className="group relative h-16 w-12 shrink-0 overflow-hidden rounded-lg border border-elevated/80 transition-all hover:border-primary hover:ring-2 hover:ring-primary/30"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element -- data-URL thumbnail generated on-device; next/image cannot optimize it */}
                 <img src={page.thumbDataUrl} alt={`Page ${page.name}`} className="h-full w-full object-cover" loading="lazy" />
                 <span className="absolute inset-x-0 bottom-0 bg-bg/75 py-0.5 text-center text-[9px] font-bold text-ink opacity-0 transition-opacity group-hover:opacity-100">
                   ⬇ save

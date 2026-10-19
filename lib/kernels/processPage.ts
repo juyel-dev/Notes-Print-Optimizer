@@ -12,7 +12,7 @@
  *  - Module-level pooled BFS buffers eliminate per-call heap allocation
  */
 import { getLuminance } from './luminance';
-import { rgbToHsv, fastMinChannel } from './hsv';
+import { fastMinChannel } from './hsv';
 import { isDarkSourceProfile } from './darkSource';
 import { applyMaskDilation, setDilationHook } from './maskOps';
 import { applyUnsharpMask, applyUnsharpMaskBW, setUnsharpHook, setUnsharpBwHook } from './sharpen';

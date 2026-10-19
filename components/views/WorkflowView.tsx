@@ -94,7 +94,6 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
     handleToggleExcludePage: onToggleExcludePage,
     handleToggleKeepOriginalPage: onToggleKeepOriginalPage,
     handleSetManualRegions: onSetManualRegions,
-    handleClearManualRegions: onClearManualRegions,
     handleProceedToPhase3: onProceedToPhase3,
     handleReprocess: onReprocess,
     handlePreviewReprocess: onPreviewReprocess,

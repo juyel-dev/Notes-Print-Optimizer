@@ -19,6 +19,26 @@ const IDLE_RECLAIM_MS = 60_000;
 
 export type WorkerFactory = (type: WorkerType) => Worker | null;
 
+/** Result shape of a PROCESS_PIXEL task. */
+type PixelResult = {
+    pageIndex: number;
+    buffer: ArrayBuffer;
+    width: number;
+    height: number;
+    inkCoverageBeforePct: number;
+    inkCoverageAfterPct: number;
+    whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
+    preservationGuardTriggered?: boolean;
+  };
+
+/** Result shape of a COMPOSE_SHEET task. */
+type ComposeResult = {
+    sheetIndex: number;
+    jpegBuffer: ArrayBuffer;
+    width: number;
+    height: number;
+  };
+
 export class WorkerPool {
   private workers: WorkerInfo[] = [];
   private taskQueue: TaskEntry[] = [];
@@ -263,27 +283,27 @@ export class WorkerPool {
     }, HEALTH_CHECK_INTERVAL_MS);
   }
 
-  private submitTask<T extends PixelTask | ComposeTask>(
+  private submitTask<T extends PixelTask | ComposeTask, R = unknown>(
     task: Omit<T, 'taskId'>,
     type: 'PROCESS_PIXEL' | 'COMPOSE_SHEET',
     timeout = DEFAULT_TIMEOUT_MS
-  ): Promise<any> {
-    return new Promise((resolve, reject) => {
+  ): Promise<R> {
+    return new Promise<R>((resolve, reject) => {
       const entry = {
         taskId: generateTaskId(),
         type,
-        resolve,
+        resolve: resolve as (value: unknown) => void,
         reject,
         startTime: Date.now(),
         timeout,
         retriesLeft: MAX_RETRIES,
         ...task,
-      } as TaskEntry & T;
+      } as unknown as TaskEntry & T;
 
       const rawReject = reject;
       const rawResolve = resolve;
       entry.reject = (reason: Error) => { this.clearTaskTimeout(entry); rawReject(reason); };
-      entry.resolve = (val: any) => { this.clearTaskTimeout(entry); rawResolve(val); };
+      entry.resolve = (val: unknown) => { this.clearTaskTimeout(entry); rawResolve(val as R); };
 
       this.scheduleTimeout(entry);
       this.taskQueue.push(entry);
@@ -292,17 +312,8 @@ export class WorkerPool {
     });
   }
 
-  submitPixelTask(task: Omit<PixelTask, 'taskId'>, timeout = DEFAULT_TIMEOUT_MS): Promise<{
-    pageIndex: number;
-    buffer: ArrayBuffer;
-    width: number;
-    height: number;
-    inkCoverageBeforePct: number;
-    inkCoverageAfterPct: number;
-    whiteBoxRegions?: Array<{ x: number; y: number; width: number; height: number }>;
-    preservationGuardTriggered?: boolean;
-  }> {
-    return this.submitTask<PixelTask>(task, 'PROCESS_PIXEL', timeout);
+  submitPixelTask(task: Omit<PixelTask, 'taskId'>, timeout = DEFAULT_TIMEOUT_MS): Promise<PixelResult> {
+    return this.submitTask<PixelTask, PixelResult>(task, 'PROCESS_PIXEL', timeout);
   }
 
   /**
@@ -349,13 +360,8 @@ export class WorkerPool {
     }
   }
 
-  submitComposeTask(task: Omit<ComposeTask, 'taskId'>, timeout = DEFAULT_TIMEOUT_MS): Promise<{
-    sheetIndex: number;
-    jpegBuffer: ArrayBuffer;
-    width: number;
-    height: number;
-  }> {
-    return this.submitTask<ComposeTask>(task, 'COMPOSE_SHEET', timeout);
+  submitComposeTask(task: Omit<ComposeTask, 'taskId'>, timeout = DEFAULT_TIMEOUT_MS): Promise<ComposeResult> {
+    return this.submitTask<ComposeTask, ComposeResult>(task, 'COMPOSE_SHEET', timeout);
   }
 
   getStats() {

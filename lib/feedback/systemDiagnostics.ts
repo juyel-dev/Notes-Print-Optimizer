@@ -130,7 +130,7 @@ export function checkCapabilities() {
     const canvas = document.createElement('canvas');
     canvasSupport = !!(canvas.getContext && canvas.getContext('2d'));
     webglSupport = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-  } catch (e) {
+  } catch {
     canvasSupport = false;
     webglSupport = false;
   }

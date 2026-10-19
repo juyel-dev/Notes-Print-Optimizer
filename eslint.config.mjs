@@ -18,6 +18,11 @@ const eslintConfig = [
     },
   },
   {
+    // Test doubles and worker/canvas mocks legitimately need loose types.
+    files: ["tests/**/*.ts", "tests/**/*.tsx"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
+  {
     ignores: ["node_modules/", ".next/", "out/", "wasm/target/", "wasm/pkg/", "next-env.d.ts", "public/vendor/", "public/wasm/", "scripts/"],
   },
 ];

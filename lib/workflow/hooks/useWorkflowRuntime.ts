@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useWorkflow } from '../useWorkflow';
 import { memoryManager } from '../../optimizer/memoryManager';
 import { pwOptimizerStorage } from '../../optimizer/storage';
@@ -13,7 +14,7 @@ export type WithProcessingFn = <T>(
   stage: ProcessingProgress | null,
 ) => Promise<T | undefined>;
 
-type PreviewPdfDoc = { bytes: Uint8Array; doc: unknown } | null;
+type PreviewPdfDoc = { bytes: Uint8Array; doc: PDFDocumentProxy } | null;
 
 /**
  * Shared runtime for the whole page-handler domain: abort plumbing,
