@@ -27,7 +27,7 @@ The app runs **entirely in the browser**. Zero server PDF processing. Static exp
 | 4 | SW caches **static assets only** — never user data | `public/sw.js` precaches `TOOL_ROUTES` + icons + vendor + wasm; user PDFs stay in memory/IndexedDB ephemeral | `public/sw.js:PRECACHE_URLS` |
 | 5 | Feedback relay is hardened | Endpoint whitelist `sendMessage`/`sendDocument` only, size caps 25 MB req / 15 MB attachment, rolling-window 15 req/60s via `CacheService`, server-controlled `chat_id` (client value stripped) | `lib/feedback/gasScriptTemplate.ts` + `GOOGLE_APPS_SCRIPT.md` |
 | 6 | CSP is minimal | `app/layout.tsx:meta http-equiv CSP` — `default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://script.google.com; worker-src 'self' blob:` — no other connect target allowed | `app/layout.tsx` |
-| 7 | OG images are **static CDN**, not app data | `lib/site.ts:OG_CDN_BASE = https://cdn.jsdelivr.net/gh/juyel-dev/image@main` — social cards never receive PDFs | `lib/site.ts`, `app/layout.tsx:ogImageUrl` |
+| 7 | OG images are **static files in this repo**, not app data | `public/og/*.png` served from the app's own origin via `lib/site.ts:ogImageUrl` — social cards never receive PDFs, no third-party CDN | `lib/site.ts`, `app/layout.tsx:ogImageUrl` |
 | 8 | Crypto is browser-native | `password-gen` uses `crypto.getRandomValues` (not `Math.random`); `protect` uses pdf-lib AES-256; QR camera (`qr-gen`) processes frames locally, never uploads | `components/passwordgen/`, `lib/protect/`, `components/qrgen/` |
 
 ## 4. Per-tool data flow (for auditors & agents)

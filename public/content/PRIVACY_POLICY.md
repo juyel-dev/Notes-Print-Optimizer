@@ -41,7 +41,7 @@ Rate limit, size caps (25 MB request / 15 MB attachment), and `chat_id` override
 ## 5. External links & CDN
 
 - The menu may link to external services (GitHub `juyel-dev/Notes-Print-Optimizer`, Telegram `t.me/PrintOptimizer_chat`) — those have their own privacy policies.
-- Social share cards (`og:image`) are static PNGs served by `cdn.jsdelivr.net/gh/juyel-dev/image@main/print-optimizer/og/*` — they are **not** your files, just pre-made card images (1200×630). No PDF is ever sent there.
+- Social share cards (`og:image`) are static PNGs served from this site's own `/og/` folder — they are **not** your files, just pre-made card images (1200×630). No PDF is ever sent there.
 
 ## 6. Children's privacy
 

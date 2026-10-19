@@ -10,6 +10,7 @@
 
 ### Changed
 
+- **Share cards (OG images) now live in this repo.** The 10 cards moved from the separate `juyel-dev/image` repo / jsDelivr CDN into `public/og/` and are served from the app's own origin (including new `compress-pdf` and `organize-pages` cards). `ogImageUrl()` falls back to `home.png` for tools without a card; `npm run check:og` is now an offline check of the folder; `NEXT_PUBLIC_OG_CDN_BASE` and `NEXT_PUBLIC_OG_PROJECT_SLUG` are removed. No external image repo is needed any more.
 - **Compress PDF — visual QA polish** (checked in a real headless Chromium on phone and desktop, light and dark). Cleaner target chips (removed the ticket notches), simpler feature tiles, a single-line **Compress · ≈ size** button with an icon-only "other file", a smaller dial on phones, a two-column result on desktop (receipt and download left, **compare** right instead of a full-width page), and the compare view now uses the page's real aspect ratio.
 
 ### Fixed

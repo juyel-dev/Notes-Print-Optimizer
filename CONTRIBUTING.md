@@ -74,7 +74,7 @@ Node 20+ (`.nvmrc`), npm 10+. Rust only for `npm run build:wasm`.
 - [ ] `TOOL_REGISTRY` entry with unique `seoTitle`/`seoDescription`, alias, keywords, gradient `emerald/teal` family
 - [ ] `public/sw.js:TOOL_ROUTES` + `VERSION` bump (`v37` → `v38`…)
 - [ ] `CATEGORY_ORDER` / `ToolsBox.tsx:labelMap` if new category
-- [ ] OG card `print-optimizer/og/<slug>.png` 1200×630 in `juyel-dev/image`
+- [ ] OG card `public/og/<slug>.png` 1200×630 + entry in `OG_CARD_NAMES` (`lib/site.ts`) — optional, falls back to `home.png`
 - [ ] `tests/unit/siteContract.test.ts` passes (frozen names)
 - [ ] Human docs: `public/content/ABOUT.md`, `FAQ.md`, `USER_GUIDE.md`, `WHATS_NEW.md`, root `CHANGELOG.md`
 

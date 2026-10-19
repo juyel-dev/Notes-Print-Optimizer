@@ -16,7 +16,7 @@ Adding a tool = 7 atomic steps (see `README.md §5`):
 2. `public/sw.js:TOOL_ROUTES` entry
 3. `generateStaticParams` auto-works — no page needed
 4. `CATEGORY_ORDER` + `ToolsBox.tsx:labelMap` if new category
-5. OG card `juyel-dev/image:print-optimizer/og/<slug>.png`
+5. OG card `public/og/<slug>.png` (1200×630) + `OG_CARD_NAMES` in `lib/site.ts` — same repo, no external image repo
 6. `public/sw.js:VERSION++` (`v39` at HEAD)
 7. Human docs: `public/content/*` + `CHANGELOG.md`
 
