@@ -74,7 +74,8 @@ function createCanvas2D(w: number, h: number): Canvas2D | null {
   if (typeof OffscreenCanvas !== 'undefined') {
     try {
       const c = new OffscreenCanvas(w, h);
-      const ctx = c.getContext('2d');
+      // Pixels are read back every page (getImageData) — keep the canvas CPU-backed.
+      const ctx = c.getContext('2d', { willReadFrequently: true });
       if (ctx) return { canvas: c, ctx, isOffscreen: true };
     } catch { /* fall through */ }
   }

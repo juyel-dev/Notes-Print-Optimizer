@@ -227,8 +227,8 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
           <h1 className="truncate text-[15px] font-bold text-ink">N-up PDF</h1>
           <p className="truncate text-[11px] text-ink-faint">
             {step === 'upload' && 'Upload → smart order → layout'}
-            {step === 'layout' && `${totalPages} pages → ${totalSheets} sheets · ${perSheet}/sheet`}
-            {step === 'done' && `${result?.sheets} sheets in ${((result?.ms ?? 0) / 1000).toFixed(1)}s`}
+            {step === 'layout' && `${totalPages} ${totalPages === 1 ? 'page' : 'pages'} → ${totalSheets} ${totalSheets === 1 ? 'sheet' : 'sheets'} · ${perSheet}/sheet`}
+            {step === 'done' && `${result?.sheets} ${result?.sheets === 1 ? 'sheet' : 'sheets'} in ${((result?.ms ?? 0) / 1000).toFixed(1)}s`}
           </p>
         </div>
         <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-bold tabular-nums text-accent-soft">
@@ -437,7 +437,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
                   <li className="flex justify-between"><span>Format</span><span className="font-bold text-ink">{perSheet} per sheet · {grid.cols}×{grid.rows}</span></li>
                   <li className="flex justify-between"><span>Cell size</span><span className="font-bold tabular-nums text-ink">{Math.round(planSheet(opts).cellW / 2.8346)}×{Math.round(planSheet(opts).cellH / 2.8346)} mm</span></li>
                   <li className="flex justify-between"><span>Margins</span><span className="font-bold tabular-nums text-ink">{outerMm} mm outer · {innerMm} mm gap</span></li>
-                  <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} pages → {totalSheets} sheets</span></li>
+                  <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} {totalPages === 1 ? 'page' : 'pages'} → {totalSheets} {totalSheets === 1 ? 'sheet' : 'sheets'}</span></li>
                 </>
               )}
             </ul>
@@ -457,7 +457,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-ink">{result.sheets} {sameAsOriginal ? `original page${result.sheets === 1 ? '' : 's'} ready · no layout` : `sheet${result.sheets === 1 ? '' : 's'} ready · ${perSheet}-up · ${paper} ${orientation.toLowerCase()}`}</p>
-            <p className="text-xs tabular-nums text-ink-muted">{totalPages} pages → {result.sheets} sheets · {fmtBytes(result.blob.size)} · built in {(result.ms / 1000).toFixed(1)}s</p>
+            <p className="text-xs tabular-nums text-ink-muted">{totalPages} {totalPages === 1 ? 'page' : 'pages'} → {result.sheets} {result.sheets === 1 ? 'sheet' : 'sheets'} · {fmtBytes(result.blob.size)} · built in {(result.ms / 1000).toFixed(1)}s</p>
           </div>
           <div className="mt-4 flex gap-2">
             <button type="button" onClick={download}
