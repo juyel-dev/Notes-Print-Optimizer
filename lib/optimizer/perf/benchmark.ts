@@ -11,7 +11,7 @@ export class BenchmarkHarness {
   private results: BenchmarkResult[] = [];
   private startTime: number = 0;
 
-  public startStage(stage: string): void {
+  public startStage(_stage: string): void {
     this.startTime = performance.now();
   }
 
@@ -27,8 +27,11 @@ export class BenchmarkHarness {
     }
 
     // Try to capture memory if available (Chrome/Node.js with --expose-gc)
-    if (typeof performance !== 'undefined' && (performance as any).memory) {
-      result.memoryBytes = (performance as any).memory.usedJSHeapSize;
+    const heap = typeof performance !== 'undefined'
+      ? (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
+      : undefined;
+    if (heap) {
+      result.memoryBytes = heap.usedJSHeapSize;
     }
 
     this.results.push(result);

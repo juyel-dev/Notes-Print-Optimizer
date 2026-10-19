@@ -63,11 +63,14 @@ function adaptiveScale(): number {
   return 1.8 * pressureMul;
 }
 
-function createCanvas2D(w: number, h: number): {
+type Ctx2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
+type Canvas2D = {
   canvas: OffscreenCanvas | HTMLCanvasElement;
-  ctx: any;
+  ctx: Ctx2D;
   isOffscreen: boolean;
-} | null {
+};
+
+function createCanvas2D(w: number, h: number): Canvas2D | null {
   if (typeof OffscreenCanvas !== 'undefined') {
     try {
       const c = new OffscreenCanvas(w, h);
@@ -141,8 +144,8 @@ export class ProcessingEngineV2 implements IProcessingEngine {
   private activeThumbnailUrls: Set<string> = new Set();
   private disposed = false;
   private abortController: AbortController | null = null;
-  private thumbSrcCanvas: { canvas: OffscreenCanvas | HTMLCanvasElement; ctx: any; isOffscreen: boolean } | null = null;
-  private thumbTargetCanvas: { canvas: OffscreenCanvas | HTMLCanvasElement; ctx: any; isOffscreen: boolean } | null = null;
+  private thumbSrcCanvas: Canvas2D | null = null;
+  private thumbTargetCanvas: Canvas2D | null = null;
 
   constructor(_layoutConfig?: LayoutConfig) {
     /* No external pipeline scaffold — V2 owns its sequential loop. */
@@ -556,7 +559,7 @@ export class ProcessingEngineV2 implements IProcessingEngine {
     if (!this.thumbSrcCanvas || !this.thumbTargetCanvas) return '';
 
     this.thumbSrcCanvas.ctx.putImageData(imageData, 0, 0);
-    this.thumbTargetCanvas.ctx.drawImage(this.thumbSrcCanvas.canvas as any, 0, 0, tw, th);
+    this.thumbTargetCanvas.ctx.drawImage(this.thumbSrcCanvas.canvas as CanvasImageSource, 0, 0, tw, th);
 
     const blob = await canvasToBlob(this.thumbTargetCanvas.canvas, this.thumbTargetCanvas.isOffscreen, 'image/jpeg', 0.55);
     if (!blob) return '';

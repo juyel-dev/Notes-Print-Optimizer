@@ -55,7 +55,7 @@ export async function sendFeedbackToGas(
 
     // 2. Fallback Attempt: mode 'no-cors' if primary returned opaque or error
     return await fallbackNoCorsPost(endpointUrl, payloadString);
-  } catch (err: unknown) {
+  } catch {
     // Fallback if CORS or network error occurred
     return await fallbackNoCorsPost(endpointUrl, payloadString);
   }

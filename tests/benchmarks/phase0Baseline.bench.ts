@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeImageData } from '../../lib/optimizer/analysis';
-import { processPage, calculateInkCoverage, createImageDataFromBuffer } from '../../lib/kernels';
+import { processPage, calculateInkCoverage } from '../../lib/kernels';
 import { ParameterGenerator } from '../../lib/optimizer/parameterGenerator';
 
 /**

@@ -37,7 +37,7 @@ export const nodeImageCodec: ImageCodec = {
       const ctx = c.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, s.width, s.height);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       ctx.drawImage(drawable as any, 0, 0, s.width, s.height);
       return { bytes: new Uint8Array(c.toBuffer('image/jpeg', Math.round(v.quality * 100))), width: s.width, height: s.height };
     });

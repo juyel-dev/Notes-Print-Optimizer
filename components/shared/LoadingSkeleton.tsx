@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export const PhaseSkeleton: React.FC<{ phaseName: string }> = ({ phaseName }) => (
+export const PhaseSkeleton: React.FC<{ phaseName?: string }> = () => (
   <div className="flex flex-col gap-4 animate-pulse">
     <div className="h-6 w-48 rounded-lg bg-surface-2" />
     <div className="h-32 rounded-2xl border border-surface-2 bg-surface/60 p-5">

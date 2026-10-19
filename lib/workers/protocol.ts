@@ -72,7 +72,7 @@ export type WorkerResponse =
   | { type: 'BUFFER_STATS'; bufferedCount: number; maxBuffered: number }
   | { type: 'ERROR'; taskId: string; error: string };
 
-export interface TaskEntry<T = any> {
+export interface TaskEntry<T = unknown> {
   taskId: string;
   type: WorkerRequest['type'];
   resolve: (value: T) => void;

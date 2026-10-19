@@ -43,7 +43,6 @@ export const Header: React.FC<HeaderProps> = ({
   currentPhase,
   onReset,
   onNavigatePhase,
-  isProcessing = false,
   showStepper = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

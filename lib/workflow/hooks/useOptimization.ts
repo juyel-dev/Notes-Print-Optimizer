@@ -5,6 +5,7 @@ import { OptimizationService } from '../../services/OptimizationService';
 import { pwOptimizerStorage } from '../../optimizer/storage';
 import { memoryManager } from '../../optimizer/memoryManager';
 import { getPdfjsLib } from '../../optimizer/pdfjsLoader';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { ParameterGenerator } from '../../optimizer/parameterGenerator';
 import type {
   PageProfile,
@@ -29,7 +30,7 @@ interface OptimizationParams {
   };
   abortRef: React.MutableRefObject<AbortController | null>;
   previewBlobUrlRef: React.MutableRefObject<string | null>;
-  previewPdfDocRef: React.MutableRefObject<{ bytes: Uint8Array; doc: any } | null>;
+  previewPdfDocRef: React.MutableRefObject<{ bytes: Uint8Array; doc: PDFDocumentProxy } | null>;
   withProcessing: WithProcessingFn;
   setProgressiveThumbnails: React.Dispatch<React.SetStateAction<Map<number, string>>>;
   clearProgressiveThumbnails: () => void;

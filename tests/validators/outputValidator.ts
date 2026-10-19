@@ -20,7 +20,6 @@ export function validateOutput(
   expectedInkCoveragePct: number,
   tolerancePct: number = 5.0
 ): ValidationResult {
-  const originalCoverage = calculateInkCoverage(originalImageData.data);
   const processedCoverage = calculateInkCoverage(processedImageData.data);
   
   const inkCoverageDiff = Math.abs(processedCoverage - expectedInkCoveragePct);
