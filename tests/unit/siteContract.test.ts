@@ -13,8 +13,11 @@ import {
   slugForMode,
   toolHref,
 } from '@/lib/tools/registry';
-import { ogImageUrl } from '@/lib/site';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { OG_CARD_NAMES, SITE_URL, ogImageUrl } from '@/lib/site';
 
+const OG_FOLDER = join(process.cwd(), 'public', 'og');
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 describe('public route contract', () => {
@@ -73,27 +76,26 @@ describe('public route contract', () => {
     }
   });
 
-  it('share-card URLs follow the image-repo naming contract', () => {
-    // Structural, env-independent: <base>/<project>/og/<name>.png where name
-    // is the route slug (landing: home.png). The base itself is env-swappable
-    // (NEXT_PUBLIC_OG_CDN_BASE) — only the path shape is frozen. The PNGs live
-    // in github.com/juyel-dev/image (see its README rules).
+  it('share-card URLs are served from this repo under /og/', () => {
+    // Cards live in public/og/<slug>.png (1200x630) and ship with the app —
+    // no external image repo or CDN. Tools without their own card fall back
+    // to home.png so every page still has a valid share image.
     for (const tool of TOOL_REGISTRY) {
       const url = ogImageUrl(`${tool.slug}.png`);
-      expect(url.startsWith('https://')).toBe(true);
-      expect(url).toContain('/print-optimizer/og/');
-      expect(url.endsWith(`/og/${tool.slug}.png`)).toBe(true);
+      expect(url.startsWith(SITE_URL)).toBe(true);
+      expect(url).toContain('/og/');
+      expect(url).not.toContain('jsdelivr');
       expect(url).not.toMatch(/[^:]\/\//); // no double slashes
+      const file = url.slice(url.lastIndexOf('/') + 1);
+      expect(existsSync(join(OG_FOLDER, file))).toBe(true);
     }
     expect(ogImageUrl('home.png').endsWith('/og/home.png')).toBe(true);
+    expect(ogImageUrl('merge-pdf.png').endsWith('/og/merge-pdf.png')).toBe(true);
+    expect(ogImageUrl('no-such-tool.png').endsWith('/og/home.png')).toBe(true);
   });
 
-  it('default share-card provider is the jsDelivr image repo', () => {
-    // Snapshot of the zero-config default; overriding NEXT_PUBLIC_OG_CDN_BASE
-    // in the hosting env intentionally changes this without breaking the
-    // structural test above.
-    expect(ogImageUrl('merge-pdf.png')).toBe(
-      'https://cdn.jsdelivr.net/gh/juyel-dev/image@main/print-optimizer/og/merge-pdf.png',
-    );
+  it('OG_CARD_NAMES matches the PNGs in public/og exactly', () => {
+    const onDisk = readdirSync(OG_FOLDER).filter((f) => f.endsWith('.png')).sort();
+    expect([...OG_CARD_NAMES].sort()).toEqual(onDisk);
   });
 });

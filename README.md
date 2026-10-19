@@ -67,7 +67,7 @@ Prereq: Node 20+ (`.nvmrc` → `20`), npm 10+. Rust toolchain only for `build:wa
 | WASM rebuild | `npm run build:wasm` | `wasm-pack build` → `public/wasm/` — binary is committed |
 | Gen fixtures | `npm run fixtures:gen` | `scripts/gen-pdf-fixtures.mjs` — fixed-seed LCG, deterministic |
 | Gen goldens | `PDF_UPDATE_GOLDENS=1 npm run test` | deliberate only — see §9 invariants |
-| Check OG cards | `npm run check:og` | validates `cdn.jsdelivr.net/gh/juyel-dev/image@main/print-optimizer/og/*.png` 1200×630 |
+| Check OG cards | `npm run check:og` | validates `public/og/*.png` (1200×630, PNG, size caps) and that `OG_CARD_NAMES` matches the folder |
 
 ## 4. Verification gate (run ALL before every push)
 
@@ -112,7 +112,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 2. Add slug to `public/sw.js:TOOL_ROUTES` (precache — 100% offline guarantee). Keep `getAllToolSlugs().length === TOOL_ROUTES.length` — enforced by `tests/unit/siteContract.test.ts`.
 3. Route already works via `app/(app)/tools/[slug]/page.tsx` (`generateStaticParams` from registry). No extra page needed.
 4. Add `CATEGORY_ORDER` placement if new category — and update `ToolsBox.tsx:labelMap`.
-5. Add OG card `print-optimizer/og/<slug>.png` (1200×630) to `juyel-dev/image` repo.
+5. Add OG card `public/og/<slug>.png` (1200×630) and list it in `OG_CARD_NAMES` (`lib/site.ts`). Optional — without a card the tool falls back to `home.png`.
 6. Bump `VERSION` in `public/sw.js:1` (`v39` at HEAD) so precache invalidates.
 7. Update human docs: `public/content/ABOUT.md`, `FAQ.md`, `USER_GUIDE.md`, `WHATS_NEW.md`, root `CHANGELOG.md`.
 
@@ -133,7 +133,7 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 
 ```
 app/                         App Router (hybrid mode 2026-09+, trailingSlash:true — see Runtime row)
-  layout.tsx                 fonts (Plus Jakarta Sans/Outfit/Geist Mono), metadataBase=SITE_URL, OG cdn, CSP, theme script
+  layout.tsx                 fonts (Plus Jakarta Sans/Outfit/Geist Mono), metadataBase=SITE_URL, OG cards, CSP, theme script
   (app)/page.tsx             LandingHero (cobalt ink) + ToolsBox (12 cards)
   (app)/tools/[slug]/page.tsx  prerendered per TOOL_REGISTRY (dynamicParams=false)
   manifest.ts / sitemap.ts / robots.ts / offline/
@@ -145,7 +145,7 @@ components/
 lib/
   tools/registry.ts          single source (see §5)
   tools/search.ts            alias+keyword fuzzy search
-  site.ts                    SITE_URL + OG_CDN_BASE (Vercel auto-detect, never hardcode domain)
+  site.ts                    SITE_URL + OG_CARD_NAMES (Vercel auto-detect, never hardcode domain)
   optimizer/                 engine V1/V2, processor, exporter, wasm/, perf/
   kernels/                   JS kernels (whiteBox, enhanceKernels, pixelKernels)
   workers/                   pool + protocol + pixel/compose workers
@@ -216,10 +216,8 @@ Copy `.env.example` → `.env.local`:
 | `NEXT_PUBLIC_BASE_PATH` | No | Base path — opt-in only, never inferred |
 | `NEXT_PUBLIC_SITE_URL` | No | Canonical URL — auto `VERCEL_PROJECT_PRODUCTION_URL` on Vercel; set explicitly for custom domain |
 | `NEXT_PUBLIC_GSC_VERIFICATION` | No | GSC token — renders `google-site-verification` meta only when set |
-| `NEXT_PUBLIC_OG_CDN_BASE` | No | OG card base — default `https://cdn.jsdelivr.net/gh/juyel-dev/image@main`. Push PNG there → purge `purge.jsdelivr.net` → rescrape FB debugger |
-| `NEXT_PUBLIC_OG_PROJECT_SLUG` | No | `print-optimizer` |
 
-**OG cards:** Static PNGs `print-optimizer/og/<slug>.png` + `home.png` (1200×630) in `juyel-dev/image` repo. Contract frozen by `tests/unit/siteContract.test.ts`. Verify: `npm run check:og`.
+**OG cards:** Static PNGs `public/og/<slug>.png` + `home.png` (1200×630), shipped with the app from its own origin — no external image repo or CDN. Tools without their own card fall back to `home.png`. Contract frozen by `tests/unit/siteContract.test.ts`. Verify: `npm run check:og`. After changing a card, rescrape it in the Facebook debugger.
 
 ## 11. Release flow (branch → production)
 
