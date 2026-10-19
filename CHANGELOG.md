@@ -16,6 +16,7 @@
 
 ### Fixed
 
+- **Real-browser audit (N-up, Dark Print).** The Dark Print result screen's only download button was labelled "Download Print PDF Again" and styled as secondary even though nothing is downloaded automatically; it is now the primary "Download Print PDF" action. "1 sheets"/"1 pages" now read "1 sheet"/"1 page" in N-up and the layout step. The processing engine's OffscreenCanvas is created with `willReadFrequently` (removes the per-page getImageData browser warning). New Playwright smoke specs cover the N-up and Dark Print flows end to end.
 - **Compress PDF: the bottom action bar was not pinned to the screen** — the tool's entrance animation used a transform, which turns the container into the containing block for `position: fixed`. It now uses the opacity-only entrance.
 - **Compress PDF + Enhance: a visible blue frame around the title after a step change** — the global unlayered `:focus-visible` rule beats Tailwind's layered `outline-none`, so the programmatic title focus now clears the outline inline.
 

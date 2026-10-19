@@ -524,9 +524,9 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                   />
                 </div>
 
-                <Button variant="secondary" size="md" onClick={handleDownloadLayoutResult}>
+                <Button variant="primary" size="lg" onClick={handleDownloadLayoutResult}>
                   <Download className="h-4 w-4" />
-                  Download Print PDF Again
+                  Download Print PDF
                 </Button>
               </div>
 

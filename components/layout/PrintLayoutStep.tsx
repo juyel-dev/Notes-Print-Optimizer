@@ -299,7 +299,7 @@ export const PrintLayoutStep: React.FC<PrintLayoutStepProps> = ({
                 <li className="flex justify-between"><span>Format</span><span className="font-bold text-ink">{perSheet} per sheet · {grid.cols}×{grid.rows}</span></li>
                 <li className="flex justify-between"><span>Cell size</span><span className="font-bold tabular-nums text-ink">{Math.round(planSheet(opts).cellW / 2.8346)}×{Math.round(planSheet(opts).cellH / 2.8346)} mm</span></li>
                 <li className="flex justify-between"><span>Margins</span><span className="font-bold tabular-nums text-ink">{outerMm} mm outer · {innerMm} mm gap</span></li>
-                <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} pages → {totalSheets} sheets</span></li>
+                <li className="flex justify-between"><span>Total</span><span className="font-bold tabular-nums text-ink">{totalPages} {totalPages === 1 ? 'page' : 'pages'} → {totalSheets} {totalSheets === 1 ? 'sheet' : 'sheets'}</span></li>
               </>
             )}
           </ul>
