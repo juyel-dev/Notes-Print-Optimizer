@@ -367,7 +367,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                   )}
                 </div>
                 <span className="text-[11px] text-ink-muted">
-                  Includes your generated output PDF to help debug layout or rendering glitches.
+                  Uploads your generated PDF to the developer to help debug layout glitches. It leaves your device and may contain your notes, so attach it only if you are comfortable sharing it.
                 </span>
               </div>
             </label>
@@ -386,7 +386,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                   <span>Include Diagnostic Information</span>
                 </div>
                 <span className="text-[11px] text-ink-muted">
-                  Sends non-sensitive OS, browser version, page counts, and layout settings for troubleshooting.
+                  Sends OS and browser version, screen size, page counts, layout settings and recent error messages. File names are anonymized.
                 </span>
               </div>
             </label>
