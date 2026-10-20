@@ -29,12 +29,34 @@ export async function blobToBase64(blob: Blob): Promise<string> {
  * still letting the author identify which submission they received.
  */
 function hashFilename(name: string): string {
+  // Idempotent: an already-anonymized name (doc_xxxxxx.pdf) is returned as is,
+  // so the Telegram message and the JSON payload show the same code.
+  if (/^doc_[0-9a-z]{1,6}\.pdf$/i.test(name)) return name;
   const base = name.replace(/\.(pdf|PDF)$/i, '');
   let hash = 5381;
   for (let i = 0; i < base.length; i++) {
     hash = ((hash << 5) + hash + base.charCodeAt(i)) | 0;
   }
   return `doc_${(hash >>> 0).toString(36).slice(0, 6)}${name.slice(-4)}`;
+}
+
+/**
+ * Returns a copy of the diagnostics that is safe to transmit: PDF file names
+ * are replaced by short anonymous codes. The whole diagnostics object is part
+ * of the JSON payload sent to the relay, not just the Telegram text, so the
+ * anonymization has to happen on the data, not only on the message.
+ */
+export function anonymizeDiagnostics<T extends { pdfStats: { originalFileNames: string[] } | null }>(
+  diagnostics: T
+): T {
+  if (!diagnostics.pdfStats) return diagnostics;
+  return {
+    ...diagnostics,
+    pdfStats: {
+      ...diagnostics.pdfStats,
+      originalFileNames: (diagnostics.pdfStats.originalFileNames || []).map(hashFilename),
+    },
+  };
 }
 
 /**
@@ -186,7 +208,7 @@ export async function buildFeedbackPayload(
   pdfBlob: Blob | null
 ): Promise<FeedbackPayload> {
   const diagnostics = input.includeDiagnostics
-    ? collectDiagnostics(currentPhase, pdfStats, processingSettings)
+    ? anonymizeDiagnostics(collectDiagnostics(currentPhase, pdfStats, processingSettings))
     : undefined;
 
   let base64PdfData: string | undefined = undefined;
