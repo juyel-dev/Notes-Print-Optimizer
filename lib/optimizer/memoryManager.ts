@@ -77,11 +77,18 @@ class MemoryManager {
   public releaseCanvas(canvas: HTMLCanvasElement | null | undefined): void {
     if (!canvas || typeof document === 'undefined') return;
     const memSize = canvas.width * canvas.height * 4;
-    if (memSize > 0 && this.canvasPool.length < this.canvasPoolMax && this.canvasPoolBytes + memSize <= this.canvasPoolMaxBytes) {
+    let poolable = memSize > 0 && this.canvasPool.length < this.canvasPoolMax && this.canvasPoolBytes + memSize <= this.canvasPoolMaxBytes;
+    if (poolable) {
       try {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Canvases created elsewhere may already hold a GPU-backed context, and a
+        // context's attributes cannot be changed afterwards. Pooled canvases are
+        // reused for pixel readback, so do not pool one that was not created CPU-backed.
+        if (ctx && ctx.getContextAttributes?.().willReadFrequently === false) poolable = false;
+        else if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       } catch { /* noop */ }
+    }
+    if (poolable) {
       this.canvasPool.push(canvas);
       this.canvasPoolBytes += memSize;
     } else {
