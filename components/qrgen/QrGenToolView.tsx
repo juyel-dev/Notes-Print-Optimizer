@@ -5,17 +5,13 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   Check,
-  ChevronDown,
   ClipboardPaste,
   Copy,
   Download,
   Eye,
   EyeOff,
   FileCode2,
-  Link2,
-  Mail,
   Palette,
-  Phone,
   QrCode,
   ScanLine,
   Shapes,
@@ -24,11 +20,31 @@ import {
   Sparkles,
   TriangleAlert,
   Trash2,
-  Type,
-  Wifi,
 } from 'lucide-react';
 import { QrScannerView } from './QrScannerView';
 import { ExportService } from '@/lib/services/ExportService';
+import {
+  CARD,
+  CHIP_BTN,
+  COLOR_SWATCHES,
+  DEFAULT_DARK,
+  DEFAULT_GRADIENT_END,
+  DEFAULT_LIGHT,
+  DOT_TYPES,
+  ECC_CAPACITY,
+  ECC_META,
+  EMAIL_RE,
+  EXAMPLES,
+  FIELD,
+  FOCUS,
+  MAX_LOGO_BYTES,
+  MODES,
+  RANGE,
+  SIZE_PRESETS,
+} from './qrConstants';
+import type { CornerType, DotType, EccKey, Flash, Mode } from './qrConstants';
+import { contrastRatio, escapeWifi, luminance, slugify } from './qrUtils';
+import { Accordion, ColorField, CornerSelect, Notice, SegTabs, Stat } from './QrParts';
 
 /**
  * Lazy qrcode loader — the lib (~30KB) is only imported on first actual
@@ -44,139 +60,6 @@ function getQrLib(): Promise<QrLib> {
 
 export interface QrGenToolViewProps {
   onBack: () => void;
-}
-
-type Mode = 'text' | 'url' | 'email' | 'wifi' | 'phone';
-type EccKey = 'L' | 'M' | 'Q' | 'H';
-type DotType = 'square' | 'dots' | 'rounded' | 'extra-rounded' | 'classy' | 'classy-rounded';
-type CornerType = 'square' | 'dot' | 'extra-rounded';
-type Flash = 'png' | 'svg' | 'img' | 'fail' | null;
-
-const MODES: Array<{ key: Mode; label: string; icon: React.ElementType }> = [
-  { key: 'text', label: 'Text', icon: Type },
-  { key: 'url', label: 'Link', icon: Link2 },
-  { key: 'email', label: 'Email', icon: Mail },
-  { key: 'wifi', label: 'Wi-Fi', icon: Wifi },
-  { key: 'phone', label: 'Phone', icon: Phone },
-];
-
-const ECC_META: Record<EccKey, { hint: string; pct: number; desc: string }> = {
-  L: { hint: '~7%', pct: 7, desc: 'Most data, fragile' },
-  M: { hint: '~15%', pct: 15, desc: 'Balanced' },
-  Q: { hint: '~25%', pct: 25, desc: 'Durable' },
-  H: { hint: '~30%', pct: 30, desc: 'Toughest' },
-};
-
-/** Max payload bytes per ECC level for a version-40 QR (byte mode). */
-const ECC_CAPACITY: Record<EccKey, number> = { L: 2953, M: 2331, Q: 1663, H: 1273 };
-
-const EXAMPLES: Record<Mode, string[]> = {
-  text: ['Hello — Print Optimizer', 'Scan me 👋 offline forever'],
-  url: ['https://print-optimizer.vercel.app', 'https://example.com/menu'],
-  email: ['hello@example.com'],
-  wifi: ['MyCafe-WiFi'],
-  phone: ['+8801XXXXXXXXX'],
-};
-
-const SIZE_PRESETS = [256, 512, 1024] as const;
-const DEFAULT_DARK = '#0f172a';
-const DEFAULT_LIGHT = '#ffffff';
-const DEFAULT_GRADIENT_END = '#3654d9';
-const COLOR_SWATCHES = [
-  { d: '#0f172a', l: '#ffffff', label: 'Ink' },
-  { d: '#1e3a5f', l: '#f0f9ff', label: 'Navy' },
-  { d: '#0f766e', l: '#f0fdfa', label: 'Teal' },
-  { d: '#28409e', l: '#eef2ff', label: 'Cobalt' },
-  { d: '#7a4808', l: '#fff7e6', label: 'Marigold' },
-] as const;
-const DOT_TYPES: DotType[] = ['square', 'dots', 'rounded', 'extra-rounded', 'classy', 'classy-rounded'];
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft';
-const CARD = 'rounded-2xl border border-surface-2 bg-surface/90 shadow-lg';
-const FIELD =
-  'w-full rounded-xl border border-elevated bg-surface-2/60 px-3.5 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/25';
-const CHIP_BTN =
-  'inline-flex h-10 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3.5 text-xs font-bold text-ink-muted transition hover:bg-surface-2 hover:text-ink active:scale-[0.98]';
-const RANGE =
-  'mt-2 w-full cursor-pointer appearance-none rounded-full bg-elevated py-2 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-primary-strong [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-primary-strong';
-
-function escapeWifi(s: string): string {
-  return s.replace(/([\\;,":])/g, '\\$1');
-}
-
-function luminance(hex: string): number {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16) / 255;
-  const g = parseInt(h.slice(2, 4), 16) / 255;
-  const b = parseInt(h.slice(4, 6), 16) / 255;
-  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-function contrastRatio(a: string, b: string): number {
-  const l1 = luminance(a);
-  const l2 = luminance(b);
-  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/^https?:\/\//, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 28);
-}
-
-/** Roving-tabindex segmented tabs (←/→/Home/End) shared by both tab rows. */
-function SegTabs<T extends string>(props: {
-  label: string;
-  idPrefix: string;
-  value: T;
-  onChange: (v: T) => void;
-  items: ReadonlyArray<{ key: T; label: string; icon: React.ElementType }>;
-  className?: string;
-  btnClass: string;
-  panelId?: string;
-}) {
-  const { label, idPrefix, value, onChange, items, className, btnClass, panelId } = props;
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    const i = items.findIndex((x) => x.key === value);
-    let next = -1;
-    if (e.key === 'ArrowRight') next = (i + 1) % items.length;
-    else if (e.key === 'ArrowLeft') next = (i - 1 + items.length) % items.length;
-    else if (e.key === 'Home') next = 0;
-    else if (e.key === 'End') next = items.length - 1;
-    if (next < 0) return;
-    e.preventDefault();
-    onChange(items[next].key);
-    document.getElementById(`${idPrefix}-${items[next].key}`)?.focus();
-  };
-  return (
-    <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className={className}>
-      {items.map((it) => {
-        const active = it.key === value;
-        return (
-          <button
-            key={it.key}
-            id={`${idPrefix}-${it.key}`}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            aria-controls={panelId}
-            tabIndex={active ? 0 : -1}
-            onClick={() => onChange(it.key)}
-            className={`${btnClass} ${FOCUS} ${active ? 'bg-primary-strong text-white shadow-md shadow-primary/25' : 'text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
-          >
-            <it.icon className="h-4 w-4" aria-hidden="true" />
-            {it.label}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 /**
@@ -1148,89 +1031,3 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
     </div>
   );
 };
-
-function Stat(props: { label: string; value: string; sub: string; tone: 'good' | 'warn' | 'bad' }) {
-  const color = props.tone === 'good' ? 'text-success' : props.tone === 'warn' ? 'text-warning' : 'text-danger';
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-surface-2 bg-bg/60 p-2.5">
-      <span className="text-2xs font-bold uppercase tracking-wide text-ink-faint">{props.label}</span>
-      <span className={`text-lg font-extrabold tabular-nums leading-tight ${color}`}>{props.value}</span>
-      <span className="truncate text-2xs text-ink-faint">{props.sub}</span>
-    </div>
-  );
-}
-
-function Notice(props: { children: React.ReactNode; action?: { label: string; onClick: () => void } }) {
-  return (
-    <li className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5">
-      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold leading-snug text-warning">{props.children}</p>
-        {props.action && (
-          <button type="button" onClick={props.action.onClick} className={`mt-1.5 h-9 rounded-full bg-warning-strong px-3 text-xs font-bold text-white ${FOCUS}`}>
-            {props.action.label}
-          </button>
-        )}
-      </div>
-    </li>
-  );
-}
-
-function Accordion(props: { icon: React.ElementType; title: string; summary: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const Icon = props.icon;
-  return (
-    <details open={props.defaultOpen} className="group border-t border-surface-2">
-      <summary
-        className={`flex min-h-[56px] cursor-pointer list-none items-center gap-3 px-4 text-ink marker:hidden sm:px-5 [&::-webkit-details-marker]:hidden ${FOCUS}`}
-      >
-        <Icon className="h-[18px] w-[18px] shrink-0 text-primary-soft" aria-hidden="true" />
-        <span className="text-sm font-bold">{props.title}</span>
-        <span className="ml-auto truncate text-xs font-semibold text-ink-faint">{props.summary}</span>
-        <ChevronDown className="h-[18px] w-[18px] shrink-0 text-ink-faint transition-transform group-open:rotate-180" aria-hidden="true" />
-      </summary>
-      <div className="flex flex-col gap-4 px-4 pb-5 pt-1 sm:px-5">{props.children}</div>
-    </details>
-  );
-}
-
-function ColorField(props: { id: string; label: string; value: string; onChange: (s: string) => void; disabled?: boolean }) {
-  return (
-    <label
-      htmlFor={props.id}
-      className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-xl border border-elevated bg-surface-2/60 p-1.5 pr-3 ${props.disabled ? 'opacity-40' : ''}`}
-    >
-      <input
-        id={props.id}
-        type="color"
-        value={props.value}
-        disabled={props.disabled}
-        onChange={(e) => props.onChange(e.target.value)}
-        className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-white/20 bg-transparent p-0"
-      />
-      <span className="flex min-w-0 flex-col">
-        <span className="text-xs font-bold text-ink">{props.label}</span>
-        <span className="font-mono text-2xs uppercase text-ink-faint">{props.value}</span>
-      </span>
-    </label>
-  );
-}
-
-function CornerSelect(props: { id: string; label: string; value: CornerType; onChange: (c: CornerType) => void }) {
-  return (
-    <div>
-      <label htmlFor={props.id} className="text-xs font-bold text-ink">
-        {props.label}
-      </label>
-      <select
-        id={props.id}
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value as CornerType)}
-        className="mt-1 h-11 w-full rounded-xl border border-elevated bg-surface-2/60 px-2.5 text-sm font-semibold text-ink focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
-      >
-        <option value="square">square</option>
-        <option value="dot">dot</option>
-        <option value="extra-rounded">extra-rounded</option>
-      </select>
-    </div>
-  );
-}
