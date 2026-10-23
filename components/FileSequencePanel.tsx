@@ -105,7 +105,7 @@ export const FileSequencePanel: React.FC<FileSequencePanelProps> = ({
             type="button"
             onClick={onSmartArrange}
             disabled={!canArrange}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary-strong px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary-strong px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-primary-deep disabled:cursor-not-allowed disabled:opacity-40"
             title="Auto-arrange detected series by their natural volume order"
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />

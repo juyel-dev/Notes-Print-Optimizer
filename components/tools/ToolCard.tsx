@@ -31,7 +31,6 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   <Link
     href={href}
     prefetch={false}
-    aria-label={`${title} — ${description}${isNew ? ' — New' : ''}`}
     className="group relative flex h-full w-full flex-col gap-3 rounded-2xl border border-surface-2 bg-surface p-5 text-left transition-[border-color,background-color] duration-200 ease-out hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
   >
     <span className="flex items-center gap-3">

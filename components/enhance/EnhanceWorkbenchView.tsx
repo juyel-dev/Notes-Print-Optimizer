@@ -336,7 +336,7 @@ export const EnhanceWorkbenchView: React.FC<EnhanceWorkbenchViewProps> = ({ work
                 <p role="status" className="text-xs font-semibold text-primary-soft">Previewing this page only — tap Apply to update all {state.results.length} page{state.results.length === 1 ? '' : 's'}.</p>
               )}
               {toneDirty && liveError && !liveBusy && (
-                <p role="status" className="text-xs font-semibold text-warning-strong">Live preview could not be refreshed. This is the last applied result; Apply will still process all pages.</p>
+                <p role="status" className="text-xs font-semibold text-warning">Live preview could not be refreshed. This is the last applied result; Apply will still process all pages.</p>
               )}
             </div>
           )}

@@ -171,7 +171,7 @@ export const InstallShareCard: React.FC = () => {
         <button
           type="button"
           onClick={handleInstall}
-          className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-strong px-3 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-primary active:scale-[0.98]"
+          className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-strong px-3 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-[0.98]"
         >
           {isIOS ? <Smartphone className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5" />}
           <span>{isIOS ? 'How to Install' : 'Install App'}</span>

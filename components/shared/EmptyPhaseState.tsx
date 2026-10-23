@@ -39,7 +39,7 @@ export const EmptyPhaseState: React.FC<EmptyPhaseStateProps> = ({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary-strong px-4 text-xs font-bold text-white shadow-md hover:bg-primary transition-colors active:scale-[0.97]"
+        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary-strong px-4 text-xs font-bold text-white shadow-md hover:bg-primary-deep transition-colors active:scale-[0.97]"
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         {backLabel}

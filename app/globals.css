@@ -57,7 +57,7 @@
 
   --color-ink: #f1f5f9; /* primary text */
   --color-ink-muted: #94a3b8; /* secondary text */
-  --color-ink-faint: #7e8ca8; /* WCAG-AA (5.3:1 on surface) tertiary text */
+  --color-ink-faint: #8896b1; /* WCAG-AA tertiary text: 4.9:1 even on surface-2 (kbd chips, tags) */
 
   /* Component radii */
   --radius-btn: 0.75rem;
@@ -124,7 +124,7 @@
 
   --color-ink: #1c1b17; /* warm near-black, ties to ink/paper concept */
   --color-ink-muted: #5c574a;
-  --color-ink-faint: #6b664f; /* 5.3:1 on bg — AA for small text, not just large/UI */
+  --color-ink-faint: #66624b; /* 5.5:1 on bg, 4.8:1 even on tinted chips (#dee2f4) — AA for small text */
 
   --shadow-card: 0 1px 2px rgb(28 27 23 / 0.06), 0 8px 24px -16px rgb(28 27 23 / 0.12);
   --shadow-pop: 0 12px 32px -8px rgb(28 27 23 / 0.18), 0 4px 8px -4px rgb(28 27 23 / 0.08);

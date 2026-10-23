@@ -176,7 +176,7 @@ export const PasswordGenToolView: React.FC<PasswordGenToolViewProps> = ({ onBack
             type="button"
             onClick={regenerate}
             disabled={pools.length === 0}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:bg-primary hover:shadow-lg active:scale-[0.98] disabled:opacity-40"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:bg-primary-deep hover:shadow-lg active:scale-[0.98] disabled:opacity-40"
           >
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Regenerate

@@ -22,7 +22,7 @@ export default function NotFound() {
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-primary-strong px-6 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:bg-primary hover:shadow-lg active:scale-[0.98]"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-primary-strong px-6 text-sm font-bold text-white shadow-md shadow-primary/20 transition hover:bg-primary-deep hover:shadow-lg active:scale-[0.98]"
         >
           <Home className="h-4 w-4" aria-hidden="true" />
           Back to tools
