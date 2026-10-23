@@ -89,15 +89,21 @@ export const PdfDropzone: React.FC<PdfDropzoneProps> = ({
   return (
     <div className="flex flex-col gap-4">
       <div
-        role="button"
-        tabIndex={0}
-        aria-label={ariaLabel}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            fileInputRef.current?.click();
-          }
-        }}
+        // The compact zone has no inner control, so the zone itself is the button.
+        // The full-size zone already contains a real "choose" button; making the
+        // wrapper a button too would nest interactive controls (invalid ARIA).
+        role={compact ? 'button' : undefined}
+        tabIndex={compact ? 0 : undefined}
+        onKeyDown={
+          compact
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }
+            : undefined
+        }
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);

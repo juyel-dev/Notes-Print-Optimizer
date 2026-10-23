@@ -256,7 +256,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => window.location.reload()}
-              className="bg-primary-strong hover:bg-primary text-white px-2.5 py-1 rounded text-xs font-semibold transition"
+              className="bg-primary-strong hover:bg-primary-deep text-white px-2.5 py-1 rounded text-xs font-semibold transition"
             >
               Update Now
             </button>

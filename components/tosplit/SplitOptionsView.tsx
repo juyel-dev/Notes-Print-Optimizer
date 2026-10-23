@@ -72,7 +72,7 @@ export const SplitOptionsView: React.FC<{ workflow: SplitWorkflow }> = ({ workfl
       </div>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-surface-2 bg-surface/80 p-4" aria-busy={busy}>
-        <h3 className="text-sm font-bold tracking-wide text-ink">Split Mode</h3>
+        <h2 className="text-sm font-bold tracking-wide text-ink">Split Mode</h2>
 
         {/* Mode cards */}
         <div role="radiogroup" aria-label="Split mode" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -129,7 +129,7 @@ export const SplitOptionsView: React.FC<{ workflow: SplitWorkflow }> = ({ workfl
               <span className="shrink-0 text-xs tabular-nums text-ink-muted">of {state.pageCount ?? '…'}</span>
             </div>
             {rangeInvalid && (
-              <p className="text-[11px] font-semibold text-warning-strong">
+              <p className="text-[11px] font-semibold text-warning">
                 Enter a valid range between 1 and {state.pageCount}.
               </p>
             )}
@@ -172,7 +172,7 @@ export const SplitOptionsView: React.FC<{ workflow: SplitWorkflow }> = ({ workfl
               />
             </div>
             {partCountNum === 1 && (
-              <p className="text-[11px] font-semibold text-warning-strong">Enter at least 2 parts.</p>
+              <p className="text-[11px] font-semibold text-warning">Enter at least 2 parts.</p>
             )}
           </div>
         )}

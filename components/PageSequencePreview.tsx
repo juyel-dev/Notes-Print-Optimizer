@@ -94,9 +94,9 @@ export const PageSequencePreview: React.FC<PageSequencePreviewProps> = ({ pageUr
   return (
     <div className="mt-2 flex flex-col gap-2 pt-3 border-t border-surface-2 w-full max-w-full min-w-0 overflow-hidden">
       <div className="flex items-center justify-between gap-2 min-w-0">
-        <h4 className="text-xs font-bold text-ink-muted truncate">
+        <h3 className="text-xs font-bold text-ink-muted truncate">
           Page Sequence Preview ({pageUrls.length} Pages)
-        </h4>
+        </h3>
         <span className="text-xs text-ink-muted sm:hidden font-mono shrink-0">
           1 Column · RAM Virtualized
         </span>
@@ -109,7 +109,12 @@ export const PageSequencePreview: React.FC<PageSequencePreviewProps> = ({ pageUr
         - Medium (>=768px): 4-column grid
         - Desktop (>=1024px): 6-column grid
       */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 max-h-72 sm:max-h-56 overflow-y-auto overflow-x-hidden p-1 w-full max-w-full">
+      <div
+        role="region"
+        aria-label="Page thumbnails (scrollable)"
+        tabIndex={0}
+        className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 max-h-72 sm:max-h-56 overflow-y-auto overflow-x-hidden p-1 w-full max-w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+      >
         {pageUrls.map((url, pIdx) => (
           <SequenceItemCard key={pIdx} url={url} pageIndex={pIdx} />
         ))}

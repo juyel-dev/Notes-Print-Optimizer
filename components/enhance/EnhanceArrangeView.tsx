@@ -44,10 +44,10 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
       )}
       <section className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/80 p-4">
         <div className="border-b border-surface-2 pb-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-ink">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
             <Files className="h-4 w-4 text-primary-soft" aria-hidden="true" />
             PDF Sequence ({state.files.length})
-          </h3>
+          </h2>
           <p className="mt-0.5 text-xs text-ink-muted">
             Arrange files in reading order — then enhance them all at once.
             <span className="mt-0.5 block text-ink-faint">{state.files.length} file{state.files.length === 1 ? '' : 's'} · {totalMb.toFixed(1)} MB total</span>
@@ -84,7 +84,7 @@ export const EnhanceArrangeView: React.FC<{ workflow: EnhanceWorkflow }> = ({ wo
             Add More PDFs ({state.files.length}/{MAX_ENHANCE_FILES})
           </button>
         ) : (
-          <p className="text-center text-xs font-semibold text-warning-strong">
+          <p className="text-center text-xs font-semibold text-warning">
             Maximum of {MAX_ENHANCE_FILES} files per session.
           </p>
         )}

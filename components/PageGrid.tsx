@@ -158,12 +158,15 @@ const LazyPageCard: React.FC<{
         </button>
       </div>
 
-      {/* Thumbnail — premium inset */}
+      {/* Thumbnail — premium inset. The "Original" tag sits OUTSIDE the role=button
+          element so the button's visible text stays empty; its accessible name
+          already says "(original)" for screen readers. */}
+      <div className="relative">
       <div
         role="button"
         tabIndex={0}
         aria-pressed={isSelected}
-        aria-label={`Inspect page ${idx + 1}`}
+        aria-label={`Inspect page ${idx + 1}${isKeptOriginal ? ' (original)' : ''}`}
         onClick={() => onSelectPage(idx)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -202,14 +205,15 @@ const LazyPageCard: React.FC<{
           <Eye className="h-3.5 w-3.5 text-primary-soft" />
           <span className="text-[10px] font-semibold tracking-wide">View</span>
         </div>
-        {isKeptOriginal && (
-          <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-accent/90 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-sm">Original</span>
-        )}
+      </div>
+      {isKeptOriginal && (
+        <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-bold text-bg shadow-sm">Original</span>
+      )}
       </div>
 
       {/* Card Footer — minimal, original tag only on top overlay */}
       <div className="flex items-center justify-between px-2 py-1.5 bg-surface border-t border-surface-2/60 min-h-[28px]">
-        <span className="text-[11px] font-medium text-ink-muted/60 truncate">P{idx + 1}</span>
+        <span className="text-[11px] font-medium text-ink-muted truncate">P{idx + 1}</span>
         <span className="flex items-center gap-1">
           {(page.whiteBoxRegions?.length ?? 0) > 0 && (
             <span
@@ -254,7 +258,7 @@ export const PageGrid: React.FC<PageGridProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-surface-2 pb-3">
         <div>
           <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-bold text-ink">Document Page Thumbnails</h3>
+            <h2 className="text-sm font-bold text-ink">Document Page Thumbnails</h2>
             <InfoTooltip
               title="Selective Page Exclusion"
               content="Skip pages you don't need to print — like promo slides, chapter covers, or breaks."

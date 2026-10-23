@@ -298,9 +298,9 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
               <>
                 <section className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/90 p-3.5 shadow-lg sm:p-4 lg:p-5 sm:gap-4 sm:shadow-xl">
                   <div className="border-b border-surface-2 pb-2 sm:pb-3">
-                    <h3 className="text-xs font-bold text-ink sm:text-sm">
+                    <h2 className="text-xs font-bold text-ink sm:text-sm">
                       PDF Sequence ({uploadedItems.length})
-                    </h3>
+                    </h2>
                     <p className="mt-0.5 text-xs text-ink-muted">
                       Arrange files in lecture order before processing.
                     </p>
@@ -359,7 +359,7 @@ export const WorkflowView: React.FC<WorkflowUIProps> = ({ state, actions, handle
                   <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-bold text-success-soft sm:text-lg" style={{ fontFamily: 'var(--font-display)' }}>Dark Backgrounds Stripped</h3>
+                  <h2 className="text-base font-bold text-success-soft sm:text-lg" style={{ fontFamily: 'var(--font-display)' }}>Dark Backgrounds Stripped</h2>
                   <p className="truncate text-xs text-ink-muted">
                     Processed {processedPages.length} pages
                     {inkSavedPct !== null ? ` · ~${inkSavedPct}% less ink` : ''}

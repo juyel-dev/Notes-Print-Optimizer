@@ -271,7 +271,7 @@ export const PrintLayoutStep: React.FC<PrintLayoutStepProps> = ({
             <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {backLabel}
           </button>
           <button type="button" onClick={generate} disabled={busy || totalPages === 0}
-            className="inline-flex h-11 flex-none items-center justify-center gap-2 rounded-full bg-primary-strong sm:flex-1 px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary active:scale-[0.98] disabled:opacity-40">
+            className="inline-flex h-11 flex-none items-center justify-center gap-2 rounded-full bg-primary-strong sm:flex-1 px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-deep active:scale-[0.98] disabled:opacity-40">
             {busy ? (<><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{progress ?? 'Building…'}</>) : sameAsOriginal ? (<><Download className="h-4 w-4" aria-hidden="true" />Download original PDF</>) : (`Generate ${perSheet}-up PDF`)}
           </button>
         </div>

@@ -184,7 +184,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({ page, merg
           <div className="flex items-center gap-1.5 font-semibold text-success">
             <CheckCircle2 className="h-3.5 w-3.5 text-success" />
             <span>Optimized: <strong>{page.inkCoverageAfterPct}% Ink</strong></span>
-            <span className="rounded-full bg-success-strong/20 px-2 py-0.5 text-[11px] font-bold text-success-soft border border-success-strong/30">
+            <span className="rounded-full bg-success-faint px-2 py-0.5 text-[11px] font-bold text-success-soft border border-success-strong/30">
               ~{inkSaved}% estimated
             </span>
           </div>

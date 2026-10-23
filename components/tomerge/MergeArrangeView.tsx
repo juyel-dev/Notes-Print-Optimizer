@@ -26,10 +26,10 @@ export const MergeArrangeView: React.FC<{ workflow: MergeWorkflow }> = ({ workfl
     <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-3 rounded-2xl border border-surface-2 bg-surface/80 p-4">
         <div className="border-b border-surface-2 pb-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-ink">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
             <Combine className="h-4 w-4 text-primary-soft" aria-hidden="true" />
             PDF Sequence ({state.files.length})
-          </h3>
+          </h2>
           <p className="mt-0.5 text-xs tabular-nums text-ink-muted">
             {totalMB > 0 ? `${totalMB.toFixed(2)} MB total · ` : ''}files merge top to bottom.
           </p>
@@ -66,7 +66,7 @@ export const MergeArrangeView: React.FC<{ workflow: MergeWorkflow }> = ({ workfl
             Add More PDFs ({state.files.length}/{maxFiles})
           </button>
         ) : (
-          <p className="text-center text-[11px] font-semibold text-warning-strong">Maximum of {maxFiles} files per merge.</p>
+          <p className="text-center text-[11px] font-semibold text-warning">Maximum of {maxFiles} files per merge.</p>
         )}
       </section>
 

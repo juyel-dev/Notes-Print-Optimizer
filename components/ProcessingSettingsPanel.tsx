@@ -363,7 +363,7 @@ export const ProcessingSettingsPanel: React.FC<ProcessingSettingsPanelProps> = (
               disabled={isProcessing || isPreviewProcessing}
               className={`h-9 px-5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 !isProcessing && !isPreviewProcessing
-                  ? 'bg-primary-strong hover:bg-primary text-white shadow-sm shadow-primary/20'
+                  ? 'bg-primary-strong hover:bg-primary-deep text-white shadow-sm shadow-primary/20'
                   : 'bg-surface-2 text-ink-faint cursor-not-allowed border border-elevated'
               }`}
             >

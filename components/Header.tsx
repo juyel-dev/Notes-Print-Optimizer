@@ -161,7 +161,6 @@ export const Header: React.FC<HeaderProps> = ({
                     }}
                     disabled={!isCompleted && !isActive}
                     aria-current={isActive ? 'step' : undefined}
-                    aria-label={`Step ${step.phase}: ${step.label}`}
                     className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all ${
                       isActive
                         ? 'bg-primary-strong text-white shadow-sm'
@@ -181,7 +180,9 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                       {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.phase}
                     </span>
-                    <span className="hidden min-[400px]:inline text-xs tracking-wide">{step.label}</span>
+                    {/* Always in the accessible name (sr-only on very narrow screens), so the name contains the visible text. */}
+                    <span className="max-[399px]:sr-only text-xs tracking-wide">{step.label}</span>
+                    {isCompleted && <span className="sr-only"> (completed)</span>}
                   </button>
                 );
               })}
@@ -193,12 +194,12 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event('po:open-command-palette'))}
-              aria-label="Search tools"
+              aria-keyshortcuts="Control+K Meta+K"
               className="hidden h-9 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 text-xs font-semibold text-ink-muted shadow-sm transition-colors hover:bg-elevated hover:text-ink sm:flex"
             >
               <Search className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Search</span>
-              <kbd className="ml-1 rounded border border-elevated bg-surface-2 px-1 py-0.5 text-[10px] font-bold text-ink-faint">
+              <kbd aria-hidden="true" className="ml-1 rounded border border-elevated bg-surface-2 px-1 py-0.5 text-[10px] font-bold text-ink-faint">
                 ⌘K
               </kbd>
             </button>

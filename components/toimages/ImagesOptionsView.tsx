@@ -52,7 +52,7 @@ export const ImagesOptionsView: React.FC<{ workflow: ImagesWorkflow }> = ({ work
       </div>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-surface-2 bg-surface/80 p-4" aria-busy={busy}>
-        <h3 className="text-sm font-bold tracking-wide text-ink">Image Quality &amp; Resolution</h3>
+        <h2 className="text-sm font-bold tracking-wide text-ink">Image Quality &amp; Resolution</h2>
 
         {/* Resolution presets */}
         <div role="radiogroup" aria-label="Resolution" className="flex flex-col gap-2">
@@ -142,7 +142,7 @@ export const ImagesOptionsView: React.FC<{ workflow: ImagesWorkflow }> = ({ work
             </div>
           )}
           {rangeInvalid && (
-            <p className="mt-1.5 text-[11px] font-semibold text-warning-strong">
+            <p className="mt-1.5 text-[11px] font-semibold text-warning">
               Enter a valid range between 1 and {state.pageCount}.
             </p>
           )}

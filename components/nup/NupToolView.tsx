@@ -262,7 +262,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
             <p className="text-sm font-bold text-ink">Drop PDFs here or choose</p>
             <p className="max-w-[34ch] text-xs leading-relaxed text-ink-muted">One file goes straight to layout; several are merged in order first.</p>
             <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
-              className="mt-1 inline-flex h-10 items-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md hover:bg-primary active:scale-[0.98] disabled:opacity-40">
+              className="mt-1 inline-flex h-10 items-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md hover:bg-primary-deep active:scale-[0.98] disabled:opacity-40">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <FileText className="h-4 w-4" aria-hidden="true" />}
               Choose PDFs
             </button>
@@ -290,7 +290,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
               </div>
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={goLayout} disabled={busy}
-                  className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary active:scale-[0.98] disabled:opacity-40">
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-deep active:scale-[0.98] disabled:opacity-40">
                   {busy ? progress ?? 'Working…' : files.length === 1 ? 'Continue to layout' : `Merge ${files.length} & layout`}
                   {!busy && <Grid2x2Check className="h-4 w-4" aria-hidden="true" />}
                 </button>
@@ -409,7 +409,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
                 ← Files
               </button>
               <button type="button" onClick={generate} disabled={busy || totalPages === 0}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary active:scale-[0.98] disabled:opacity-40">
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-deep active:scale-[0.98] disabled:opacity-40">
                 {busy ? (<><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{progress ?? 'Building…'}</>) : sameAsOriginal ? (<><Download className="h-4 w-4" aria-hidden="true" />Download original PDF</>) : (`Generate ${perSheet}-up PDF`)}
               </button>
             </div>
@@ -461,7 +461,7 @@ export const NupToolView: React.FC<NupToolViewProps> = ({ onBack }) => {
           </div>
           <div className="mt-4 flex gap-2">
             <button type="button" onClick={download}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary active:scale-[0.98]">
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary-strong px-5 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-deep active:scale-[0.98]">
               <Download className="h-4 w-4" aria-hidden="true" /> Download PDF
             </button>
             <button type="button" onClick={reset}

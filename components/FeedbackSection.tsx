@@ -405,7 +405,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
             <button
               type="submit"
               disabled={isSending}
-              className="flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-xl bg-primary-strong px-5 text-xs font-bold text-white shadow-lg hover:bg-primary disabled:opacity-50 transition-all cursor-pointer"
+              className="flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-xl bg-primary-strong px-5 text-xs font-bold text-white shadow-lg hover:bg-primary-deep disabled:opacity-50 transition-all cursor-pointer"
             >
               {isSending ? (
                 <>
@@ -554,7 +554,7 @@ export const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                     <button
                       type="button"
                       onClick={handleCopyGasCode}
-                      className="flex items-center gap-1.5 rounded-lg bg-primary-strong px-3 py-1.5 text-xs font-bold text-white hover:bg-primary cursor-pointer shrink-0"
+                      className="flex items-center gap-1.5 rounded-lg bg-primary-strong px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-deep cursor-pointer shrink-0"
                     >
                       {copiedGas ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                       <span>{copiedGas ? 'Copied!' : 'Copy GAS Code'}</span>

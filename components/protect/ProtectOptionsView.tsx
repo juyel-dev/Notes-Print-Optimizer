@@ -22,7 +22,7 @@ const ISO_LINE = (
 );
 
 const HONESTY_NOTE = (
-  <p className="text-2xs leading-relaxed text-warning-strong">
+  <p className="text-2xs leading-relaxed text-warning">
     Note: permission locks are honoured by compliant PDF readers. A strong open
     password is what truly keeps the contents private.
   </p>
@@ -102,7 +102,7 @@ export const ProtectOptionsView: React.FC<{ workflow: ProtectWorkflow }> = ({ wo
 
       {/* Options */}
       <section className="flex flex-col gap-4 rounded-2xl border border-surface-2 bg-surface/80 p-4" aria-busy={busy}>
-        <h3 className="text-sm font-bold tracking-wide text-ink">Security Options</h3>
+        <h2 className="text-sm font-bold tracking-wide text-ink">Security Options</h2>
 
         <PasswordInput
           id="open-password"

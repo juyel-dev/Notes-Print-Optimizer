@@ -83,7 +83,7 @@ export const ImagePdfArrangeView: React.FC<{ workflow: ImagePdfWorkflow }> = ({ 
             Add More Images ({state.files.length}/{maxFiles})
           </button>
         ) : (
-          <p className="text-center text-[11px] font-semibold text-warning-strong">Maximum of {maxFiles} images per PDF.</p>
+          <p className="text-center text-[11px] font-semibold text-warning">Maximum of {maxFiles} images per PDF.</p>
         )}
       </section>
 
