@@ -37,7 +37,7 @@ jobs:
       # testing was only meaningful for static-host portability, which this
       # migration deliberately gives up — see docs/hybrid-architecture-migration.md.
       - name: Build
-        run: npm run build
+        run: bash scripts/ci-build.sh
         env:
           NEXT_PUBLIC_BASE_PATH: ''
           NEXT_PUBLIC_FEEDBACK_URL: ${{ vars.NEXT_PUBLIC_FEEDBACK_URL || 'https://script.google.com/macros/s/AKfycbyYBvhRphdbvTAEI-hktpUWcpYyFjdsOjSHhHwuQyt0K310uqIX3ManTNfQ1Kx7UEtw/exec' }}
@@ -86,7 +86,7 @@ jobs:
         run: npm ci --prefer-offline --no-fund
 
       - name: Build
-        run: npm run build
+        run: bash scripts/ci-build.sh
         env:
           NEXT_PUBLIC_BASE_PATH: ''
           NEXT_PUBLIC_FEEDBACK_URL: ${{ vars.NEXT_PUBLIC_FEEDBACK_URL || 'https://script.google.com/macros/s/AKfycbyYBvhRphdbvTAEI-hktpUWcpYyFjdsOjSHhHwuQyt0K310uqIX3ManTNfQ1Kx7UEtw/exec' }}
