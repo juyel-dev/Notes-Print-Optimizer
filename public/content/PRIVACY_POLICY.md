@@ -2,7 +2,7 @@
 
 *Last updated: 2026-08-28*
 
-Your privacy is the foundation of Print Optimizer. This policy explains what data is handled and how — for **all 12 tools**.
+Your privacy is the foundation of Print Optimizer. This policy explains what data is handled and how — for **all 14 tools**.
 
 ## 1. Local-first processing
 

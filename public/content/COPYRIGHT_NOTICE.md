@@ -12,7 +12,7 @@ This software and its source code, design, documentation, and 12-tool suite (`li
 
 ## You may not
 
-- Use this software commercially without prior written permission (including SaaS offering of any of the 12 tools, bundling, or revenue-generating use).
+- Use this software commercially without prior written permission (including SaaS offering of any of the 14 tools, bundling, or revenue-generating use).
 - Remove attribution or misrepresent authorship.
 - Claim this software as your own.
 
@@ -37,4 +37,4 @@ For licensing or commercial enquiries: [myself.juyel.dev@gmail.com](mailto:mysel
 
 ---
 
-*© 2026 Juyel Hossain. All Rights Reserved. Product: Print Optimizer v1.2 (sw.js v37, 12 tools, Emerald theme).*
+*© 2026 Juyel Hossain. All Rights Reserved. Product: Print Optimizer v1.2 (sw.js v39, 14 tools, Emerald theme).*
