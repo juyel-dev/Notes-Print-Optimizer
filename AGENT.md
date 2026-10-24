@@ -45,7 +45,7 @@ npx tsc --noEmit && npm run lint && npm run test && npm run build
 # then optionally: npx serve out -l 4180 && npm run test:smoke
 ```
 
-Suite: Vitest 434 tests / 41 files + Playwright 22. Never hardcode `241` — old number. Gate is *all green*.
+Suite: Vitest (unit/golden) + Playwright (smoke, routing, a11y, PDF-tool flows). Test counts change — never hardcode them. Gate is *all green*.
 
 ## 5. Theme & PWA
 

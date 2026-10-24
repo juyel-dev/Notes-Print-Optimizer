@@ -2,7 +2,7 @@
 
 *Last updated: 2026-08-28*
 
-By using Print Optimizer (including all 12 tools) you agree to these terms.
+By using Print Optimizer (including all 14 tools) you agree to these terms.
 
 ## 1. License
 

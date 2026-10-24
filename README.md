@@ -60,7 +60,7 @@ Prereq: Node 20+ (`.nvmrc` → `20`), npm 10+. Rust toolchain only for `build:wa
 | Lint | `npm run lint` | `eslint.config.mjs` — `next/core-web-vitals` |
 | Unit + integration + bench | `npm run test` | `vitest run` — see CI output for current test/file count; never hardcode it here — gate is *all green* |
 | Benchmarks (all) | `npm run test:bench` | `phase0Baseline`, `sharpenShootout`, `kernelProfile`, `realPdfBaseline` |
-| E2E smoke | `npm run test:smoke` | `playwright` chromium (22 tests) — `npm run start` first (real server; hybrid mode, see Runtime row) |
+| E2E smoke | `npm run test:smoke` | `playwright` chromium (smoke, routing, a11y and PDF-tool flow specs) — `npm run start` first (real server; hybrid mode, see Runtime row) |
 | CI full | `npm run test:ci` | vitest + bench + smoke |
 | Production build | `npm run build` | `next build && postbuild-strip-devtools.js` → `.next/` (hybrid). Known warnings: `next/no-img-element` in `EnhanceWorkbenchView/ProcessingModal/ImagesResultView`, `no-unused-vars` `phaseName/isProcessing`, `exhaustive-deps` `PersistentShell` — do not chase |
 | Serve build | `npm run start` | real Next.js server, hybrid mode. (Pre-2026-09 this row said `next start` **FAILS** under `output:'export'` — that constraint is gone now that export mode is removed; see `docs/hybrid-architecture-migration.md`.) |

@@ -55,6 +55,11 @@ export const OG_CARD_NAMES: readonly string[] = [
   'image-to-pdf.png',
   'compress-pdf.png',
   'organize-pages.png',
+  'n-up.png',
+  'password-generator.png',
+  'qr-generator.png',
+  'word-counter.png',
+  'case-converter.png',
 ];
 
 /**
