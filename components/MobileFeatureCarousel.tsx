@@ -304,7 +304,7 @@ export const MobileFeatureCarousel: React.FC = () => {
         </button>
       </div>
 
-      <div className="mt-2 flex items-center justify-center gap-2" aria-label="Choose a banner">
+      <div role="group" className="mt-2 flex items-center justify-center gap-2" aria-label="Choose a banner">
         {SLIDES.map((slide, index) => (
           <button
             key={slide.eyebrow}
