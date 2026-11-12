@@ -50,13 +50,17 @@ const MobileLandingAction: React.FC = () => {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   const handleInstall = useCallback(async () => {
+    if (isIOS || !canInstall) {
+      setShowIOSGuide(true);
+      return;
+    }
     const outcome = await promptInstall();
-    if (outcome === 'ios') setShowIOSGuide(true);
-  }, [promptInstall]);
+    if (outcome === 'ios' || outcome === 'unavailable') setShowIOSGuide(true);
+  }, [canInstall, isIOS, promptInstall]);
 
   return (
     <>
-      {canInstall && !isInstalled ? (
+      {!isInstalled ? (
         <button
           type="button"
           onClick={handleInstall}
@@ -80,13 +84,17 @@ const MobileLandingAction: React.FC = () => {
           <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="ios-install-title"
+            aria-labelledby="mobile-install-title"
             className="w-full max-w-sm rounded-2xl border border-elevated bg-surface p-5 text-ink shadow-2xl"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 id="ios-install-title" className="text-base font-bold">Install Print Optimizer</h2>
-                <p className="mt-1 text-sm text-ink-muted">Add it to your iPhone home screen from Safari.</p>
+                <h2 id="mobile-install-title" className="text-base font-bold">Install Print Optimizer</h2>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {isIOS
+                    ? 'Add it to your iPhone home screen from Safari.'
+                    : 'Use your browser menu to add the app to your home screen.'}
+                </p>
               </div>
               <button
                 type="button"
@@ -97,11 +105,19 @@ const MobileLandingAction: React.FC = () => {
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <ol className="mt-4 space-y-2 text-sm text-ink-muted">
-              <li>1. Open this page in Safari and tap <strong className="text-ink">Share</strong>.</li>
-              <li>2. Choose <strong className="text-ink">Add to Home Screen</strong>.</li>
-              <li>3. Tap <strong className="text-ink">Add</strong>.</li>
-            </ol>
+            {isIOS ? (
+              <ol className="mt-4 space-y-2 text-sm text-ink-muted">
+                <li>1. Open this page in Safari and tap <strong className="text-ink">Share</strong>.</li>
+                <li>2. Choose <strong className="text-ink">Add to Home Screen</strong>.</li>
+                <li>3. Tap <strong className="text-ink">Add</strong>.</li>
+              </ol>
+            ) : (
+              <ol className="mt-4 space-y-2 text-sm text-ink-muted">
+                <li>1. Open your browser menu (<strong className="text-ink">⋮</strong> or <strong className="text-ink">Share</strong>).</li>
+                <li>2. Choose <strong className="text-ink">Install app</strong> or <strong className="text-ink">Add to Home Screen</strong>.</li>
+                <li>3. Confirm the install option shown by your browser.</li>
+              </ol>
+            )}
             <button
               type="button"
               onClick={() => setShowIOSGuide(false)}
