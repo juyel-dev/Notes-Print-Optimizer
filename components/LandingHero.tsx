@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, LayoutGrid, ShieldCheck, WandSparkles } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
 import { TOOL_REGISTRY } from '@/lib/tools/registry';
 import { MobileFeatureCarousel } from '@/components/MobileFeatureCarousel';
@@ -122,25 +122,28 @@ export const LandingHero: React.FC = () => (
         right in your browser, without sending your documents away.
       </p>
 
-      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+      <div className="flex w-full flex-row gap-2 sm:w-auto sm:gap-3">
         <Link
           href={toolHref('dark-print')}
           prefetch={false}
-          className="inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-[14px] bg-primary-strong px-6 text-base font-bold text-white transition-colors hover:bg-primary-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:gap-2.5 md:border-transparent md:bg-primary-strong md:px-6 md:text-base md:text-white md:hover:bg-primary-deep"
         >
-          Whiten a dark PDF
-          <ArrowRight className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+          <WandSparkles className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
+          <span>Whiten a dark PDF</span>
+          <ArrowRight className="hidden h-[18px] w-[18px] shrink-0 md:block" aria-hidden="true" />
         </Link>
         <a
           href="#tools"
-          className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border border-elevated px-5 text-base font-semibold text-ink transition-colors hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:border-elevated md:bg-transparent md:px-5 md:text-base md:font-semibold md:text-ink md:hover:border-primary/50"
         >
-          Browse all {TOOL_REGISTRY.length} tools
+          <LayoutGrid className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
+          <span className="md:hidden">Browse all tools</span>
+          <span className="hidden md:inline">Browse all {TOOL_REGISTRY.length} tools</span>
         </a>
       </div>
 
       <p className="font-mono text-[13px] tracking-wide text-ink-faint">
-        Free · No account · No upload
+        Free · No account · No login
       </p>
     </div>
 
