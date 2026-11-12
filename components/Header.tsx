@@ -218,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Toggle App Menu"
               aria-expanded={isMenuOpen}
               aria-controls="settings-drawer"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-elevated/60 bg-surface/80 text-ink shadow-sm transition-all hover:bg-elevated hover:shadow active:scale-95 sm:h-11 sm:w-11"
+              className={isLanding ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 bg-transparent text-ink shadow-none transition-all hover:bg-surface-2 active:scale-95 sm:h-11 sm:w-11 md:border md:border-elevated/60 md:bg-surface/80 md:shadow-sm" : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-elevated/60 bg-surface/80 text-ink shadow-sm transition-all hover:bg-elevated hover:shadow active:scale-95 sm:h-11 sm:w-11"}
             >
               {isMenuOpen ? <X className="h-5 w-5 text-warning" /> : <Menu className="h-5 w-5 text-primary-soft" />}
             </button>
