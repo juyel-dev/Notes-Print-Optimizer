@@ -243,7 +243,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex h-[190px] w-[calc(100%-48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm"
+              className="relative flex h-[190px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
@@ -290,7 +290,7 @@ export const MobileFeatureCarousel: React.FC = () => {
           type="button"
           aria-label="Previous banner"
           onClick={() => scrollToSlide((activeIndex - 1 + SLIDES.length) % SLIDES.length)}
-          className="absolute left-1 top-[calc(50%-2px)] z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
+          className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
