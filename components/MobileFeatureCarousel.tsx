@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type ArtworkKind = 'dark-print' | 'enhance' | 'organize' | 'convert' | 'private';
 
@@ -160,9 +160,7 @@ export const MobileFeatureCarousel: React.FC = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
-  const rotationPaused = isPaused || isInteracting;
 
   const scrollToSlide = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
     const viewport = viewportRef.current;
@@ -197,7 +195,7 @@ export const MobileFeatureCarousel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (rotationPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (isInteracting || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return;
@@ -206,7 +204,7 @@ export const MobileFeatureCarousel: React.FC = () => {
     }, 5200);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, rotationPaused, scrollToSlide]);
+  }, [activeIndex, isInteracting, scrollToSlide]);
 
   const handleFocusCapture = (event: React.FocusEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
@@ -249,7 +247,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex h-[190px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm"
+              className="relative flex h-[168px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
@@ -304,7 +302,7 @@ export const MobileFeatureCarousel: React.FC = () => {
           type="button"
           aria-label="Next banner"
           onClick={() => scrollToSlide((activeIndex + 1) % SLIDES.length)}
-          className="absolute right-1 top-[calc(50%-2px)] z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
+          className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
         >
           <ChevronRight className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -323,16 +321,6 @@ export const MobileFeatureCarousel: React.FC = () => {
             }`}
           />
         ))}
-        <button
-          type="button"
-          data-carousel-rotation-control
-          aria-label={isPaused ? 'Resume banner rotation' : 'Pause banner rotation'}
-          aria-pressed={isPaused}
-          onClick={() => setIsPaused((paused) => !paused)}
-          className="ml-1 flex h-7 w-7 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-2"
-        >
-          {isPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-        </button>
       </div>
     </section>
   );
