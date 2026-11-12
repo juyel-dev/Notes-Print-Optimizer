@@ -143,7 +143,8 @@ export const LandingHero: React.FC = () => (
       </div>
 
       <p className="font-mono text-[13px] tracking-wide text-ink-faint">
-        Free · No account · No login
+        <span className="md:hidden">Free · No account · No login</span>
+        <span className="hidden md:inline">Free · No account · No upload</span>
       </p>
     </div>
 
