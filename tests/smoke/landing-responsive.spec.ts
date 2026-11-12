@@ -6,7 +6,9 @@ test.describe('mobile-only landing hero carousel', () => {
     await page.goto('/');
 
     await expect(page.getByRole('region', { name: 'Featured tools' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Dark Notes → Print/ })).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Featured tools' }).getByRole('link', { name: /Dark Notes → Print/ })
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next banner' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Show banner 1/ })).toBeVisible();
 
@@ -35,6 +37,10 @@ test.describe('mobile-only landing hero carousel', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
+    const installButton = page.getByRole('button', { name: 'Install Print Optimizer' });
+    await expect(installButton).toBeVisible();
+
+    // Dispatch only after the PWA hook has mounted and registered its listener.
     await page.evaluate(() => {
       const installEvent = new Event('beforeinstallprompt', { cancelable: true }) as Event & {
         prompt: () => Promise<void>;
@@ -45,8 +51,6 @@ test.describe('mobile-only landing hero carousel', () => {
       window.dispatchEvent(installEvent);
     });
 
-    const installButton = page.getByRole('button', { name: 'Install Print Optimizer' });
-    await expect(installButton).toBeVisible();
     await installButton.click();
     await expect(page.getByRole('button', { name: /Switch to (dark|light) theme/ })).toBeVisible();
 
