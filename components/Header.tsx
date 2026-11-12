@@ -231,7 +231,7 @@ export const Header: React.FC<HeaderProps> = ({
             <AppLogo className={`${isLanding ? 'h-10 w-10 sm:h-8 sm:w-8' : 'h-8 w-8'} lg:h-9 lg:w-9 shrink-0 drop-shadow-sm`} />
             <div className="min-w-0">
               <div
-                className={`${isLanding ? 'text-[15px] sm:text-[17px]' : 'text-[17px] sm:text-[18px]'} font-bold tracking-[-0.02em] lg:text-[19px]`}
+                className={`${isLanding ? 'text-[15px] sm:text-[18px]' : 'text-[17px] sm:text-[18px]'} font-bold tracking-[-0.02em] lg:text-[19px]`}
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 <span className="bg-gradient-to-r from-primary-strong via-primary to-accent bg-clip-text text-transparent">
