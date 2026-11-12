@@ -99,7 +99,7 @@ export const LandingHero: React.FC = () => (
     className="grid items-center gap-10 py-6 md:grid-cols-2 md:gap-14 md:py-10"
   >
     <div className="flex flex-col items-start gap-6">
-      <span className="inline-flex items-center gap-2 rounded-full border border-elevated px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px]">
+      <span className="hidden items-center gap-2 rounded-full border border-elevated px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px] md:inline-flex">
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
         Private by default · 100% on-device
       </span>
