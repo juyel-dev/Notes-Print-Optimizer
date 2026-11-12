@@ -82,7 +82,10 @@ export function useInstallPrompt(): InstallPromptState {
     if (!deferredPrompt) return 'unavailable';
     await deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
-    if (choice.outcome === 'accepted') setDeferredPrompt(null);
+    if (choice.outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstalled(true);
+    }
     return choice.outcome;
   }, [deferredPrompt, isIOS]);
 
