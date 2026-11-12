@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
 import { TOOL_REGISTRY } from '@/lib/tools/registry';
+import { MobileFeatureCarousel } from '@/components/MobileFeatureCarousel';
 
 /**
  * Landing hero — one promise, one primary action, and a live demonstration
@@ -103,8 +104,10 @@ export const LandingHero: React.FC = () => (
         Private by default · 100% on-device
       </span>
 
+      <MobileFeatureCarousel />
+
       <h1
-        className="text-balance text-[2.75rem] font-bold leading-[1.04] tracking-[-0.025em] text-ink sm:text-6xl"
+        className="sr-only md:not-sr-only text-balance text-[2.75rem] font-bold leading-[1.04] tracking-[-0.025em] text-ink sm:text-6xl"
         style={{ fontFamily: 'var(--font-display)' }}
       >
         Your notes,{' '}
@@ -114,7 +117,7 @@ export const LandingHero: React.FC = () => (
         in seconds.
       </h1>
 
-      <p className="max-w-xl text-pretty text-base leading-relaxed text-ink-muted sm:text-lg">
+      <p className="hidden max-w-xl text-pretty text-base leading-relaxed text-ink-muted sm:text-lg md:block">
         Whiten dark slides, clean up scans, arrange pages and convert files —
         right in your browser, without sending your documents away.
       </p>
