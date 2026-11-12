@@ -161,6 +161,8 @@ export const MobileFeatureCarousel: React.FC = () => {
   const slideRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+  const rotationPaused = isPaused || isInteracting;
 
   const scrollToSlide = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
     const viewport = viewportRef.current;
@@ -195,7 +197,7 @@ export const MobileFeatureCarousel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (rotationPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return;
@@ -204,11 +206,16 @@ export const MobileFeatureCarousel: React.FC = () => {
     }, 5200);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, isPaused, scrollToSlide]);
+  }, [activeIndex, rotationPaused, scrollToSlide]);
+
+  const handleFocusCapture = (event: React.FocusEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    setIsInteracting(!target.closest('[data-carousel-rotation-control]'));
+  };
 
   const handleBlurCapture = (event: React.FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setIsPaused(false);
+      setIsInteracting(false);
     }
   };
 
@@ -220,12 +227,11 @@ export const MobileFeatureCarousel: React.FC = () => {
     >
       <div
         className="relative -mx-3"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        onFocusCapture={() => setIsPaused(true)}
+        onFocusCapture={handleFocusCapture}
         onBlurCapture={handleBlurCapture}
-        onTouchStart={() => setIsPaused(true)}
-        onTouchEnd={() => setIsPaused(false)}
+        onTouchStart={() => setIsInteracting(true)}
+        onTouchEnd={() => setIsInteracting(false)}
+        onTouchCancel={() => setIsInteracting(false)}
       >
         <div
           ref={viewportRef}
@@ -319,6 +325,7 @@ export const MobileFeatureCarousel: React.FC = () => {
         ))}
         <button
           type="button"
+          data-carousel-rotation-control
           aria-label={isPaused ? 'Resume banner rotation' : 'Pause banner rotation'}
           aria-pressed={isPaused}
           onClick={() => setIsPaused((paused) => !paused)}
