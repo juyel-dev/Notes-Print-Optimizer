@@ -47,7 +47,12 @@ const SettingsDrawer = ({ onAppAction }: SettingsDrawerProps) => (
 /** Install action used only in the narrow-screen landing header. */
 const MobileLandingAction: React.FC = () => {
   const { canInstall, isInstalled, isIOS, promptInstall } = useInstallPrompt();
+  const [installStateReady, setInstallStateReady] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+
+  useEffect(() => {
+    setInstallStateReady(true);
+  }, []);
 
   const handleInstall = useCallback(async () => {
     if (isIOS || !canInstall) {
@@ -60,7 +65,7 @@ const MobileLandingAction: React.FC = () => {
 
   return (
     <>
-      {!isInstalled ? (
+      {installStateReady && !isInstalled ? (
         <button
           type="button"
           onClick={handleInstall}
