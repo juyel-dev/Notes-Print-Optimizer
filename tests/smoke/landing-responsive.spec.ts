@@ -6,6 +6,7 @@ test.describe('mobile-only landing hero carousel', () => {
     await page.goto('/');
 
     await expect(page.getByRole('region', { name: 'Featured tools' })).toBeVisible();
+    await expect(page.getByText(/Private by default · 100% on-device/)).toBeHidden();
     await expect(
       page.getByRole('region', { name: 'Featured tools' }).getByRole('link', { name: /Dark Notes → Print/ })
     ).toBeVisible();
@@ -65,6 +66,7 @@ test.describe('mobile-only landing hero carousel', () => {
 
     await expect(page.getByRole('region', { name: 'Featured tools' })).toBeHidden();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText(/Private by default · 100% on-device/)).toBeVisible();
     await expect(page.getByText(/Whiten dark slides, clean up scans, arrange pages/)).toBeVisible();
     await expect(page.getByText('Free · No account · No upload')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Install Print Optimizer' })).toHaveCount(0);
