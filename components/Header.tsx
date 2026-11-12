@@ -228,10 +228,10 @@ export const Header: React.FC<HeaderProps> = ({
           <div
             className={`flex items-center gap-2.5 ${isLanding ? 'static translate-x-0' : showStepper ? '' : 'absolute left-1/2 -translate-x-1/2 sm:static sm:translate-x-0'}`}
           >
-            <AppLogo className={`${isLanding ? 'h-10 w-10 sm:h-8 sm:w-8' : 'h-8 w-8'} lg:h-9 lg:w-9 shrink-0 drop-shadow-sm`} />
+            <AppLogo className={`${isLanding ? 'h-10 w-10 md:h-8 md:w-8' : 'h-8 w-8'} lg:h-9 lg:w-9 shrink-0 drop-shadow-sm`} />
             <div className="min-w-0">
               <div
-                className={`${isLanding ? 'text-[15px] sm:text-[18px]' : 'text-[17px] sm:text-[18px]'} font-bold tracking-[-0.02em] lg:text-[19px]`}
+                className={`${isLanding ? 'text-[15px] md:text-[18px]' : 'text-[17px] sm:text-[18px]'} font-bold tracking-[-0.02em] lg:text-[19px]`}
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 <span className="bg-gradient-to-r from-primary-strong via-primary to-accent bg-clip-text text-transparent">
@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-ink">Optimizer</span>
               </div>
               {isLanding && (
-                <p className="text-[9px] leading-tight text-ink-muted sm:hidden">
+                <p className="text-[9px] leading-tight text-ink-muted md:hidden">
                   Smart PDF &amp; Document Tools
                 </p>
               )}
@@ -311,10 +311,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             {isLanding ? (
               <>
-                <div className="sm:hidden">
+                <div className="md:hidden">
                   <MobileLandingAction />
                 </div>
-                <div className="hidden sm:block">
+                <div className="hidden md:block">
                   <ThemeToggle />
                 </div>
               </>
