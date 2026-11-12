@@ -7,10 +7,13 @@ import {
   CheckCircle2,
   RefreshCw,
   Search,
+  Download,
+  Smartphone,
 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useDialogFocus } from '@/lib/ui/useDialogFocus';
+import { useInstallPrompt } from '@/lib/pwa/useInstallPrompt';
 
 import type { WorkflowPhase } from '@/lib/workflow/types';
 export type { WorkflowPhase };
@@ -27,6 +30,8 @@ interface HeaderProps {
   isProcessing?: boolean;
   /** Controls stepper visibility — landing has no stepper until a tool is chosen */
   showStepper?: boolean;
+  /** Enables the compact install-aware header on the mobile landing page only. */
+  isLanding?: boolean;
 }
 
 interface SettingsDrawerProps {
@@ -39,11 +44,105 @@ const SettingsDrawer = ({ onAppAction }: SettingsDrawerProps) => (
   </Suspense>
 );
 
+/** Install action used only in the narrow-screen landing header. */
+const MobileLandingAction: React.FC = () => {
+  const { canInstall, isInstalled, isIOS, promptInstall } = useInstallPrompt();
+  const [installStateReady, setInstallStateReady] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+
+  useEffect(() => {
+    setInstallStateReady(true);
+  }, []);
+
+  const handleInstall = useCallback(async () => {
+    if (isIOS || !canInstall) {
+      setShowIOSGuide(true);
+      return;
+    }
+    const outcome = await promptInstall();
+    if (outcome === 'ios' || outcome === 'unavailable') setShowIOSGuide(true);
+  }, [canInstall, isIOS, promptInstall]);
+
+  return (
+    <>
+      {installStateReady && !isInstalled ? (
+        <button
+          type="button"
+          onClick={handleInstall}
+          aria-label="Install Print Optimizer"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-success-deep px-3.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-success-strong active:scale-[0.98]"
+        >
+          {isIOS ? <Smartphone className="h-4 w-4" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+          <span>Install</span>
+        </button>
+      ) : (
+        <ThemeToggle />
+      )}
+
+      {showIOSGuide && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-bg/65 p-3 backdrop-blur-sm sm:items-center"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowIOSGuide(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-install-title"
+            className="w-full max-w-sm rounded-2xl border border-elevated bg-surface p-5 text-ink shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="mobile-install-title" className="text-base font-bold">Install Print Optimizer</h2>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {isIOS
+                    ? 'Add it to your iPhone home screen from Safari.'
+                    : 'Use your browser menu to add the app to your home screen.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowIOSGuide(false)}
+                aria-label="Close install instructions"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-2"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            {isIOS ? (
+              <ol className="mt-4 space-y-2 text-sm text-ink-muted">
+                <li>1. Open this page in Safari and tap <strong className="text-ink">Share</strong>.</li>
+                <li>2. Choose <strong className="text-ink">Add to Home Screen</strong>.</li>
+                <li>3. Tap <strong className="text-ink">Add</strong>.</li>
+              </ol>
+            ) : (
+              <ol className="mt-4 space-y-2 text-sm text-ink-muted">
+                <li>1. Open your browser menu (<strong className="text-ink">⋮</strong> or <strong className="text-ink">Share</strong>).</li>
+                <li>2. Choose <strong className="text-ink">Install app</strong> or <strong className="text-ink">Add to Home Screen</strong>.</li>
+                <li>3. Confirm the install option shown by your browser.</li>
+              </ol>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowIOSGuide(false)}
+              className="mt-5 flex h-10 w-full items-center justify-center rounded-xl bg-success-deep text-sm font-bold text-white"
+            >
+              Got it
+            </button>
+          </section>
+        </div>
+      )}
+    </>
+  );
+};
+
 export const Header: React.FC<HeaderProps> = ({
   currentPhase,
   onReset,
   onNavigatePhase,
   showStepper = false,
+  isLanding = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
@@ -119,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Toggle App Menu"
               aria-expanded={isMenuOpen}
               aria-controls="settings-drawer"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-elevated/60 bg-surface/80 text-ink shadow-sm transition-all hover:bg-elevated hover:shadow active:scale-95 sm:h-11 sm:w-11"
+              className={isLanding ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 bg-transparent text-ink shadow-none transition-all hover:bg-surface-2 active:scale-95 sm:h-11 sm:w-11 md:border md:border-elevated/60 md:bg-surface/80 md:shadow-sm" : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-elevated/60 bg-surface/80 text-ink shadow-sm transition-all hover:bg-elevated hover:shadow active:scale-95 sm:h-11 sm:w-11"}
             >
               {isMenuOpen ? <X className="h-5 w-5 text-warning" /> : <Menu className="h-5 w-5 text-primary-soft" />}
             </button>
@@ -127,17 +226,24 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Logo — div (not h1) so each page has a single semantic h1 in its main content */}
           <div
-            className={`flex items-center gap-2.5 ${showStepper ? '' : 'absolute left-1/2 -translate-x-1/2 sm:static sm:translate-x-0'}`}
+            className={`flex items-center gap-2.5 ${isLanding ? 'static translate-x-0' : showStepper ? '' : 'absolute left-1/2 -translate-x-1/2 sm:static sm:translate-x-0'}`}
           >
-            <AppLogo className="h-8 w-8 lg:h-9 lg:w-9 drop-shadow-sm" />
-            <div
-              className="text-[17px] font-bold tracking-[-0.02em] sm:text-[18px] lg:text-[19px]"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              <span className="bg-gradient-to-r from-primary-strong via-primary to-accent bg-clip-text text-transparent">
-                Print
-              </span>{' '}
-              <span className="text-ink">Optimizer</span>
+            <AppLogo className={`${isLanding ? 'h-10 w-10 md:h-8 md:w-8' : 'h-8 w-8'} lg:h-9 lg:w-9 shrink-0 drop-shadow-sm`} />
+            <div className="min-w-0">
+              <div
+                className={`${isLanding ? 'text-[15px] md:text-[18px]' : 'text-[17px] sm:text-[18px]'} font-bold tracking-[-0.02em] lg:text-[19px]`}
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                <span className="bg-gradient-to-r from-primary-strong via-primary to-accent bg-clip-text text-transparent">
+                  Print
+                </span>{' '}
+                <span className="text-ink">Optimizer</span>
+              </div>
+              {isLanding && (
+                <p className="text-[9px] leading-tight text-ink-muted md:hidden">
+                  Smart PDF &amp; Document Tools
+                </p>
+              )}
             </div>
           </div>
 
@@ -203,7 +309,18 @@ export const Header: React.FC<HeaderProps> = ({
                 ⌘K
               </kbd>
             </button>
-            <ThemeToggle />
+            {isLanding ? (
+              <>
+                <div className="md:hidden">
+                  <MobileLandingAction />
+                </div>
+                <div className="hidden md:block">
+                  <ThemeToggle />
+                </div>
+              </>
+            ) : (
+              <ThemeToggle />
+            )}
             {currentPhase > 1 && onReset && (
               <button
                 type="button"
