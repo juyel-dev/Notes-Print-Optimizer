@@ -26,7 +26,7 @@ function SlideMock({ variant }: { variant: SlideVariant }) {
   return (
     <div
       aria-hidden="true"
-      className="absolute inset-0 flex flex-col gap-[5%] px-[8%] py-[9%]"
+      className="absolute inset-0 flex flex-col gap-[5%] px-[8%] pb-[7%] pt-[19%]"
       style={{ background: p.bg }}
     >
       <div className="h-[9%] w-[46%] rounded" style={{ background: p.heading }} />
@@ -48,7 +48,7 @@ function BeforeAfterDemo() {
   const [pos, setPos] = useState(50);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-3">
       <div
         className="relative aspect-[16/11] w-full overflow-hidden rounded-[20px] border border-elevated bg-white shadow-float"
       >
@@ -96,9 +96,9 @@ function BeforeAfterDemo() {
 export const LandingHero: React.FC = () => (
   <section
     aria-label="Print Optimizer — made for students"
-    className="grid items-center gap-10 py-6 md:grid-cols-2 md:gap-14 md:py-10"
+    className="grid grid-cols-1 items-center gap-8 py-4 md:grid-cols-2 md:gap-14 md:py-10"
   >
-    <div className="flex flex-col items-start gap-6">
+    <div className="flex min-w-0 flex-col items-start gap-5 md:gap-6">
       <span className="hidden items-center gap-2 rounded-full border border-elevated px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px] md:inline-flex">
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
         Private by default · 100% on-device
@@ -122,11 +122,11 @@ export const LandingHero: React.FC = () => (
         right in your browser, without sending your documents away.
       </p>
 
-      <div className="flex w-full flex-row gap-2 sm:w-auto sm:gap-3">
+      <div className="flex w-full min-w-0 flex-row gap-2 sm:w-auto sm:gap-3">
         <Link
           href={toolHref('dark-print')}
           prefetch={false}
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:gap-2.5 md:border-transparent md:bg-primary-strong md:px-6 md:text-base md:text-white md:hover:bg-primary-deep"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[14px] text-center leading-tight md:whitespace-nowrap border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:gap-2.5 md:border-transparent md:bg-primary-strong md:px-6 md:text-base md:text-white md:hover:bg-primary-deep"
         >
           <WandSparkles className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
           <span>Whiten a dark PDF</span>
@@ -134,7 +134,7 @@ export const LandingHero: React.FC = () => (
         </Link>
         <a
           href="#tools"
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:border-elevated md:bg-transparent md:px-5 md:text-base md:font-semibold md:text-ink md:hover:border-primary/50"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[14px] text-center leading-tight md:whitespace-nowrap border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:border-elevated md:bg-transparent md:px-5 md:text-base md:font-semibold md:text-ink md:hover:border-primary/50"
         >
           <LayoutGrid className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
           <span className="md:hidden">Browse all tools</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Menu,
   X,
@@ -50,9 +51,22 @@ const MobileLandingAction: React.FC = () => {
   const [installStateReady, setInstallStateReady] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
+  const dialogCloseRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     setInstallStateReady(true);
   }, []);
+
+  // Close on Escape and move focus into the dialog while it is open.
+  useEffect(() => {
+    if (!showIOSGuide) return;
+    dialogCloseRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowIOSGuide(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showIOSGuide]);
 
   const handleInstall = useCallback(async () => {
     if (isIOS || !canInstall) {
@@ -65,12 +79,15 @@ const MobileLandingAction: React.FC = () => {
 
   return (
     <>
-      {installStateReady && !isInstalled ? (
+      {!installStateReady ? (
+        // Reserve the Install button's footprint so the header never jumps on mount.
+        <span aria-hidden="true" className="inline-block h-9 w-[84px]" />
+      ) : !isInstalled ? (
         <button
           type="button"
           onClick={handleInstall}
           aria-label="Install Print Optimizer"
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-success-deep px-3.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-success-strong active:scale-[0.98]"
+          className="inline-flex h-9 min-w-[84px] items-center justify-center gap-1.5 rounded-full bg-success-deep px-3.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-success-strong active:scale-[0.98]"
         >
           {isIOS ? <Smartphone className="h-4 w-4" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
           <span>Install</span>
@@ -79,7 +96,9 @@ const MobileLandingAction: React.FC = () => {
         <ThemeToggle />
       )}
 
-      {showIOSGuide && (
+      {/* Portalled to <body>: the header has backdrop-filter, which would otherwise become the
+          containing block for this fixed overlay and clip it to the 56px header. */}
+      {showIOSGuide && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-bg/65 p-3 backdrop-blur-sm sm:items-center"
           onMouseDown={(event) => {
@@ -102,6 +121,7 @@ const MobileLandingAction: React.FC = () => {
                 </p>
               </div>
               <button
+                ref={dialogCloseRef}
                 type="button"
                 onClick={() => setShowIOSGuide(false)}
                 aria-label="Close install instructions"
@@ -131,7 +151,8 @@ const MobileLandingAction: React.FC = () => {
               Got it
             </button>
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
