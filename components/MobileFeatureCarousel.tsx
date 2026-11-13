@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { toolHref } from '@/lib/tools/registry';
 
 type ArtworkKind = 'dark-print' | 'enhance' | 'organize' | 'convert' | 'private';
 
@@ -19,28 +20,28 @@ const SLIDES: FeatureSlide[] = [
     eyebrow: 'FEATURE SPOTLIGHT',
     title: 'Dark Notes → Print',
     description: 'Turn dark lecture slides into printer-friendly pages.',
-    href: '/tools/dark-print/',
+    href: toolHref('dark-print'),
     artwork: 'dark-print',
   },
   {
     eyebrow: 'SCAN CLEANUP',
     title: 'Enhance Light PDF',
     description: 'Make faint handwriting and washed-out scans easier to read.',
-    href: '/tools/enhance-light-pdf/',
+    href: toolHref('enhance'),
     artwork: 'enhance',
   },
   {
     eyebrow: 'PDF ORGANIZER',
     title: 'Organize PDF Pages',
     description: 'Rotate, reorder or remove pages in a few simple steps.',
-    href: '/tools/organize-pages/',
+    href: toolHref('organize'),
     artwork: 'organize',
   },
   {
     eyebrow: 'FILE CONVERSION',
     title: 'Images ↔ PDF',
     description: 'Turn photos into PDFs or export PDF pages as images.',
-    href: '/tools/image-to-pdf/',
+    href: toolHref('to-pdf'),
     artwork: 'convert',
   },
   {
@@ -156,26 +157,53 @@ function FeatureArtwork({ kind }: { kind: ArtworkKind }) {
   );
 }
 
+const AUTOPLAY_MS = 5200;
+
 export const MobileFeatureCarousel: React.FC = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const activeRef = useRef(0);
+  /** True while a programmatic smooth-scroll is in flight, so intermediate
+   *  scroll events cannot overwrite the target index (dot flicker). */
+  const lockRef = useRef(false);
+  const lockTimerRef = useRef<number | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const scrollToSlide = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
-    const viewport = viewportRef.current;
-    const slide = slideRefs.current[index];
-    if (!viewport || !slide) return;
-
-    const left = slide.offsetLeft - (viewport.clientWidth - slide.clientWidth) / 2;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    viewport.scrollTo({ left, behavior: reducedMotion ? 'auto' : behavior });
-    setActiveIndex(index);
+  const commitIndex = useCallback((index: number) => {
+    activeRef.current = index;
+    setActiveIndex((current) => (current === index ? current : index));
   }, []);
+
+  const releaseLock = useCallback(() => {
+    lockRef.current = false;
+    window.clearTimeout(lockTimerRef.current);
+  }, []);
+
+  const scrollToSlide = useCallback(
+    (index: number) => {
+      const viewport = viewportRef.current;
+      const slide = slideRefs.current[index];
+      if (!viewport || !slide) return;
+
+      const left = slide.offsetLeft - (viewport.clientWidth - slide.clientWidth) / 2;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      lockRef.current = true;
+      window.clearTimeout(lockTimerRef.current);
+      // Fallback for browsers without `scrollend`.
+      lockTimerRef.current = window.setTimeout(releaseLock, reducedMotion ? 60 : 900);
+
+      viewport.scrollTo({ left, behavior: reducedMotion ? 'auto' : 'smooth' });
+      commitIndex(index);
+    },
+    [commitIndex, releaseLock],
+  );
 
   const handleScroll = useCallback(() => {
     const viewport = viewportRef.current;
-    if (!viewport) return;
+    if (!viewport || lockRef.current) return;
 
     const center = viewport.scrollLeft + viewport.clientWidth / 2;
     let closestIndex = 0;
@@ -183,51 +211,62 @@ export const MobileFeatureCarousel: React.FC = () => {
 
     slideRefs.current.forEach((slide, index) => {
       if (!slide) return;
-      const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
-      const distance = Math.abs(center - slideCenter);
+      const distance = Math.abs(center - (slide.offsetLeft + slide.clientWidth / 2));
       if (distance < closestDistance) {
         closestDistance = distance;
         closestIndex = index;
       }
     });
 
-    setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
-  }, []);
+    commitIndex(closestIndex);
+  }, [commitIndex]);
 
   useEffect(() => {
-    if (isInteracting || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const onScrollEnd = () => {
+      releaseLock();
+      handleScroll();
+    };
+    viewport.addEventListener('scrollend', onScrollEnd);
+    return () => {
+      viewport.removeEventListener('scrollend', onScrollEnd);
+      window.clearTimeout(lockTimerRef.current);
+    };
+  }, [handleScroll, releaseLock]);
+
+  // Autoplay: depends only on pause/interaction state (not on the active index),
+  // so manual navigation never resets the timer mid-cycle.
+  useEffect(() => {
+    if (isPaused || isInteracting) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'visible') return;
-      const nextIndex = (activeIndex + 1) % SLIDES.length;
-      scrollToSlide(nextIndex);
-    }, 5200);
+      scrollToSlide((activeRef.current + 1) % SLIDES.length);
+    }, AUTOPLAY_MS);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, isInteracting, scrollToSlide]);
+  }, [isPaused, isInteracting, scrollToSlide]);
 
-  const handleFocusCapture = (event: React.FocusEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-    setIsInteracting(!target.closest('[data-carousel-rotation-control]'));
-  };
-
-  const handleBlurCapture = (event: React.FocusEvent<HTMLDivElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setIsInteracting(false);
-    }
-  };
+  const go = (delta: number) => scrollToSlide((activeRef.current + delta + SLIDES.length) % SLIDES.length);
 
   return (
     <section
       aria-label="Featured tools"
       aria-roledescription="carousel"
-      className="w-full md:hidden"
+      className="w-full min-w-0 max-w-full md:hidden"
     >
       <div
         className="relative -mx-3"
-        onFocusCapture={handleFocusCapture}
-        onBlurCapture={handleBlurCapture}
-        onTouchStart={() => setIsInteracting(true)}
+        onFocusCapture={() => setIsInteracting(true)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsInteracting(false);
+        }}
+        onTouchStart={() => {
+          releaseLock();
+          setIsInteracting(true);
+        }}
         onTouchEnd={() => setIsInteracting(false)}
         onTouchCancel={() => setIsInteracting(false)}
       >
@@ -235,7 +274,7 @@ export const MobileFeatureCarousel: React.FC = () => {
           ref={viewportRef}
           onScroll={handleScroll}
           className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-6 pb-1"
-          style={{ scrollBehavior: 'smooth', scrollPaddingInline: '24px' }}
+          style={{ scrollPaddingInline: '24px' }}
         >
           {SLIDES.map((slide, index) => (
             <Link
@@ -247,7 +286,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex h-[168px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm"
+              className="relative flex min-h-[176px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
@@ -258,7 +297,7 @@ export const MobileFeatureCarousel: React.FC = () => {
                 className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full"
                 style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}
               />
-              <div className="relative z-10 flex min-w-0 w-[62%] flex-col items-start">
+              <div className="relative z-10 flex w-[56%] min-w-0 flex-col items-start">
                 <span
                   className="inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-[9px] font-bold tracking-[0.06em]"
                   style={{
@@ -268,18 +307,19 @@ export const MobileFeatureCarousel: React.FC = () => {
                 >
                   {slide.eyebrow}
                 </span>
-                <h2 className="mt-2.5 text-[20px] font-bold leading-[1.08] tracking-[-0.035em] text-ink">
+                {/* <p>, not <h2>: five heading-level titles would precede the page <h1> in DOM order. */}
+                <p className="mt-2.5 text-balance text-[20px] font-bold leading-[1.1] tracking-[-0.03em] text-ink">
                   {slide.title}
-                </h2>
-                <p className="mt-2 max-w-[215px] text-[12px] leading-[1.4] text-ink-muted">
+                </p>
+                <p className="mt-1.5 line-clamp-3 text-[12px] leading-[1.4] text-ink-muted">
                   {slide.description}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-bold text-success">
+                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[11px] font-bold text-success">
                   Explore tool <span aria-hidden="true">→</span>
                 </span>
               </div>
 
-              <div className="pointer-events-none absolute bottom-2 right-0 top-10 w-[46%]">
+              <div className="pointer-events-none absolute bottom-3 right-1 top-12 w-[42%]">
                 <FeatureArtwork kind={slide.artwork} />
               </div>
 
@@ -293,34 +333,49 @@ export const MobileFeatureCarousel: React.FC = () => {
         <button
           type="button"
           aria-label="Previous banner"
-          onClick={() => scrollToSlide((activeIndex - 1 + SLIDES.length) % SLIDES.length)}
-          className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
+          onClick={() => go(-1)}
+          className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <button
           type="button"
           aria-label="Next banner"
-          onClick={() => scrollToSlide((activeIndex + 1) % SLIDES.length)}
-          className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md"
+          onClick={() => go(1)}
+          className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
         >
           <ChevronRight className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
-      <div role="group" className="mt-2 flex items-center justify-center gap-2" aria-label="Choose a banner">
-        {SLIDES.map((slide, index) => (
-          <button
-            key={slide.eyebrow}
-            type="button"
-            aria-label={`Show banner ${index + 1}: ${slide.title}`}
-            aria-pressed={activeIndex === index}
-            onClick={() => scrollToSlide(index)}
-            className={`h-2 rounded-full transition-[width,background-color] duration-300 ${
-              activeIndex === index ? 'w-5 bg-success-deep' : 'w-2 bg-elevated'
-            }`}
-          />
-        ))}
+      <div className="mt-1.5 flex items-center justify-center gap-1">
+        <div role="group" className="flex items-center" aria-label="Choose a banner">
+          {SLIDES.map((slide, index) => (
+            <button
+              key={slide.eyebrow}
+              type="button"
+              aria-label={`Show banner ${index + 1}: ${slide.title}`}
+              aria-pressed={activeIndex === index}
+              onClick={() => scrollToSlide(index)}
+              className="flex h-6 items-center justify-center px-1"
+            >
+              <span
+                aria-hidden="true"
+                className={`block h-2 rounded-full transition-[width,background-color] duration-300 ${
+                  activeIndex === index ? 'w-5 bg-success-deep' : 'w-2 bg-elevated'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsPaused((p) => !p)}
+          aria-label={isPaused ? 'Play automatic rotation' : 'Pause automatic rotation'}
+          className="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted hover:text-ink"
+        >
+          {isPaused ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
+        </button>
       </div>
     </section>
   );
