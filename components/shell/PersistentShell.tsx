@@ -245,7 +245,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
         onNavigatePhase={(phase) => actions.setPhase(phase)}
         isProcessing={state.isProcessing}
         showStepper={toolMode === 'dark-print' && !arrivedViaEnhance}
-        isLanding={toolMode === null}
+        isLanding={pathname === '/'}
       />
       <ProcessingModal progress={state.progress} onCancel={handleCancelProcessing} progressiveThumbnails={progressiveThumbnails} />
       {swUpdateAvailable && (
