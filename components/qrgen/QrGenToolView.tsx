@@ -757,7 +757,7 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
             >
               {flash === 'png' ? <Check className="h-[18px] w-[18px]" aria-hidden="true" /> : <Download className="h-[18px] w-[18px]" aria-hidden="true" />}
               Download PNG
-              <span className="font-mono text-xs font-semibold opacity-80">
+              <span className="font-mono text-xs font-semibold">
                 {size} × {size}
               </span>
             </button>
