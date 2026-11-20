@@ -247,7 +247,8 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
               }
             : { type: dotType, color: dark },
           cornersSquareOptions: { type: cornerSquare, color: dark },
-          cornersDotOptions: { type: cornerDot, color: dark },          // '' (not undefined) so removing the logo really clears it — the library ignores undefined when merging.
+          cornersDotOptions: { type: cornerDot, color: dark },
+          // '' (not undefined) so removing the logo really clears it — the library ignores undefined when merging.
           image: logoDataUrl ?? '',
           // saveAsBlob:false is REQUIRED: the default re-reads the logo with XMLHttpRequest(data:), which our
           // CSP (connect-src, no data:) blocks silently — the render promise then never resolves (blank preview, hung download).
@@ -496,7 +497,8 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
         aria-labelledby="qr-tab-generate"
         className={tab === 'generate' ? 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-6' : 'hidden'}
       >
-        {/* 1 — content */}        <section aria-label={`${modeMeta.label} content`} className={`${CARD} min-w-0 p-4 sm:p-5 lg:col-start-1`}>
+        {/* 1 — content */}
+        <section aria-label={`${modeMeta.label} content`} className={`${CARD} min-w-0 p-4 sm:p-5 lg:col-start-1`}>
           {mode === 'wifi' ? (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
@@ -745,6 +747,7 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
               </div>
             </div>
           )}
+
           <div className="flex flex-col gap-2">
             <button
               type="button"
@@ -995,3 +998,36 @@ export const QrGenToolView: React.FC<QrGenToolViewProps> = ({ onBack }) => {
                 {(['L', 'M', 'Q', 'H'] as const).map((k) => (
                   <button
                     key={k}
+                    type="button"
+                    onClick={() => setEcc(k)}
+                    aria-pressed={ecc === k}
+                    className={`flex min-h-[64px] flex-col items-center justify-center rounded-xl border px-1 py-1.5 text-center transition active:scale-[0.97] ${FOCUS} ${ecc === k ? 'border-primary/50 bg-primary/15 text-primary-soft shadow-sm' : 'border-elevated/60 bg-surface-2/60 text-ink-muted hover:bg-elevated'}`}
+                  >
+                    <span className="text-sm font-extrabold">{k}</span>
+                    <span className="text-2xs font-bold">{ECC_META[k].hint}</span>
+                    <span className="mt-0.5 text-2xs leading-tight text-ink-faint">{ECC_META[k].desc}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-ink-muted">Higher survives creases and logos but holds less data. Use Q or H for anything printed.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDark(DEFAULT_DARK);
+                setLight(DEFAULT_LIGHT);
+                setTransparent(false);
+                setSizeBoth(512);
+                setMargin(2);
+                setEcc('M');
+              }}
+              className={`${CHIP_BTN} self-start ${FOCUS}`}
+            >
+              Reset style
+            </button>
+          </Accordion>
+        </section>
+      </div>
+    </div>
+  );
+};
