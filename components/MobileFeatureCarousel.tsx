@@ -286,7 +286,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex aspect-[16/9] min-h-[176px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+              className="relative flex aspect-[3/1] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[20px] border border-success/15 p-3 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
@@ -308,18 +308,18 @@ export const MobileFeatureCarousel: React.FC = () => {
                   {slide.eyebrow}
                 </span>
                 {/* <p>, not <h2>: five heading-level titles would precede the page <h1> in DOM order. */}
-                <p className="mt-2.5 text-balance text-[20px] font-bold leading-[1.1] tracking-[-0.03em] text-ink">
+                <p className="mt-1.5 text-balance text-[16px] font-bold leading-[1.1] tracking-[-0.03em] text-ink">
                   {slide.title}
                 </p>
-                <p className="mt-1.5 line-clamp-3 text-[12px] leading-[1.4] text-ink-muted">
+                <p className="mt-1 line-clamp-2 text-[10px] leading-[1.4] text-ink-muted">
                   {slide.description}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[11px] font-bold text-success">
+                <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[10px] font-bold text-success">
                   Explore tool <span aria-hidden="true">→</span>
                 </span>
               </div>
 
-              <div className="pointer-events-none absolute bottom-3 right-1 top-12 w-[42%]">
+              <div className="pointer-events-none absolute bottom-2 right-1 top-2 w-[42%]">
                 <FeatureArtwork kind={slide.artwork} />
               </div>
 
