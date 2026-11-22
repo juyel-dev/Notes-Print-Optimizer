@@ -18,7 +18,7 @@ The workflow defaults to **OFF**. If it is enabled without a valid page selectio
 | Page ID | Route / capture |
 | --- | --- |
 | `home` | Home page |
-| `dark-print` | Dark Print upload, processing, result, layout, done, and invalid-file states |
+| `dark-print` | Attempts to capture upload, processing, result, layout, done, and invalid-file states |
 | `enhance-light-pdf` | Enhance Light PDF |
 | `protect-pdf` | Protect PDF |
 | `pdf-to-images` | PDF to Images |
@@ -47,7 +47,7 @@ Whitespace around comma-separated IDs is ignored. Unknown IDs fail validation.
 - **Viewport:** `mobile`, `desktop`, or `both`.
 - Desktop is 1280 × 800; mobile is 390 × 844.
 
-Only selected page × theme × viewport combinations run. Home is captured full-page, tool landing pages use the selected viewport, and Dark Print captures its available interaction states.
+Only selected page × theme × viewport combinations run. Home is captured full-page, tool landing pages use the selected viewport, and Dark Print attempts its multi-step interaction flow. The processing-dialog image may be absent if processing finishes too quickly.
 
 ## Storage and safety
 
