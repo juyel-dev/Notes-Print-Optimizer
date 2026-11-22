@@ -80,7 +80,7 @@
     "url": "https://github.com/juyel-dev/Notes-Print-Optimizer/issues"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "24.x"
   },
   "browserslist": [
     "last 2 Chrome versions",

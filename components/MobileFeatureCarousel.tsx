@@ -286,7 +286,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex min-h-[176px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[24px] border border-success/15 p-[18px] text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+              className="relative flex aspect-[3/1] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[20px] border border-success/15 p-2 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
@@ -299,7 +299,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               />
               <div className="relative z-10 flex w-[56%] min-w-0 flex-col items-start">
                 <span
-                  className="inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-[9px] font-bold tracking-[0.06em]"
+                  className="inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[8px] font-bold tracking-[0.04em]"
                   style={{
                     color: 'var(--color-success)',
                     background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
@@ -308,22 +308,22 @@ export const MobileFeatureCarousel: React.FC = () => {
                   {slide.eyebrow}
                 </span>
                 {/* <p>, not <h2>: five heading-level titles would precede the page <h1> in DOM order. */}
-                <p className="mt-2.5 text-balance text-[20px] font-bold leading-[1.1] tracking-[-0.03em] text-ink">
+                <p className="mt-1 text-balance text-[14px] font-bold leading-[1.05] tracking-[-0.03em] text-ink">
                   {slide.title}
                 </p>
-                <p className="mt-1.5 line-clamp-3 text-[12px] leading-[1.4] text-ink-muted">
+                <p className="hidden">
                   {slide.description}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[11px] font-bold text-success">
+                <span className="mt-auto inline-flex items-center gap-1 pt-0.5 text-[9px] font-bold leading-none text-success">
                   Explore tool <span aria-hidden="true">→</span>
                 </span>
               </div>
 
-              <div className="pointer-events-none absolute bottom-3 right-1 top-12 w-[42%]">
+              <div className="pointer-events-none absolute bottom-1 right-1 top-1 w-[42%]">
                 <FeatureArtwork kind={slide.artwork} />
               </div>
 
-              <span className="absolute right-3.5 top-3.5 rounded-full bg-success-deep px-2.5 py-1 text-[10px] font-bold tabular-nums text-white">
+              <span className="absolute right-2 top-2 rounded-full bg-success-deep px-2 py-0.5 text-[9px] font-bold tabular-nums text-white">
                 {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
               </span>
             </Link>
