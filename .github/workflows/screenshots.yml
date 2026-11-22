@@ -1,0 +1,84 @@
+name: Screenshot Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      enabled:
+        description: Explicitly enable screenshot generation
+        type: boolean
+        required: true
+        default: false
+      page_ids:
+        description: 'IDs in docs/SCREENSHOT_WORKFLOW.md; comma-separated or "all". Blank is rejected.'
+        type: string
+        required: false
+        default: ''
+      theme:
+        description: Which theme variants to capture
+        type: choice
+        required: true
+        default: both
+        options:
+          - both
+          - light
+          - dark
+      viewport:
+        description: Which viewport variants to capture
+        type: choice
+        required: true
+        default: both
+        options:
+          - both
+          - desktop
+          - mobile
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: ${{ inputs.enabled }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SCREENSHOT_ENABLED: 'true'
+      SCREENSHOT_PAGE_IDS: ${{ inputs.page_ids }}
+      SCREENSHOT_THEME: ${{ inputs.theme }}
+      SCREENSHOT_VIEWPORT: ${{ inputs.viewport }}
+      NEXT_PUBLIC_BASE_PATH: ''
+      NEXT_PUBLIC_FEEDBACK_URL: ${{ vars.NEXT_PUBLIC_FEEDBACK_URL || 'https://script.google.com/macros/s/AKfycbyYBvhRphdbvTAEI-hktpUWcpYyFjdsOjSHhHwuQyt0K310uqIX3ManTNfQ1Kx7UEtw/exec' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Validate screenshot selection
+        run: node scripts/validate-visual-inputs.mjs
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-fund
+
+      - name: Build app
+        run: bash scripts/ci-build.sh
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture selected pages only
+        run: npx playwright test --config=playwright.visual.config.ts
+
+      - name: Upload selected screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-screenshots
+          path: visual-output/**/*.png
+          if-no-files-found: ignore
+          retention-days: 14
