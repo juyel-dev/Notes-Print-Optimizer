@@ -311,9 +311,6 @@ export const MobileFeatureCarousel: React.FC = () => {
                 <p className="mt-1 text-balance text-[14px] font-bold leading-[1.05] tracking-[-0.03em] text-ink">
                   {slide.title}
                 </p>
-                <p className="hidden">
-                  {slide.description}
-                </p>
                 <span className="mt-auto inline-flex items-center gap-1 pt-0.5 text-[9px] font-bold leading-none text-success">
                   Explore tool <span aria-hidden="true">→</span>
                 </span>
@@ -334,17 +331,17 @@ export const MobileFeatureCarousel: React.FC = () => {
           type="button"
           aria-label="Previous banner"
           onClick={() => go(-1)}
-          className="absolute left-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
+          className="absolute left-0.5 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
         >
-          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           type="button"
           aria-label="Next banner"
           onClick={() => go(1)}
-          className="absolute right-1 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
+          className="absolute right-0.5 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
         >
-          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
