@@ -15,7 +15,7 @@ async function shot(
 ): Promise<void> {
   await page.screenshot({
     path: `visual-output/${pageId}/${theme}-${viewport}/landing.png`,
-    fullPage: true,
+    fullPage: false,
   });
 }
 
