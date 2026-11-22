@@ -96,7 +96,7 @@ function BeforeAfterDemo() {
 export const LandingHero: React.FC = () => (
   <section
     aria-label="Print Optimizer — made for students"
-    className="grid grid-cols-1 items-center gap-8 py-4 md:grid-cols-2 md:gap-14 md:py-10"
+    className="grid grid-cols-1 items-center gap-8 pb-4 pt-0 sm:pt-4 md:grid-cols-2 md:gap-14 md:py-10"
   >
     <div className="flex min-w-0 flex-col items-start gap-5 md:gap-6">
       <span className="hidden items-center gap-2 rounded-full border border-elevated px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px] md:inline-flex">

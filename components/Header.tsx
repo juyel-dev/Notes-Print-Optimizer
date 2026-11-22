@@ -227,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
     <>
       <header
         id="app-header"
-        className="sticky top-0 z-40 w-full border-b border-surface-2/60 bg-surface/80 backdrop-blur-xl supports-[backdrop-filter]:bg-surface/70 text-ink shadow-sm pt-safe"
+        className="sticky top-0 z-40 w-full border-b border-surface-2/40 bg-surface/80 backdrop-blur-xl supports-[backdrop-filter]:bg-surface/70 text-ink shadow-sm pt-safe"
       >
         <div className="mx-auto flex h-[56px] max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:h-[60px]">
           {/* Left: Hamburger */}

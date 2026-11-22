@@ -285,7 +285,7 @@ export function PersistentShell({ children }: { children: React.ReactNode }) {
       )}
       {/* pb-28 only while a tool is active — it reserves room for the fixed action bar.
           Landing has no bar, so the dead 112px gap before the footer is removed. */}
-      <main id="main-content" className={`mx-auto w-full max-w-5xl lg:max-w-6xl flex-1 px-3 py-4 sm:px-6 sm:py-6 ${toolMode !== null ? 'pb-28 md:pb-8' : 'pb-10 md:pb-8'}`}>
+      <main id="main-content" className={`mx-auto w-full max-w-5xl lg:max-w-6xl flex-1 px-3 sm:px-6 sm:py-6 ${toolMode !== null ? 'pt-4 pb-28 md:pb-8' : 'pt-3 pb-10 md:pb-8'}`}>
         {toolMode !== null && (
           <>
             <PlatformUIOrchestrator
