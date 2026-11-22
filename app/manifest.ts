@@ -15,11 +15,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: `${basePath}/`,
     display: 'standalone',
     background_color: '#020617',
-    /* Static by PWA platform design. Rebrand 2026-09: Cobalt Ink primary
-       (#3654D9) replaces the old violet/indigo leftover — matches
-       --color-primary-strong in app/globals.css. Runtime toggle only
-       drives the meta theme-color, not this manifest value. */
-    theme_color: '#3654d9',
+    /* Static by PWA platform design. Must match the page background: Android
+       paints the splash status bar and the navigation bar with this value, so a
+       brand blue here showed up as a blue band at the bottom of the installed app.
+       Runtime toggle only drives the meta theme-color (status bar). */
+    theme_color: '#020617',
     orientation: 'portrait-primary',
     categories: ['education', 'productivity', 'utilities'],
     prefer_related_applications: false,
