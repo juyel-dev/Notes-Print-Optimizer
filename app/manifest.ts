@@ -15,11 +15,14 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: `${basePath}/`,
     display: 'standalone',
     background_color: '#020617',
-    /* Static by PWA platform design. Must match the page background: Android
-       paints the splash status bar and the navigation bar with this value, so a
-       brand blue here showed up as a blue band at the bottom of the installed app.
-       Runtime toggle only drives the meta theme-color (status bar). */
-    theme_color: '#020617',
+    /* Deliberately NO theme_color. Chrome on Android paints an installed
+       app's navigation bar with the manifest theme_color, and a manifest holds
+       one static value (color_scheme_dark is spec-only, not parsed by Chrome
+       yet). Any fixed colour is wrong in one of the two modes (blue/dark bar
+       under a white app, or white bar under a dark app). Without it the bar
+       follows the phone's own light/dark mode like native apps, and the status
+       bar keeps following the runtime meta theme-color (THEME_INIT_SCRIPT /
+       ThemeToggle). background_color only paints the launch splash. */
     orientation: 'portrait-primary',
     categories: ['education', 'productivity', 'utilities'],
     prefer_related_applications: false,

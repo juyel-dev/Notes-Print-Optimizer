@@ -122,7 +122,7 @@ Helpers: `toolHref(mode)` → `/tools/<slug>/`, `getToolBySlug`, `slugForMode`, 
 
 ## 6. PWA & Service Worker
 
-- **Manifest:** `app/manifest.ts` — `id/start_url/scope = BASE_PATH + /`, `name Print Optimizer`, `theme_color #020617` (dark) / `#f4f6fb` (light via `THEME_INIT_SCRIPT` in `app/layout.tsx:165`), `background #020617`, `display standalone`, icons `icon-192-v2.png / icon-512-v2.png / icon-maskable-v2.svg` (cache-busted `-v2` — never reuse name).
+- **Manifest:** `app/manifest.ts` — `id/start_url/scope = BASE_PATH + /`, `name Print Optimizer`, no manifest `theme_color` (nav bar follows the phone's light/dark mode; status bar via meta theme-color set by `THEME_INIT_SCRIPT` in `app/layout.tsx`), `background #020617`, `display standalone`, icons `icon-192-v2.png / icon-512-v2.png / icon-maskable-v2.svg` (cache-busted `-v2` — never reuse name).
 - **SW:** `public/sw.js` — `VERSION='v39'` → `CACHE='npo-v39'` (renamed 2026-09 from `pw-optimizer-*`, see identity note above) + `STATIC`/`DYNAMIC` variants. `BASE` derived from `self.location.pathname` for subpath deploys. `PRECACHE_URLS = [/, /offline/, ...TOOL_ROUTES, icons, vendor/pdf*.mjs, wasm/npo_wasm.*]`.
   - `install`: `skipWaiting` + `Promise.allSettled(precache)` — deliberate for 100% offline (see comment `public/sw.js:1`).
   - `activate`: delete any cache key not in the current version's keep-set (auto-purges old-prefix caches too).
