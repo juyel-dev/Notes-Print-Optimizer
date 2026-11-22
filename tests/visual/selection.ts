@@ -1,5 +1,3 @@
-import type { ViewportSize } from '@playwright/test';
-
 export const PAGE_IDS = [
   'home',
   'dark-print',
@@ -99,6 +97,6 @@ export function isToolPage(pageId: PageId): boolean {
   return pageId !== 'home' && pageId !== 'dark-print';
 }
 
-export function viewportSize(viewport: CaptureViewport): ViewportSize {
+export function viewportSize(viewport: CaptureViewport): { width: number; height: number } {
   return { width: viewport.width, height: viewport.height };
 }
