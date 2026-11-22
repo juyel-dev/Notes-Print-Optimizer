@@ -9,7 +9,7 @@ on:
         required: true
         default: false
       page_ids:
-        description: 'Comma-separated IDs (for example: home,dark-print,merge-pdf) or "all"'
+        description: 'IDs in docs/SCREENSHOT_WORKFLOW.md; comma-separated or "all". Blank is rejected.'
         type: string
         required: false
         default: ''
