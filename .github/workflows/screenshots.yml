@@ -92,15 +92,18 @@ jobs:
 
       - name: Publish screenshots to screenshots-preview branch (optional)
         if: ${{ always() && inputs.publish_branch }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           test -d visual-output
-          cp -r visual-output /tmp/shots
+          # Build the branch in a clean directory so node_modules/.next never get committed.
+          rm -rf /tmp/pub && mkdir /tmp/pub
+          cp -r visual-output/. /tmp/pub/
+          cd /tmp/pub
+          git init -q -b screenshots-preview
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan screenshots-preview
-          git rm -rf . -q
-          cp -r /tmp/shots/. .
           git add -A
           git commit -q -m "Screenshots from run ${{ github.run_id }}"
-          git push -f origin screenshots-preview
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" screenshots-preview
