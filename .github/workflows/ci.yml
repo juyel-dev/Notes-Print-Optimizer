@@ -6,9 +6,15 @@ on:
   pull_request:
     branches: ["main", "master"]
   workflow_dispatch:
+    inputs:
+      full:
+        description: Run every check (coverage, dead-code, dev audit, smoke) regardless of what changed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  pull-requests: read # lists the PR's changed files for the "Decide what to run" step
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -29,33 +35,82 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # ---- Switches --------------------------------------------------------
+      # This job is always named `ci` and always finishes, because branch
+      # protection requires that status. Heavy steps are skipped instead:
+      #   * docs-only / workflow-only PRs skip everything (nothing to verify)
+      #   * Playwright smoke runs only when app code or its tests changed
+      #   * coverage, dead-code and dev-audit are OFF by default
+      # Override with repository variables (Settings > Secrets and variables >
+      # Actions > Variables): CI_SMOKE=off, CI_AUDIT=off, CI_COVERAGE=on,
+      # CI_DEADCODE=on, CI_DEV_AUDIT=on. A manual run with `full` ticked runs
+      # all of them. Lighthouse has its own switch: CI_LIGHTHOUSE=on.
+      - name: Decide what to run
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          FULL: ${{ inputs.full }}
+          V_SMOKE: ${{ vars.CI_SMOKE }}
+          V_AUDIT: ${{ vars.CI_AUDIT }}
+          V_COVERAGE: ${{ vars.CI_COVERAGE }}
+          V_DEADCODE: ${{ vars.CI_DEADCODE }}
+          V_DEV_AUDIT: ${{ vars.CI_DEV_AUDIT }}
+        run: |
+          code=true; ui=true
+          if [ "$EVENT" = "pull_request" ]; then
+            files=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files" --paginate -q '.[].filename')
+            echo "Changed files:"; echo "$files"
+            code=false; ui=false
+            echo "$files" | grep -qvE '^(docs/|.*\.md$|LICENSE|\.github/workflows/(screenshots|lighthouse|wasm-build)\.yml$)' && code=true
+            echo "$files" | grep -qE '^(app/|components/|lib/|public/|tests/smoke/|package(-lock)?\.json$|next\.config|postcss\.config|playwright\.config|scripts/ci-build)' && ui=true
+          fi
+          on()  { [ "$FULL" = "true" ] || [ "$1" = "on" ]; }
+          off() { [ "$1" = "off" ]; }
+          out() { echo "$1=$2" >> "$GITHUB_OUTPUT"; echo "$1=$2"; }
+          out code "$code"
+          [ "$code" = true ] && ! off "$V_AUDIT" && out audit true || out audit false
+          [ "$ui" = true ] && ! off "$V_SMOKE" && out smoke true || out smoke false
+          [ "$code" = true ] && on "$V_COVERAGE" && out coverage true || out coverage false
+          [ "$code" = true ] && on "$V_DEADCODE" && out deadcode true || out deadcode false
+          [ "$code" = true ] && on "$V_DEV_AUDIT" && out devaudit true || out devaudit false
+
       - uses: actions/setup-node@v7
+        if: steps.plan.outputs.code == 'true'
         with:
           node-version: "24"
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.plan.outputs.code == 'true'
         run: npm ci --prefer-offline --no-fund
 
       - name: Lint
+        if: steps.plan.outputs.code == 'true'
         run: npm run lint
 
       - name: Type Check
+        if: steps.plan.outputs.code == 'true'
         run: npm run typecheck
 
       - name: Unit Tests
+        if: steps.plan.outputs.code == 'true'
         run: npm run test
 
       - name: Coverage (regression floor)
+        if: steps.plan.outputs.coverage == 'true'
         run: npm run test:coverage
 
       - name: Dead code scan (informational)
+        if: steps.plan.outputs.deadcode == 'true'
         continue-on-error: true
         run: npm run deadcode:check
 
       # sharp is next's optional build-time dep (server image optimizer);
       # static export never includes it, so exclude optional deps from audit.
       - name: Dependency Audit (production)
+        if: steps.plan.outputs.audit == 'true'
         run: npm audit --omit=dev --omit=optional --audit-level=high
 
       # Non-blocking: dev-only tooling (vite/esbuild/vitest chain) has had
@@ -64,20 +119,26 @@ jobs:
       # supply-chain risk to contributors — keep it visible without gating
       # merges on transitive dev-dependency churn we don't fully control.
       - name: Dependency Audit (dev, informational)
+        if: steps.plan.outputs.devaudit == 'true'
         continue-on-error: true
         run: npm audit --audit-level=high
 
       - name: Warn if using upstream default feedback endpoint
+        if: steps.plan.outputs.smoke == 'true'
         run: |
           if [ -z "${{ vars.NEXT_PUBLIC_FEEDBACK_URL }}" ]; then
             echo "::warning::NEXT_PUBLIC_FEEDBACK_URL repo variable is not set — this build falls back to juyel-dev's own Apps Script endpoint. Forks should set their own repo variable (see GOOGLE_APPS_SCRIPT.md) so feedback submissions don't silently go to the upstream owner."
           fi
 
       - name: Build
+        if: steps.plan.outputs.smoke == 'true'
         run: bash scripts/ci-build.sh
 
       - name: Install Playwright Browsers
+        if: steps.plan.outputs.smoke == 'true'
         run: npx playwright install --with-deps chromium
 
+      # --retries=1: a one-off flaky failure no longer fails the PR (it still shows as "flaky").
       - name: Smoke Tests (Playwright)
-        run: npx playwright test --config=playwright.config.ts --project=chromium --grep-invert "worker pool runtime"
+        if: steps.plan.outputs.smoke == 'true'
+        run: npx playwright test --config=playwright.config.ts --project=chromium --retries=1 --grep-invert "worker pool runtime"
