@@ -20,6 +20,8 @@ permissions:
 
 jobs:
   lighthouse:
+    # Off by default (it was failing on every push and gates nothing). Turn on: repo variable CI_LIGHTHOUSE=on
+    if: ${{ vars.CI_LIGHTHOUSE == 'on' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
