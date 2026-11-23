@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, LayoutGrid, ShieldCheck, WandSparkles } from 'lucide-react';
+import { ArrowRight, GraduationCap, LayoutGrid, ShieldCheck, WandSparkles } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
 import { TOOL_REGISTRY } from '@/lib/tools/registry';
 import { MobileFeatureCarousel } from '@/components/MobileFeatureCarousel';
@@ -140,6 +140,22 @@ export const LandingHero: React.FC = () => (
           <span className="md:hidden">Browse all tools</span>
           <span className="hidden md:inline">Browse all {TOOL_REGISTRY.length} tools</span>
         </a>
+        {/* Study Hub: not live yet. Disabled on purpose (no link) until the tool ships; phones only. */}
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="col-span-2 inline-flex min-h-12 w-full min-w-0 cursor-not-allowed items-center justify-center gap-2 rounded-[14px] border border-dashed border-elevated bg-transparent px-3 text-[14px] font-semibold leading-tight text-ink-muted sm:hidden"
+        >
+          <GraduationCap className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Study Hub</span>
+          <span
+            className="rounded-full px-2 py-0.5 text-[11px] font-bold text-accent"
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 16%, transparent)' }}
+          >
+            Coming soon
+          </span>
+        </button>
       </div>
 
       <p className="flex items-center gap-1.5 text-[13px] text-ink-muted md:hidden">
