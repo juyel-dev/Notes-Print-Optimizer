@@ -74,9 +74,9 @@ export const ToolsBox: React.FC = () => {
     <section
       id="tools"
       aria-label="All tools"
-      className="flex scroll-mt-20 flex-col gap-10"
+      className="flex scroll-mt-20 flex-col gap-6 sm:gap-10"
     >
-      <div className="flex flex-col gap-5 border-t border-surface-2 pt-10 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-5 border-t border-surface-2 pt-6 sm:flex-row sm:pt-10 sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1.5">
           <h2
             className="text-[1.75rem] font-bold tracking-[-0.02em] text-ink sm:text-3xl"

@@ -96,9 +96,9 @@ function BeforeAfterDemo() {
 export const LandingHero: React.FC = () => (
   <section
     aria-label="Print Optimizer — made for students"
-    className="grid grid-cols-1 items-center gap-8 pb-4 pt-0 sm:pt-4 md:grid-cols-2 md:gap-14 md:py-10"
+    className="grid grid-cols-1 items-center gap-5 pb-0 pt-0 sm:gap-8 sm:pb-4 sm:pt-4 md:grid-cols-2 md:gap-14 md:py-10"
   >
-    <div className="flex min-w-0 flex-col items-start gap-5 md:gap-6">
+    <div className="flex min-w-0 flex-col items-start gap-3.5 sm:gap-5 md:gap-6">
       <span className="hidden items-center gap-2 rounded-full border border-elevated px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px] md:inline-flex">
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
         Private by default · 100% on-device
@@ -122,21 +122,21 @@ export const LandingHero: React.FC = () => (
         right in your browser, without sending your documents away.
       </p>
 
-      <div className="flex w-full min-w-0 flex-col gap-2.5 sm:w-auto sm:flex-row sm:gap-3">
+      <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-3">
         <Link
           href={toolHref('dark-print')}
           prefetch={false}
-          className="inline-flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-[14px] bg-primary-strong px-5 text-center text-[15px] font-bold leading-tight text-white shadow-sm transition-colors hover:bg-primary-deep active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:px-6 md:text-base"
+          className="inline-flex min-h-12 w-full min-w-0 items-center justify-center gap-1.5 rounded-[14px] bg-primary-strong px-3 text-center text-[14px] font-bold leading-tight text-white shadow-sm transition-colors hover:bg-primary-deep active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:px-6 md:text-base"
         >
-          <WandSparkles className="h-[18px] w-[18px] shrink-0 md:hidden" aria-hidden="true" />
+          <WandSparkles className="h-4 w-4 shrink-0 md:hidden" aria-hidden="true" />
           <span>Whiten a dark PDF</span>
           <ArrowRight className="hidden h-[18px] w-[18px] shrink-0 md:block" aria-hidden="true" />
         </Link>
         <a
           href="#tools"
-          className="inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-[14px] border border-elevated bg-transparent px-5 text-center text-[14px] font-semibold leading-tight text-ink transition-colors hover:border-primary/50 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:text-base"
+          className="inline-flex min-h-12 w-full min-w-0 items-center justify-center gap-1.5 rounded-[14px] border border-elevated bg-transparent px-3 text-center text-[14px] font-semibold leading-tight text-ink transition-colors hover:border-primary/50 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:text-base"
         >
-          <LayoutGrid className="h-[18px] w-[18px] shrink-0 md:hidden" aria-hidden="true" />
+          <LayoutGrid className="h-4 w-4 shrink-0 md:hidden" aria-hidden="true" />
           <span className="md:hidden">Browse all tools</span>
           <span className="hidden md:inline">Browse all {TOOL_REGISTRY.length} tools</span>
         </a>

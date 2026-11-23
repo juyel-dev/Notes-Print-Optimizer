@@ -10,7 +10,6 @@ test.describe('mobile-only landing hero carousel', () => {
     await expect(
       page.getByRole('region', { name: 'Featured tools' }).getByRole('link', { name: /Dark Notes → Print/ })
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next banner' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Show banner 1/ })).toBeVisible();
 
     // Keep the original SEO heading in the DOM, but remove its visual block
@@ -29,8 +28,8 @@ test.describe('mobile-only landing hero carousel', () => {
     const browseBox = await browseButton.boundingBox();
     expect(whitenBox).not.toBeNull();
     expect(browseBox).not.toBeNull();
-    // Phones stack the actions: primary on top, secondary below, both at a comfortable tap height.
-    expect(browseBox!.y).toBeGreaterThan(whitenBox!.y + whitenBox!.height - 1);
+    // The two actions share one line (a Study hub button will sit below them), at a comfortable tap height.
+    expect(Math.abs(whitenBox!.y - browseBox!.y)).toBeLessThan(1);
     expect(whitenBox!.height).toBeGreaterThanOrEqual(44);
     expect(browseBox!.height).toBeGreaterThanOrEqual(44);
 
@@ -125,7 +124,7 @@ test.describe('mobile-only landing hero carousel', () => {
     await page.goto('/');
 
     await page.getByRole('button', { name: 'Pause automatic rotation' }).click();
-    await page.getByRole('button', { name: 'Next banner' }).click();
+    await page.getByRole('button', { name: /Show banner 2/ }).click();
     await expect(page.getByRole('button', { name: /Show banner 2/ })).toHaveAttribute('aria-pressed', 'true');
     // Hold through the smooth-scroll animation: the pressed dot must not revert.
     await page.waitForTimeout(900);

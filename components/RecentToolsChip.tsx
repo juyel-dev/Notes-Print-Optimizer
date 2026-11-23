@@ -24,10 +24,10 @@ export const RecentToolsChip: React.FC = () => {
   if (!tools || tools.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 px-1" aria-label="Continue where you left off">
-      <span className="flex items-center gap-1 text-xs font-semibold text-ink-muted">
+    <div className="flex flex-wrap items-center gap-2" aria-label="Continue where you left off">
+      <span className="flex basis-full items-center gap-1.5 text-xs font-semibold text-ink-muted sm:basis-auto">
         <History className="h-3.5 w-3.5" aria-hidden="true" />
-        Continue:
+        Continue where you left off
       </span>
       {tools.map((tool) => {
         const Icon = tool.icon;
@@ -36,7 +36,7 @@ export const RecentToolsChip: React.FC = () => {
             key={tool.id}
             href={toolHref(tool.id)}
             prefetch={false}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 text-xs font-bold text-ink transition-colors hover:border-primary/40 hover:text-primary-soft"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 text-xs font-bold text-ink transition-colors hover:border-primary/40 hover:text-primary-soft"
           >
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             {tool.title}

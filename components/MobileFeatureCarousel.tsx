@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronRight, Pause, Play } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
 
 type ArtworkKind = 'dark-print' | 'enhance' | 'organize' | 'convert' | 'private';
@@ -158,6 +158,8 @@ function FeatureArtwork({ kind }: { kind: ArtworkKind }) {
 }
 
 const AUTOPLAY_MS = 5200;
+/** Cards line up with the page's 12px content edge (same as the buttons and demo below). */
+const EDGE_PX = 12;
 
 export const MobileFeatureCarousel: React.FC = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -187,7 +189,7 @@ export const MobileFeatureCarousel: React.FC = () => {
       const slide = slideRefs.current[index];
       if (!viewport || !slide) return;
 
-      const left = slide.offsetLeft - (viewport.clientWidth - slide.clientWidth) / 2;
+      const left = slide.offsetLeft - EDGE_PX;
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       lockRef.current = true;
@@ -205,13 +207,12 @@ export const MobileFeatureCarousel: React.FC = () => {
     const viewport = viewportRef.current;
     if (!viewport || lockRef.current) return;
 
-    const center = viewport.scrollLeft + viewport.clientWidth / 2;
     let closestIndex = 0;
     let closestDistance = Number.POSITIVE_INFINITY;
 
     slideRefs.current.forEach((slide, index) => {
       if (!slide) return;
-      const distance = Math.abs(center - (slide.offsetLeft + slide.clientWidth / 2));
+      const distance = Math.abs(slide.offsetLeft - viewport.scrollLeft - EDGE_PX);
       if (distance < closestDistance) {
         closestDistance = distance;
         closestIndex = index;
@@ -249,8 +250,6 @@ export const MobileFeatureCarousel: React.FC = () => {
     return () => window.clearInterval(timer);
   }, [isPaused, isInteracting, scrollToSlide]);
 
-  const go = (delta: number) => scrollToSlide((activeRef.current + delta + SLIDES.length) % SLIDES.length);
-
   return (
     <section
       aria-label="Featured tools"
@@ -273,8 +272,8 @@ export const MobileFeatureCarousel: React.FC = () => {
         <div
           ref={viewportRef}
           onScroll={handleScroll}
-          className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-6 pb-1"
-          style={{ scrollPaddingInline: '24px' }}
+          className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-3 pb-1"
+          style={{ scrollPaddingInline: `${EDGE_PX}px` }}
         >
           {SLIDES.map((slide, index) => (
             <Link
@@ -286,7 +285,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex min-h-[120px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[20px] border border-primary/20 p-3 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+              className="relative flex min-h-[120px] w-[calc(100%_-_24px)] shrink-0 snap-start overflow-hidden rounded-[20px] border border-primary/20 p-3 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
               style={{
                 background:
                   'linear-gradient(118deg, color-mix(in srgb, var(--color-primary) 15%, var(--color-bg)), color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)))',
@@ -321,26 +320,9 @@ export const MobileFeatureCarousel: React.FC = () => {
             </Link>
           ))}
         </div>
-
-        <button
-          type="button"
-          aria-label="Previous banner"
-          onClick={() => go(-1)}
-          className="absolute left-0.5 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
-        >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label="Next banner"
-          onClick={() => go(1)}
-          className="absolute right-0.5 top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-elevated/70 bg-surface text-ink shadow-md active:scale-95"
-        >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </button>
       </div>
 
-      <div className="mt-1.5 flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         <div role="group" className="flex items-center" aria-label="Choose a banner">
           {SLIDES.map((slide, index) => (
             <button
@@ -349,7 +331,7 @@ export const MobileFeatureCarousel: React.FC = () => {
               aria-label={`Show banner ${index + 1}: ${slide.title}`}
               aria-pressed={activeIndex === index}
               onClick={() => scrollToSlide(index)}
-              className="flex h-8 items-center justify-center px-1.5"
+              className="flex h-7 items-center justify-center px-1.5"
             >
               <span
                 aria-hidden="true"
@@ -364,7 +346,7 @@ export const MobileFeatureCarousel: React.FC = () => {
           type="button"
           onClick={() => setIsPaused((p) => !p)}
           aria-label={isPaused ? 'Play automatic rotation' : 'Pause automatic rotation'}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:text-ink"
+          className="flex h-7 w-8 items-center justify-center rounded-full text-ink-muted hover:text-ink"
         >
           {isPaused ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
         </button>
