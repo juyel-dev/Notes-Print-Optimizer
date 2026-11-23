@@ -22,6 +22,11 @@ on:
           - both
           - light
           - dark
+      publish_branch:
+        description: Also push the PNGs to the screenshots-preview branch (to view them without downloading the artifact)
+        type: boolean
+        required: false
+        default: false
       viewport:
         description: Which viewport variants to capture
         type: choice
@@ -42,6 +47,8 @@ concurrency:
 jobs:
   capture:
     if: ${{ inputs.enabled }}
+    permissions:
+      contents: write # only used by the optional publish step below
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -82,3 +89,18 @@ jobs:
           path: visual-output/**/*.png
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Publish screenshots to screenshots-preview branch (optional)
+        if: ${{ always() && inputs.publish_branch }}
+        run: |
+          set -e
+          test -d visual-output
+          cp -r visual-output /tmp/shots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan screenshots-preview
+          git rm -rf . -q
+          cp -r /tmp/shots/. .
+          git add -A
+          git commit -q -m "Screenshots from run ${{ github.run_id }}"
+          git push -f origin screenshots-preview

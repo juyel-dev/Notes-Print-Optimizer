@@ -55,3 +55,7 @@ Only selected page × theme × viewport combinations run. Home is captured full-
 - Artifacts are retained for 14 days.
 - The screenshot workflow has read-only repository permissions.
 - The normal CI workflow still runs lint, type-check, tests, coverage, audits, build, and smoke tests, but does not create or publish screenshots.
+
+## Viewing without downloading the artifact
+
+Tick `publish_branch` when dispatching. The PNGs are also force-pushed to the `screenshots-preview` branch (orphan, overwritten every run), so they can be opened straight from GitHub. Leave it off for normal runs.
