@@ -17,35 +17,35 @@ interface FeatureSlide {
 
 const SLIDES: FeatureSlide[] = [
   {
-    eyebrow: 'FEATURE SPOTLIGHT',
+    eyebrow: 'Feature spotlight',
     title: 'Dark Notes → Print',
     description: 'Turn dark lecture slides into printer-friendly pages.',
     href: toolHref('dark-print'),
     artwork: 'dark-print',
   },
   {
-    eyebrow: 'SCAN CLEANUP',
+    eyebrow: 'Scan cleanup',
     title: 'Enhance Light PDF',
     description: 'Make faint handwriting and washed-out scans easier to read.',
     href: toolHref('enhance'),
     artwork: 'enhance',
   },
   {
-    eyebrow: 'PDF ORGANIZER',
+    eyebrow: 'PDF organizer',
     title: 'Organize PDF Pages',
     description: 'Rotate, reorder or remove pages in a few simple steps.',
     href: toolHref('organize'),
     artwork: 'organize',
   },
   {
-    eyebrow: 'FILE CONVERSION',
+    eyebrow: 'File conversion',
     title: 'Images ↔ PDF',
     description: 'Turn photos into PDFs or export PDF pages as images.',
     href: toolHref('to-pdf'),
     artwork: 'convert',
   },
   {
-    eyebrow: 'PRIVATE BY DESIGN',
+    eyebrow: 'Private by design',
     title: 'Your files stay yours',
     description: 'Process documents in your browser. No PDF uploads.',
     href: '/#tools',
@@ -62,7 +62,7 @@ function FeatureArtwork({ kind }: { kind: ArtworkKind }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <ellipse cx="111" cy="151" rx="76" ry="7" fill="#1A7651" opacity=".12" />
+      <ellipse cx="111" cy="151" rx="76" ry="7" fill="#3654D9" opacity=".12" />
       {kind === 'dark-print' && (
         <>
           <g transform="rotate(-8 67 83)">
@@ -74,81 +74,81 @@ function FeatureArtwork({ kind }: { kind: ArtworkKind }) {
             <rect x="34" y="91" width="59" height="30" rx="3" fill="#64748B" opacity=".55" />
             <path d="M43 112L55 99L65 108L74 101L85 114H43Z" fill="#CBD5E1" opacity=".75" />
           </g>
-          <path d="M105 82C119 70 132 70 143 79" stroke="#188357" strokeWidth="5" strokeLinecap="round" />
-          <path d="M135 66L146 79L131 84" stroke="#188357" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M105 82C119 70 132 70 143 79" stroke="#3654D9" strokeWidth="5" strokeLinecap="round" />
+          <path d="M135 66L146 79L131 84" stroke="#3654D9" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
           <g transform="rotate(8 162 86)">
-            <rect x="128" y="20" width="66" height="123" rx="7" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
+            <rect x="128" y="20" width="66" height="123" rx="7" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
             <rect x="140" y="35" width="41" height="5" rx="2.5" fill="#CBD5E1" />
-            <rect x="140" y="47" width="35" height="5" rx="2.5" fill="#D6DCE5" />
+            <rect x="140" y="47" width="35" height="5" rx="2.5" fill="#D6DCEE" />
             <rect x="140" y="61" width="43" height="28" rx="3" fill="#E8EDF2" />
             <path d="M145 83L154 71L163 80L169 73L178 83H145Z" fill="#AAB8C7" />
-            <rect x="140" y="99" width="42" height="4" rx="2" fill="#D6DCE5" />
-            <rect x="140" y="110" width="35" height="4" rx="2" fill="#D6DCE5" />
+            <rect x="140" y="99" width="42" height="4" rx="2" fill="#D6DCEE" />
+            <rect x="140" y="110" width="35" height="4" rx="2" fill="#D6DCEE" />
           </g>
-          <path d="M190 16L194 27L205 31L194 35L190 46L186 35L175 31L186 27L190 16Z" fill="#68A95A" />
+          <path d="M190 16L194 27L205 31L194 35L190 46L186 35L175 31L186 27L190 16Z" fill="#F2A93C" />
         </>
       )}
       {kind === 'enhance' && (
         <>
           <g transform="rotate(-5 92 83)">
-            <rect x="49" y="18" width="100" height="128" rx="8" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-            <rect x="63" y="34" width="58" height="6" rx="3" fill="#A9B7AC" />
-            <rect x="63" y="51" width="67" height="5" rx="2.5" fill="#CBD5D1" />
-            <rect x="63" y="64" width="61" height="5" rx="2.5" fill="#DDE5E0" />
-            <rect x="63" y="77" width="69" height="5" rx="2.5" fill="#A7B9AE" />
-            <rect x="63" y="90" width="55" height="5" rx="2.5" fill="#DDE5E0" />
-            <rect x="63" y="108" width="66" height="22" rx="3" fill="#E8F1E7" />
+            <rect x="49" y="18" width="100" height="128" rx="8" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+            <rect x="63" y="34" width="58" height="6" rx="3" fill="#9AA9DD" />
+            <rect x="63" y="51" width="67" height="5" rx="2.5" fill="#C3CCEE" />
+            <rect x="63" y="64" width="61" height="5" rx="2.5" fill="#DDE3F6" />
+            <rect x="63" y="77" width="69" height="5" rx="2.5" fill="#A3B2E2" />
+            <rect x="63" y="90" width="55" height="5" rx="2.5" fill="#DDE3F6" />
+            <rect x="63" y="108" width="66" height="22" rx="3" fill="#E6EBFC" />
           </g>
-          <circle cx="151" cy="112" r="27" fill="#D8EED8" stroke="#188357" strokeWidth="5" />
-          <path d="M170 132L194 151" stroke="#188357" strokeWidth="9" strokeLinecap="round" />
-          <path d="M151 96V127M135 112H167" stroke="#188357" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="151" cy="112" r="27" fill="#DCE4FF" stroke="#3654D9" strokeWidth="5" />
+          <path d="M170 132L194 151" stroke="#3654D9" strokeWidth="9" strokeLinecap="round" />
+          <path d="M151 96V127M135 112H167" stroke="#3654D9" strokeWidth="4" strokeLinecap="round" />
           <path d="M35 20L39 30L49 34L39 38L35 48L31 38L21 34L31 30L35 20Z" fill="#D49A34" />
         </>
       )}
       {kind === 'organize' && (
         <>
           <g transform="rotate(-9 73 82)">
-            <rect x="25" y="34" width="72" height="101" rx="7" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-            <rect x="38" y="49" width="44" height="5" rx="2.5" fill="#7EA58E" />
-            <rect x="38" y="63" width="43" height="5" rx="2.5" fill="#CBD8CF" />
-            <rect x="38" y="77" width="35" height="5" rx="2.5" fill="#CBD8CF" />
+            <rect x="25" y="34" width="72" height="101" rx="7" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+            <rect x="38" y="49" width="44" height="5" rx="2.5" fill="#7F95E6" />
+            <rect x="38" y="63" width="43" height="5" rx="2.5" fill="#CBD5F0" />
+            <rect x="38" y="77" width="35" height="5" rx="2.5" fill="#CBD5F0" />
           </g>
           <g transform="rotate(8 135 78)">
-            <rect x="111" y="25" width="72" height="101" rx="7" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-            <rect x="124" y="40" width="44" height="5" rx="2.5" fill="#7EA58E" />
-            <rect x="124" y="54" width="43" height="5" rx="2.5" fill="#CBD8CF" />
-            <rect x="124" y="68" width="35" height="5" rx="2.5" fill="#CBD8CF" />
+            <rect x="111" y="25" width="72" height="101" rx="7" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+            <rect x="124" y="40" width="44" height="5" rx="2.5" fill="#7F95E6" />
+            <rect x="124" y="54" width="43" height="5" rx="2.5" fill="#CBD5F0" />
+            <rect x="124" y="68" width="35" height="5" rx="2.5" fill="#CBD5F0" />
           </g>
-          <path d="M84 139L101 150L118 139" stroke="#188357" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="100" cy="114" r="15" fill="#DFF0DE" stroke="#188357" strokeWidth="4" />
-          <path d="M100 105V123M91 114H109" stroke="#188357" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M84 139L101 150L118 139" stroke="#3654D9" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="100" cy="114" r="15" fill="#DCE4FF" stroke="#3654D9" strokeWidth="4" />
+          <path d="M100 105V123M91 114H109" stroke="#3654D9" strokeWidth="3.5" strokeLinecap="round" />
         </>
       )}
       {kind === 'convert' && (
         <>
-          <rect x="18" y="35" width="70" height="90" rx="8" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-          <rect x="29" y="47" width="48" height="48" rx="5" fill="#E7F1E7" />
+          <rect x="18" y="35" width="70" height="90" rx="8" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+          <rect x="29" y="47" width="48" height="48" rx="5" fill="#E6EBFC" />
           <circle cx="62" cy="60" r="7" fill="#D9B56C" />
-          <path d="M34 88L47 73L57 83L65 75L75 88H34Z" fill="#80A98C" />
-          <path d="M92 81H119M110 71L120 81L110 91" stroke="#188357" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M34 88L47 73L57 83L65 75L75 88H34Z" fill="#8FA3EA" />
+          <path d="M92 81H119M110 71L120 81L110 91" stroke="#3654D9" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
           <g transform="rotate(5 157 84)">
-            <rect x="126" y="22" width="67" height="121" rx="7" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-            <path d="M145 22V41H164" fill="#E6EFE7" stroke="#D9E4DC" strokeWidth="2" />
-            <rect x="138" y="57" width="43" height="6" rx="3" fill="#188357" />
-            <rect x="138" y="72" width="43" height="5" rx="2.5" fill="#C5D4C9" />
-            <rect x="138" y="85" width="35" height="5" rx="2.5" fill="#C5D4C9" />
-            <rect x="138" y="106" width="43" height="19" rx="3" fill="#EAF3E8" />
+            <rect x="126" y="22" width="67" height="121" rx="7" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+            <path d="M145 22V41H164" fill="#E6EBFC" stroke="#D5DCF3" strokeWidth="2" />
+            <rect x="138" y="57" width="43" height="6" rx="3" fill="#3654D9" />
+            <rect x="138" y="72" width="43" height="5" rx="2.5" fill="#CBD5F0" />
+            <rect x="138" y="85" width="35" height="5" rx="2.5" fill="#CBD5F0" />
+            <rect x="138" y="106" width="43" height="19" rx="3" fill="#E6EBFC" />
           </g>
         </>
       )}
       {kind === 'private' && (
         <>
-          <rect x="39" y="22" width="100" height="125" rx="9" fill="#FFFFFF" stroke="#D9E4DC" strokeWidth="2" />
-          <rect x="55" y="41" width="64" height="6" rx="3" fill="#7EA58E" />
-          <rect x="55" y="57" width="69" height="5" rx="2.5" fill="#CBD8CF" />
-          <rect x="55" y="70" width="56" height="5" rx="2.5" fill="#CBD8CF" />
-          <rect x="55" y="83" width="65" height="5" rx="2.5" fill="#CBD8CF" />
-          <path d="M151 83L181 94V118C181 136 168 148 151 155C134 148 121 136 121 118V94L151 83Z" fill="#188357" />
+          <rect x="39" y="22" width="100" height="125" rx="9" fill="#FFFFFF" stroke="#D5DCF3" strokeWidth="2" />
+          <rect x="55" y="41" width="64" height="6" rx="3" fill="#7F95E6" />
+          <rect x="55" y="57" width="69" height="5" rx="2.5" fill="#CBD5F0" />
+          <rect x="55" y="70" width="56" height="5" rx="2.5" fill="#CBD5F0" />
+          <rect x="55" y="83" width="65" height="5" rx="2.5" fill="#CBD5F0" />
+          <path d="M151 83L181 94V118C181 136 168 148 151 155C134 148 121 136 121 118V94L151 83Z" fill="#3654D9" />
           <path d="M138 118L147 127L165 107" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M28 15L32 25L42 29L32 33L28 43L24 33L14 29L24 25L28 15Z" fill="#D49A34" />
         </>
@@ -286,43 +286,38 @@ export const MobileFeatureCarousel: React.FC = () => {
               }}
               aria-label={`${slide.title}. ${slide.description}`}
               aria-current={activeIndex === index ? 'true' : undefined}
-              className="relative flex aspect-[3/1] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[20px] border border-success/15 p-2 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+              className="relative flex min-h-[120px] w-[calc(100%_-_48px)] shrink-0 snap-center overflow-hidden rounded-[20px] border border-primary/20 p-3 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
               style={{
                 background:
-                  'linear-gradient(118deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg)), color-mix(in srgb, var(--color-success) 7%, var(--color-surface)))',
+                  'linear-gradient(118deg, color-mix(in srgb, var(--color-primary) 15%, var(--color-bg)), color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)))',
               }}
             >
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}
+                style={{ background: 'color-mix(in srgb, var(--color-primary) 9%, transparent)' }}
               />
               <div className="relative z-10 flex w-[56%] min-w-0 flex-col items-start">
                 <span
-                  className="inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[8px] font-bold tracking-[0.04em]"
-                  style={{
-                    color: 'var(--color-success)',
-                    background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-                  }}
+                  className="inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-semibold text-primary-soft"
+                  style={{ background: 'color-mix(in srgb, var(--color-primary) 14%, transparent)' }}
                 >
                   {slide.eyebrow}
                 </span>
                 {/* <p>, not <h2>: five heading-level titles would precede the page <h1> in DOM order. */}
-                <p className="mt-1 text-balance text-[14px] font-bold leading-[1.05] tracking-[-0.03em] text-ink">
+                <p className="mt-1.5 text-balance text-[17px] font-bold leading-[1.1] tracking-[-0.02em] text-ink">
                   {slide.title}
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 pt-0.5 text-[9px] font-bold leading-none text-success">
-                  Explore tool <span aria-hidden="true">→</span>
+                <span className="mt-auto inline-flex items-center gap-0.5 pt-1.5 text-[12px] font-bold leading-none text-primary-soft">
+                  Open tool
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </span>
               </div>
 
-              <div className="pointer-events-none absolute bottom-1 right-1 top-1 w-[42%]">
+              <div className="pointer-events-none absolute bottom-2 right-2 top-2 w-[40%]">
                 <FeatureArtwork kind={slide.artwork} />
               </div>
 
-              <span className="absolute right-2 top-2 rounded-full bg-success-deep px-2 py-0.5 text-[9px] font-bold tabular-nums text-white">
-                {String(index + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
-              </span>
             </Link>
           ))}
         </div>
@@ -354,12 +349,12 @@ export const MobileFeatureCarousel: React.FC = () => {
               aria-label={`Show banner ${index + 1}: ${slide.title}`}
               aria-pressed={activeIndex === index}
               onClick={() => scrollToSlide(index)}
-              className="flex h-6 items-center justify-center px-1"
+              className="flex h-8 items-center justify-center px-1.5"
             >
               <span
                 aria-hidden="true"
                 className={`block h-2 rounded-full transition-[width,background-color] duration-300 ${
-                  activeIndex === index ? 'w-5 bg-success-deep' : 'w-2 bg-elevated'
+                  activeIndex === index ? 'w-6 bg-primary-strong' : 'w-2 bg-elevated'
                 }`}
               />
             </button>
@@ -369,7 +364,7 @@ export const MobileFeatureCarousel: React.FC = () => {
           type="button"
           onClick={() => setIsPaused((p) => !p)}
           aria-label={isPaused ? 'Play automatic rotation' : 'Pause automatic rotation'}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted hover:text-ink"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:text-ink"
         >
           {isPaused ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
         </button>
