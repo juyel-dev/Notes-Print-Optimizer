@@ -21,7 +21,7 @@ test.describe('mobile-only landing hero carousel', () => {
     // Existing actions and before/after demo remain in the mobile hero.
     await expect(page.getByRole('link', { name: /Whiten a dark PDF/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /Browse all tools/ })).toBeVisible();
-    await expect(page.getByText('Free · No account · No login')).toBeVisible();
+    await expect(page.getByText('Free, no account. Your files never leave your phone.')).toBeVisible();
 
     const whitenButton = page.getByRole('link', { name: /Whiten a dark PDF/ });
     const browseButton = page.getByRole('link', { name: /Browse all tools/ });
@@ -29,7 +29,10 @@ test.describe('mobile-only landing hero carousel', () => {
     const browseBox = await browseButton.boundingBox();
     expect(whitenBox).not.toBeNull();
     expect(browseBox).not.toBeNull();
-    expect(Math.abs(whitenBox!.y - browseBox!.y)).toBeLessThan(1);
+    // Phones stack the actions: primary on top, secondary below, both at a comfortable tap height.
+    expect(browseBox!.y).toBeGreaterThan(whitenBox!.y + whitenBox!.height - 1);
+    expect(whitenBox!.height).toBeGreaterThanOrEqual(44);
+    expect(browseBox!.height).toBeGreaterThanOrEqual(44);
 
     await expect(page.getByRole('slider', { name: /Compare the original dark slide/ })).toBeVisible();
   });
@@ -86,7 +89,7 @@ test.describe('mobile-only landing hero carousel', () => {
       // The first slide's CTA is not cut off by the card's overflow clipping.
       const card = page.getByRole('region', { name: 'Featured tools' }).getByRole('link').first();
       const cardBox = await card.boundingBox();
-      const ctaBox = await card.getByText('Explore tool').boundingBox();
+      const ctaBox = await card.getByText('Open tool').boundingBox();
       expect(cardBox).not.toBeNull();
       expect(ctaBox).not.toBeNull();
       expect(ctaBox!.y + ctaBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height);

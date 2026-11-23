@@ -50,7 +50,7 @@ function BeforeAfterDemo() {
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div
-        className="relative aspect-[16/11] w-full overflow-hidden rounded-[20px] border border-elevated bg-white shadow-float"
+        className="relative aspect-[16/11] w-full overflow-hidden rounded-[20px] border border-elevated bg-white shadow-float focus-within:ring-2 focus-within:ring-primary-soft focus-within:ring-offset-2 focus-within:ring-offset-bg"
       >
         <SlideMock variant="light" />
         <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}>
@@ -83,7 +83,7 @@ function BeforeAfterDemo() {
           value={pos}
           onChange={(e) => setPos(Number(e.target.value))}
           aria-label="Compare the original dark slide with the print-ready result"
-          className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
+          className="absolute inset-0 h-full w-full cursor-ew-resize touch-pan-y opacity-0"
         />
       </div>
       <p className="text-center text-[13px] text-ink-faint">
@@ -122,29 +122,32 @@ export const LandingHero: React.FC = () => (
         right in your browser, without sending your documents away.
       </p>
 
-      <div className="flex w-full min-w-0 flex-row gap-2 sm:w-auto sm:gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-2.5 sm:w-auto sm:flex-row sm:gap-3">
         <Link
           href={toolHref('dark-print')}
           prefetch={false}
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[14px] text-center leading-tight md:whitespace-nowrap border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:gap-2.5 md:border-transparent md:bg-primary-strong md:px-6 md:text-base md:text-white md:hover:bg-primary-deep"
+          className="inline-flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-[14px] bg-primary-strong px-5 text-center text-[15px] font-bold leading-tight text-white shadow-sm transition-colors hover:bg-primary-deep active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:px-6 md:text-base"
         >
-          <WandSparkles className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
+          <WandSparkles className="h-[18px] w-[18px] shrink-0 md:hidden" aria-hidden="true" />
           <span>Whiten a dark PDF</span>
           <ArrowRight className="hidden h-[18px] w-[18px] shrink-0 md:block" aria-hidden="true" />
         </Link>
         <a
           href="#tools"
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[14px] text-center leading-tight md:whitespace-nowrap border border-success-deep bg-transparent px-2 text-[12px] font-bold text-success-deep transition-colors hover:bg-success-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:px-3 sm:text-[13px] md:min-h-[52px] md:flex-none md:border-elevated md:bg-transparent md:px-5 md:text-base md:font-semibold md:text-ink md:hover:border-primary/50"
+          className="inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-[14px] border border-elevated bg-transparent px-5 text-center text-[14px] font-semibold leading-tight text-ink transition-colors hover:border-primary/50 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft sm:min-h-[52px] sm:w-auto md:whitespace-nowrap md:text-base"
         >
-          <LayoutGrid className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] md:hidden" aria-hidden="true" />
+          <LayoutGrid className="h-[18px] w-[18px] shrink-0 md:hidden" aria-hidden="true" />
           <span className="md:hidden">Browse all tools</span>
           <span className="hidden md:inline">Browse all {TOOL_REGISTRY.length} tools</span>
         </a>
       </div>
 
-      <p className="font-mono text-[13px] tracking-wide text-ink-faint">
-        <span className="md:hidden">Free · No account · No login</span>
-        <span className="hidden md:inline">Free · No account · No upload</span>
+      <p className="flex items-center gap-1.5 text-[13px] text-ink-muted md:hidden">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-primary-soft" aria-hidden="true" />
+        Free, no account. Your files never leave your phone.
+      </p>
+      <p className="hidden font-mono text-[13px] tracking-wide text-ink-faint md:block">
+        Free · No account · No upload
       </p>
     </div>
 
