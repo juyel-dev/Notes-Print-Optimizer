@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, GraduationCap, LayoutGrid, ShieldCheck, WandSparkles } from 'lucide-react';
+import { ArrowRight, Check, GraduationCap, LayoutGrid, ShieldCheck, WandSparkles } from 'lucide-react';
 import { toolHref } from '@/lib/tools/registry';
 import { TOOL_REGISTRY } from '@/lib/tools/registry';
 import { MobileFeatureCarousel } from '@/components/MobileFeatureCarousel';
@@ -162,11 +162,35 @@ export const LandingHero: React.FC = () => (
         <ShieldCheck className="h-4 w-4 shrink-0 text-primary-soft" aria-hidden="true" />
         Free, no account. Your files never leave your phone.
       </p>
-      <p className="hidden font-mono text-[13px] tracking-wide text-ink-faint md:block">
-        Free · No account · No upload
-      </p>
+      <ul className="hidden flex-wrap gap-x-5 gap-y-2 text-[13px] font-medium text-ink-muted md:flex">
+        {['Free to use', 'No account', 'No upload'].map((t) => (
+          <li key={t} className="inline-flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-primary-soft" aria-hidden="true" />
+            {t}
+          </li>
+        ))}
+      </ul>
     </div>
 
-    <BeforeAfterDemo />
+    <div className="relative isolate">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-5 -z-10 hidden rounded-[36px] md:block"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 80% 15%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 55%), radial-gradient(color-mix(in srgb, var(--color-ink) 14%, transparent) 1px, transparent 1px)',
+          backgroundSize: 'auto, 20px 20px',
+        }}
+      />
+      <BeforeAfterDemo />
+      <span className="absolute -left-2 top-12 hidden rotate-[-4deg] items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 py-1.5 text-xs font-bold text-ink shadow-[var(--shadow-pop)] md:inline-flex">
+        <WandSparkles className="h-3.5 w-3.5 text-primary-soft" aria-hidden="true" />
+        Auto-whiten
+      </span>
+      <span className="absolute -right-2 bottom-20 hidden rotate-[3deg] items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 py-1.5 text-xs font-bold text-ink shadow-[var(--shadow-pop)] md:inline-flex">
+        <LayoutGrid className="h-3.5 w-3.5 text-primary-soft" aria-hidden="true" />
+        Up to 10-up
+      </span>
+    </div>
   </section>
 );

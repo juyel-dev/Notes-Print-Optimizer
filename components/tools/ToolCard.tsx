@@ -18,7 +18,7 @@ export interface ToolCardProps {
 /**
  * Quiet task card. One consistent icon treatment (primary on a faint well)
  * across all tools, the full description (no clamping), and the specifics as a
- * single mono line — so the grid scans as one system, not twelve banners.
+ * row of small pills — so the grid scans as one system, not twelve banners.
  */
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
@@ -50,8 +50,15 @@ export const ToolCard: React.FC<ToolCardProps> = ({
     <span className="text-sm leading-relaxed text-ink-muted">{description}</span>
 
     {chips.length > 0 && (
-      <span className="mt-auto pt-1 font-mono text-xs text-ink-faint">
-        {chips.slice(0, 3).join(' · ')}
+      <span className="mt-auto flex flex-wrap gap-1.5 pt-1">
+        {chips.slice(0, 3).map((chip) => (
+          <span
+            key={chip}
+            className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium leading-none text-ink-muted"
+          >
+            {chip}
+          </span>
+        ))}
       </span>
     )}
   </Link>

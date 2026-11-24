@@ -139,7 +139,7 @@ test.describe('mobile-only landing hero carousel', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText(/Private by default · 100% on-device/)).toBeVisible();
     await expect(page.getByText(/Whiten dark slides, clean up scans, arrange pages/)).toBeVisible();
-    await expect(page.getByText('Free · No account · No upload')).toBeVisible();
+    await expect(page.getByText('No upload', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Install Print Optimizer' })).toHaveCount(0);
   });
 });

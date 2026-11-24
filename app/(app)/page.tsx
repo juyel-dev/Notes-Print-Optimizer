@@ -1,6 +1,7 @@
 import { LandingHero } from '@/components/LandingHero';
 import { RecentToolsChip } from '@/components/RecentToolsChip';
 import { ToolsBox } from '@/components/tools/ToolsBox';
+import { LandingSections } from '@/components/landing/LandingSections';
 
 /**
  * Landing route — server-rendered hero + crawlable tool links.
@@ -12,6 +13,7 @@ export default function HomePage() {
       <LandingHero />
       <RecentToolsChip />
       <ToolsBox />
+      <LandingSections />
     </div>
   );
 }
