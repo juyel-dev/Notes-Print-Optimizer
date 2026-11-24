@@ -54,10 +54,10 @@ function SectionHeading({
       </span>
       <h2
         id={id}
-        className="max-w-2xl text-balance text-[1.75rem] font-bold leading-[1.1] tracking-[-0.025em] text-ink sm:text-4xl"
+        className="max-w-3xl text-balance text-[1.75rem] font-bold leading-[1.1] tracking-[-0.025em] text-ink sm:text-4xl"
         style={{ fontFamily: 'var(--font-display)' }}
       >
-        {lead} <span className="text-primary-soft">{accent}</span>
+        {lead} <span className="whitespace-nowrap text-primary-soft">{accent}</span>
         {tail ? ` ${tail}` : ''}
       </h2>
       {lede && (
@@ -85,7 +85,7 @@ function HowItWorks() {
         id="how-heading"
         eyebrow="How it works"
         lead="From dark slides to"
-        accent="print-ready"
+        accent="print‑ready"
         tail="in four steps"
         lede="No upload, no waiting in a queue. Everything happens on your own device."
       />
@@ -149,7 +149,6 @@ function ProofStrip() {
               style={{ fontFamily: 'var(--font-display)' }}
             >
               {f.value}
-              {f.value !== '0' && <span className="text-primary-soft">+</span>}
             </dd>
             <dt className="order-2 mt-2 text-sm font-semibold text-ink">{f.label}</dt>
             <dd className="order-3 text-[13px] leading-snug text-ink-muted">{f.hint}</dd>
@@ -235,12 +234,15 @@ function ClosingCta() {
   return (
     <section
       aria-labelledby="closing-heading"
-      className="relative isolate overflow-hidden rounded-[28px] bg-[#28409e] p-7 text-white shadow-[var(--shadow-float)] sm:rounded-[32px] sm:p-12"
+      className="relative isolate overflow-hidden rounded-[28px] p-7 text-white shadow-[var(--shadow-float)] sm:rounded-[32px] sm:p-12"
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 -right-16 -z-10 h-72 w-72 rounded-full opacity-90 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #f2a93c 0%, rgba(242,169,60,0) 70%)' }}
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 90% at 100% 100%, rgba(242,169,60,0.95) 0%, rgba(242,169,60,0.35) 35%, rgba(242,169,60,0) 70%), linear-gradient(135deg, #28409e 0%, #3654d9 100%)',
+        }}
       />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-40" style={{
         backgroundImage: 'radial-gradient(rgba(255,255,255,0.22) 1px, transparent 1px)',
