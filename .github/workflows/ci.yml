@@ -141,4 +141,4 @@ jobs:
       # --retries=1: a one-off flaky failure no longer fails the PR (it still shows as "flaky").
       - name: Smoke Tests (Playwright)
         if: steps.plan.outputs.smoke == 'true'
-        run: npx playwright test --config=playwright.config.ts --project=chromium --retries=1 --grep-invert "worker pool runtime"
+        run: npx playwright test --config=playwright.config.ts --project=chromium --retries=1 --reporter=github,line --grep-invert "worker pool runtime"

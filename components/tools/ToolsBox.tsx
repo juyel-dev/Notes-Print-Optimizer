@@ -123,13 +123,13 @@ export const ToolsBox: React.FC = () => {
             className="grid gap-5 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] lg:gap-8"
           >
             <div className="flex flex-col gap-2 lg:pt-1">
-              <h3 className="font-mono text-[13px] font-medium uppercase tracking-[0.1em] text-accent">
+              <h3 className="text-xl font-bold tracking-[-0.015em] text-ink" style={{ fontFamily: 'var(--font-display)' }}>
                 {section.label}
               </h3>
               <p className="text-sm leading-relaxed text-ink-muted">{section.blurb}</p>
             </div>
 
-            <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
               {section.tools.map((tool) => (
                 <ToolCard
                   key={tool.id}

@@ -18,7 +18,7 @@ export interface ToolCardProps {
 /**
  * Quiet task card. One consistent icon treatment (primary on a faint well)
  * across all tools, the full description (no clamping), and the specifics as a
- * single mono line — so the grid scans as one system, not twelve banners.
+ * row of small pills — so the grid scans as one system, not twelve banners.
  */
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
@@ -31,7 +31,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   <Link
     href={href}
     prefetch={false}
-    className="group relative flex h-full w-full flex-col gap-3 rounded-2xl border border-surface-2 bg-surface p-5 text-left transition-[border-color,background-color] duration-200 ease-out hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
+    className="group relative flex h-full w-full flex-col gap-2.5 rounded-2xl border border-surface-2 bg-surface p-4 text-left sm:gap-3 sm:p-5 transition-[border-color,background-color] duration-200 ease-out hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-soft"
   >
     <span className="flex items-center gap-3">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-primary-faint">
@@ -47,11 +47,18 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       )}
     </span>
 
-    <span className="text-sm leading-relaxed text-ink-muted">{description}</span>
+    <span className="line-clamp-2 text-sm leading-relaxed text-ink-muted sm:line-clamp-none">{description}</span>
 
     {chips.length > 0 && (
-      <span className="mt-auto pt-1 font-mono text-xs text-ink-faint">
-        {chips.slice(0, 3).join(' · ')}
+      <span className="mt-auto hidden flex-wrap gap-1.5 pt-1 sm:flex">
+        {chips.slice(0, 3).map((chip) => (
+          <span
+            key={chip}
+            className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium leading-none text-ink-muted"
+          >
+            {chip}
+          </span>
+        ))}
       </span>
     )}
   </Link>

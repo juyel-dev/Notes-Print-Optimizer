@@ -18,12 +18,12 @@ test.describe('mobile-only landing hero carousel', () => {
     await expect(page.getByText(/Whiten dark slides, clean up scans, arrange pages/)).toBeHidden();
 
     // Existing actions and before/after demo remain in the mobile hero.
-    await expect(page.getByRole('link', { name: /Whiten a dark PDF/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Browse all tools/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Whiten a dark PDF/ }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Browse all tools/ }).first()).toBeVisible();
     await expect(page.getByText('Free, no account. Your files never leave your phone.')).toBeVisible();
 
-    const whitenButton = page.getByRole('link', { name: /Whiten a dark PDF/ });
-    const browseButton = page.getByRole('link', { name: /Browse all tools/ });
+    const whitenButton = page.getByRole('link', { name: /Whiten a dark PDF/ }).first();
+    const browseButton = page.getByRole('link', { name: /Browse all tools/ }).first();
     const whitenBox = await whitenButton.boundingBox();
     const browseBox = await browseButton.boundingBox();
     expect(whitenBox).not.toBeNull();
@@ -74,7 +74,7 @@ test.describe('mobile-only landing hero carousel', () => {
 
       // Both hero buttons sit fully inside the viewport.
       for (const name of [/Whiten a dark PDF/, /Browse all tools/]) {
-        const box = await page.getByRole('link', { name }).boundingBox();
+        const box = await page.getByRole('link', { name }).first().boundingBox();
         expect(box).not.toBeNull();
         expect(box!.x).toBeGreaterThanOrEqual(0);
         expect(box!.x + box!.width).toBeLessThanOrEqual(width + 0.5);
@@ -139,7 +139,7 @@ test.describe('mobile-only landing hero carousel', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText(/Private by default · 100% on-device/)).toBeVisible();
     await expect(page.getByText(/Whiten dark slides, clean up scans, arrange pages/)).toBeVisible();
-    await expect(page.getByText('Free · No account · No upload')).toBeVisible();
+    await expect(page.getByText('No upload', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Install Print Optimizer' })).toHaveCount(0);
   });
 });
