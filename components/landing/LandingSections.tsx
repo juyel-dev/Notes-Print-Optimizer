@@ -48,7 +48,7 @@ function SectionHeading({
 }) {
   const center = align === 'center';
   return (
-    <header className={`flex flex-col gap-3 ${center ? 'items-center text-center' : 'items-start'}`}>
+    <div className={`flex flex-col gap-3 ${center ? 'items-center text-center' : 'items-start'}`}>
       <span className="inline-flex items-center rounded-full border border-elevated bg-surface px-3.5 py-1.5 text-xs font-semibold text-primary-soft sm:text-[13px]">
         {eyebrow}
       </span>
@@ -65,7 +65,7 @@ function SectionHeading({
           {lede}
         </p>
       )}
-    </header>
+    </div>
   );
 }
 
