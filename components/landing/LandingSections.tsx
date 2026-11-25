@@ -138,23 +138,23 @@ function ProofStrip() {
   ];
   return (
     <section aria-label="At a glance">
-      <dl className="grid grid-cols-2 overflow-hidden rounded-[24px] border border-surface-2 bg-surface shadow-[var(--shadow-card)] md:grid-cols-4">
+      <ul className="grid grid-cols-2 overflow-hidden rounded-[24px] border border-surface-2 bg-surface shadow-[var(--shadow-card)] md:grid-cols-4">
         {facts.map((f, i) => (
-          <div
+          <li
             key={f.label}
             className={`flex flex-col gap-1 p-5 md:p-7 ${i % 2 === 1 ? 'border-l border-surface-2' : ''} ${i >= 2 ? 'border-t border-surface-2 md:border-t-0' : ''} ${i > 0 ? 'md:border-l md:border-surface-2' : ''}`}
           >
-            <dd
-              className="order-1 text-4xl font-bold leading-none tracking-[-0.03em] text-ink md:text-5xl"
+            <span
+              className="text-4xl font-bold leading-none tracking-[-0.03em] text-ink md:text-5xl"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               {f.value}
-            </dd>
-            <dt className="order-2 mt-2 text-sm font-semibold text-ink">{f.label}</dt>
-            <dd className="order-3 text-[13px] leading-snug text-ink-muted">{f.hint}</dd>
-          </div>
+            </span>
+            <span className="mt-2 text-sm font-semibold text-ink">{f.label}</span>
+            <span className="text-[13px] leading-snug text-ink-muted">{f.hint}</span>
+          </li>
         ))}
-      </dl>
+      </ul>
     </section>
   );
 }
