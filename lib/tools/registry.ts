@@ -57,7 +57,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     category: 'pdf',
     icon: FileText,
     gradient: 'linear-gradient(135deg, #3654D9 0%, #5B7FFF 58%, #8FA6FF 100%)',
-    chips: ['Auto-whiten', 'Keeps white boxes', 'Up to 16-up'],
+    chips: ['Auto-whiten', 'Saves ink', 'Up to 16-up'],
     cta: 'Convert',
   },
   {
