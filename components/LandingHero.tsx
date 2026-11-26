@@ -189,7 +189,7 @@ export const LandingHero: React.FC = () => (
       </span>
       <span className="absolute -right-3 top-[44%] hidden rotate-[3deg] items-center gap-1.5 rounded-full border border-elevated bg-surface px-3 py-1.5 text-xs font-bold text-ink shadow-[var(--shadow-pop)] md:inline-flex">
         <LayoutGrid className="h-3.5 w-3.5 text-primary-soft" aria-hidden="true" />
-        Up to 10-up
+        Up to 16-up
       </span>
     </div>
   </section>

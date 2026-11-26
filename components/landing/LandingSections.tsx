@@ -74,7 +74,7 @@ function SectionHeading({
 const STEPS: Array<{ icon: LucideIcon; title: string; text: string }> = [
   { icon: FileUp, title: 'Drop your PDF', text: 'Pick a file or drag it in. It opens right in your browser.' },
   { icon: WandSparkles, title: 'Auto-whiten', text: 'Dark backgrounds turn white and extra ink is cleaned up.' },
-  { icon: LayoutGrid, title: 'Arrange the pages', text: 'Fit up to 10 slides on a sheet, merge files or reorder pages.' },
+  { icon: LayoutGrid, title: 'Arrange the pages', text: 'Fit up to 16 pages on a sheet, merge files or reorder pages.' },
   { icon: Download, title: 'Download & print', text: 'Save a clean PDF that prints crisp and saves ink.' },
 ];
 
@@ -134,7 +134,7 @@ function ProofStrip() {
     { value: String(TOOL_REGISTRY.length), label: 'Free tools', hint: 'PDF, images, text and security' },
     { value: '0', label: 'Files uploaded', hint: 'Processing stays on your device' },
     { value: '0', label: 'Accounts needed', hint: 'Open a tool and start' },
-    { value: '10', label: 'Slides per sheet', hint: 'Maximum N-up layout' },
+    { value: '16', label: 'Pages per sheet', hint: 'Largest N-up layout' },
   ];
   return (
     <section aria-label="At a glance">
@@ -164,7 +164,7 @@ function ProofStrip() {
 const VALUES: Array<{ icon: LucideIcon; tag: string; title: string; text: string }> = [
   { icon: ShieldCheck, tag: 'On-device', title: 'Private by design', text: 'Your PDFs are processed in your browser and are never sent to a server.' },
   { icon: Droplets, tag: 'Ink saver', title: "Whiten, don't waste toner", text: 'Turn dark backgrounds white so a lecture deck stops printing a black block on every page.' },
-  { icon: Layers, tag: 'Paper saver', title: 'Many slides, one sheet', text: 'Fit up to 10 slides on a page and cut paper, binding and printing cost.' },
+  { icon: Layers, tag: 'Paper saver', title: 'Many slides, one sheet', text: 'Fit up to 16 pages on a sheet and cut paper, binding and printing cost.' },
   { icon: Smartphone, tag: 'Any device', title: 'Works where you study', text: 'Use it on a phone or a laptop, or install it from your browser like an app.' },
 ];
 

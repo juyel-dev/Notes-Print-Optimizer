@@ -52,7 +52,7 @@ describe('searchTools', () => {
   });
 
   it('matches keywords', () => {
-    const hits = searchTools(TOOL_REGISTRY, 'banner');
+    const hits = searchTools(TOOL_REGISTRY, 'white box');
     expect(hits.map((t) => t.id)).toContain('dark-print');
   });
 
