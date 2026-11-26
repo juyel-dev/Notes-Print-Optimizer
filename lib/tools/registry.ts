@@ -40,6 +40,12 @@ export interface ToolDefinition {
    * isNewTool below only ever reads real data, never estimates.
    */
   addedAt?: string;
+  /**
+   * Editorial label shown on the card (e.g. "Top pick"). It is a curated
+   * recommendation, not a usage statistic, so keep it to wording we can stand
+   * behind. "New" (from addedAt) wins if both apply.
+   */
+  badge?: string;
 }
 
 export const TOOL_REGISTRY: ToolDefinition[] = [
@@ -48,16 +54,17 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     slug: 'dark-print',
     title: 'Dark Notes → Print',
     description:
-      'Turn dark lecture slides into crisp, print-ready PDFs with auto-whitening and smart N-up layouts.',
+      'Merge your files, whiten dark lecture slides and arrange up to 16 per sheet — one crisp, print-ready PDF.',
     seoTitle: 'Dark Notes to Print-Ready PDF — Auto-Whitening & Smart N-Up',
     seoDescription:
-      'Convert dark lecture slides and photos into crisp, ink-saving print-ready PDFs. Auto-whitening, white-box protection and N-up layouts up to 16 per sheet — free, private, fully on-device.',
+      'Convert dark lecture slides and photos into crisp, ink-saving print-ready PDFs. Merge files, auto-whiten and lay out up to 16 slides per sheet in one go — free, private, fully on-device.',
     aliases: ['whiten', 'dark slides', 'print', 'n-up', 'ink saver'],
     keywords: ['optimize', 'convert', 'white box', 'slides'],
     category: 'pdf',
     icon: FileText,
     gradient: 'linear-gradient(135deg, #3654D9 0%, #5B7FFF 58%, #8FA6FF 100%)',
-    chips: ['Auto-whiten', 'Keeps white boxes', 'Up to 16-up'],
+    chips: ['Merge + Whiten + Layout', 'Saves ink', 'Up to 16-up'],
+    badge: 'Top pick',
     cta: 'Convert',
   },
   {
