@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import type { LucideIcon } from 'lucide-react';
+import { Star, type LucideIcon } from 'lucide-react';
 
 export interface ToolCardProps {
   title: string;
@@ -13,6 +13,8 @@ export interface ToolCardProps {
   href: string;
   /** True only when the registry has a real addedAt date within the badge window. */
   isNew?: boolean;
+  /** Editorial label (e.g. "Top pick"); ignored when `isNew` is true. */
+  badge?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
   chips,
   href,
   isNew,
+  badge,
 }) => (
   <Link
     href={href}
@@ -43,6 +46,12 @@ export const ToolCard: React.FC<ToolCardProps> = ({
       {isNew && (
         <span className="ml-auto shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-accent">
           New
+        </span>
+      )}
+      {!isNew && badge && (
+        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary-soft">
+          <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+          {badge}
         </span>
       )}
     </span>

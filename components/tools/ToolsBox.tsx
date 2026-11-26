@@ -139,6 +139,7 @@ export const ToolsBox: React.FC = () => {
                   chips={tool.chips}
                   href={toolHref(tool.id)}
                   isNew={isNewTool(tool)}
+                  badge={tool.badge}
                 />
               ))}
             </div>

@@ -40,6 +40,12 @@ export interface ToolDefinition {
    * isNewTool below only ever reads real data, never estimates.
    */
   addedAt?: string;
+  /**
+   * Editorial label shown on the card (e.g. "Top pick"). It is a curated
+   * recommendation, not a usage statistic, so keep it to wording we can stand
+   * behind. "New" (from addedAt) wins if both apply.
+   */
+  badge?: string;
 }
 
 export const TOOL_REGISTRY: ToolDefinition[] = [
@@ -58,6 +64,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     icon: FileText,
     gradient: 'linear-gradient(135deg, #3654D9 0%, #5B7FFF 58%, #8FA6FF 100%)',
     chips: ['Merge + Whiten + Layout', 'Saves ink', 'Up to 16-up'],
+    badge: 'Top pick',
     cta: 'Convert',
   },
   {
