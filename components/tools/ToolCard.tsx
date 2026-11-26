@@ -49,7 +49,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         </span>
       )}
       {!isNew && badge && (
-        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary-soft">
+        <span className="absolute -top-2.5 right-4 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-bg px-2.5 py-0.5 text-[11px] font-bold text-primary-soft shadow-sm">
           <Star className="h-3 w-3 fill-current" aria-hidden="true" />
           {badge}
         </span>
