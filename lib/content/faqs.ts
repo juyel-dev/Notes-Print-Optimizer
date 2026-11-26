@@ -271,7 +271,7 @@ export const TOOL_FAQS: Record<string, FaqItem[]> = {
   'n-up': [
     {
       q: 'What does N-up do?',
-      a: 'It tiles N source pages onto one output sheet — 2-up, 4-up, 6-up or 9-up. Perfect for handouts and saving paper while keeping every page readable.',
+      a: 'It tiles N source pages onto one output sheet — from 2-up to 16-up (2, 4, 6, 8, 9, 10, 15 or 16 per sheet). Perfect for handouts and saving paper while keeping every page readable.',
     },
     {
       q: 'I selected several PDFs — are they merged first?',
@@ -283,7 +283,7 @@ export const TOOL_FAQS: Record<string, FaqItem[]> = {
     },
     {
       q: 'Which sizes are supported?',
-      a: 'A4 and Letter, portrait or landscape. The grid auto-fits the sheet — 1, 2, 4, 6 or 9 per sheet — with thin borders and optional page numbers.',
+      a: 'A4, Letter or Legal, portrait or landscape. The grid auto-fits the sheet — from 1 up to 16 per sheet — with thin borders and optional page numbers.',
     },
     {
       q: 'Is it private and fast?',

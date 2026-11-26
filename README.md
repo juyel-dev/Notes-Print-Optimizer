@@ -89,7 +89,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 
 | # | id (`ToolMode`) | slug (stable URL) | title | category | icon | chips |
 |---|---|---|---|---|---|---|
-| 1 | `dark-print` | `dark-print` | Dark Notes → Print | pdf | FileText | Auto-whiten · Banner removal · Up to 10-up |
+| 1 | `dark-print` | `dark-print` | Dark Notes → Print | pdf | FileText | Auto-whiten · Keeps white boxes · Up to 16-up |
 | 2 | `enhance` | `enhance-light-pdf` | Enhance Light PDF | pdf | Contrast | Darken ink · Contrast · Sharpen |
 | 3 | `protect` | `protect-pdf` | Protect PDF | security | ShieldCheck | AES-256 · Open password · Print/Copy locks |
 | 4 | `to-images` | `pdf-to-images` | PDF to Images | image | Images | JPG·PNG·WebP · Up to 300 DPI · ZIP |
@@ -100,7 +100,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 | 9 | `qr-gen` | `qr-generator` | QR Studio | utility | QrCode | Generate+Scan · Styled QR · Camera & image |
 | 10 | `word-count` | `word-counter` | Word Counter | text | Type | Live stats · Reading time · Top keywords |
 | 11 | `case-convert` | `case-converter` | Case Converter | text | CaseSensitive | 11 formats · One-tap copy · Live |
-| 12 | `nup` | `n-up` | N-up PDF | pdf | LayoutGrid | Auto-merge · 1/2/4/6/9-up · A4/Letter |
+| 12 | `nup` | `n-up` | N-up PDF | pdf | LayoutGrid | Auto-merge · 1 to 16-up · A4 · Letter · Legal |
 | 13 | `compress` | `compress-pdf` | Compress PDF | pdf | Shrink | Hit a target size · Keeps text · Before / after |
 | 14 | `organize` | `organize-pages` | Organize Pages | pdf | LayoutPanelTop | Drag to reorder · Find blank pages · Undo / redo |
 
