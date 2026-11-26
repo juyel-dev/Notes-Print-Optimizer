@@ -89,7 +89,7 @@ Do not skip a step. Do not claim "already verified" without evidence.
 
 | # | id (`ToolMode`) | slug (stable URL) | title | category | icon | chips |
 |---|---|---|---|---|---|---|
-| 1 | `dark-print` | `dark-print` | Dark Notes → Print | pdf | FileText | Auto-whiten · Saves ink · Up to 16-up |
+| 1 | `dark-print` | `dark-print` | Dark Notes → Print | pdf | FileText | Merge + Whiten + Layout · Saves ink · Up to 16-up |
 | 2 | `enhance` | `enhance-light-pdf` | Enhance Light PDF | pdf | Contrast | Darken ink · Contrast · Sharpen |
 | 3 | `protect` | `protect-pdf` | Protect PDF | security | ShieldCheck | AES-256 · Open password · Print/Copy locks |
 | 4 | `to-images` | `pdf-to-images` | PDF to Images | image | Images | JPG·PNG·WebP · Up to 300 DPI · ZIP |
